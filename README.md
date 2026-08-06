@@ -12,7 +12,7 @@ O principal objetivo do projeto é organizar e facilitar o estudo de forma estru
 - visualizar uma trilha de estudo com organização por matérias e temas;
 - praticar com questões e acompanhar o desempenho ao longo do processo de preparação.
 
-A proposta é transformar o estudo em uma experiência mais visual, prática e orientada a resultados, reduzindo a dispersão e oferecendo uma base de revisão mais consistente.
+A proposta é transformar o estudo em uma experiência mais visual, prática e orientada a resultados, reduzindo a dispersão e oferecendo uma base de revisão mais consistente, para uma melhor performance nos estudos.
 
 ## O que a aplicação oferece
 
