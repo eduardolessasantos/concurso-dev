@@ -31,16 +31,13 @@ jobs:
 
       - name: Instalar dependências e fazer o Build
         run: |
-          cd angular-app
           npm ci
           npx ng build --configuration production --base-href /concurso-dev/
 
       - name: Upload artefato para o Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist/angular-app/browser' # Se usar Angular 17/18/19
-          # Nota: Se o seu build gerar os arquivos direto dentro de 'dist/angular-app' sem a pasta 'browser',
-          # altere a linha acima para: 'angular-app/dist/angular-app'
+          path: 'dist/angular-app/browser'
 
       - name: Deploy para GitHub Pages
         id: deployment
