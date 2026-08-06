@@ -1,0 +1,221 @@
+@if (subject) {
+  <div class="subject-detail-container">
+    <div class="detail-head">
+      <button class="back-button" (click)="goBack()">← Voltar ao mapa</button>
+      <span class="eyebrow"> DISCIPLINA {{ subject.number }}</span>
+      <h2>{{ subject.name }}</h2>
+      <p>{{ subject.description }}</p>
+    </div>
+
+    <!-- Topics -->
+    <div class="detail-topics">
+      <h3>Foco de estudo sugerido</h3>
+      <p class="topics-subtitle">
+        {{ subject.topics.length }} tópicos para dominar. Clique em qualquer um para ver o resumo e dicas.
+      </p>
+      <ul class="topics-list">
+        @for (topic of subject.topics; track topic; let i = $index) {
+          <li class="topic-item" [class.active]="activeTopicIndex() === i" (click)="selectTopic(i)">
+            <span class="topic-number">{{ (i + 1).toString().padStart(2, '0') }}</span>
+            <span class="topic-link">{{ topic }}</span>
+          </li>
+        }
+      </ul>
+
+      @if (activeTopicIndex() !== null) {
+        <div class="topic-detail-card">
+          <div class="topic-detail-card-inner">
+            <div class="topic-header-row">
+              <p class="topic-detail-eyebrow">CONCEITO-CHAVE</p>
+              @if (activeTopicDetail()?.peso) {
+                <span class="topic-peso-badge">{{ activeTopicDetail()?.peso }}</span>
+              }
+            </div>
+            <h4>{{ activeTopicDetail()?.title || subject.topics[activeTopicIndex()!] }}</h4>
+            <p class="topic-summary">{{ activeTopicDetail()?.summary || 'Revise este tópico com atenção — estude os conceitos fundamentais, identifique as questões relacionadas abaixo e verifique seu desempenho.' }}</p>
+
+            @if (activeTopicDetail()?.incidenciaFGV) {
+              <div class="topic-incidencia">
+                <strong>📊 Incidência FGV:</strong> {{ activeTopicDetail()?.incidenciaFGV }}
+              </div>
+            }
+
+            @if (activeTopicDetail()?.detail) {
+              <div class="topic-detail-section">
+                <h5>📖 Detalhamento</h5>
+                <p>{{ activeTopicDetail()?.detail }}</p>
+              </div>
+            }
+
+            @if (activeTopicDetail()) {
+              <div class="topic-detail-grid">
+                @if (activeTopicDetail()?.keyPoints?.length) {
+                  <div>
+                    <h5>✅ O que revisar</h5>
+                    <ul>
+                      @for (item of activeTopicDetail()?.keyPoints; track item) {
+                        <li>{{ item }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+                @if (activeTopicDetail()?.tips?.length) {
+                  <div>
+                    <h5>🎯 Dica para a prova</h5>
+                    <ul>
+                      @for (item of activeTopicDetail()?.tips; track item) {
+                        <li>{{ item }}</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Links Úteis -->
+            @if (activeTopicLinks().length > 0) {
+              <div class="topic-detail-section useful-links-section">
+                <h5>🔗 Links úteis</h5>
+
+                <!-- Links de documentação e estudo -->
+                @if (docLinks().length > 0) {
+                  <ul class="doc-links-list">
+                    @for (link of docLinks(); track link.url) {
+                      <li>
+                        <a [href]="link.url" target="_blank" rel="noopener noreferrer" class="doc-link-item">
+                          <span class="doc-link-icon">
+                            @if (link.type === 'documentacao') { 📄 }
+                            @else { 🔗 }
+                          </span>
+                          <span class="doc-link-label">{{ link.label }}</span>
+                          <span class="doc-link-arrow">↗</span>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                }
+
+                <!-- Cards de vídeos YouTube -->
+                @if (youtubeLinks().length > 0) {
+                  <div class="yt-section">
+                    <p class="yt-section-label">▶ Vídeos recomendados</p>
+                    <div class="yt-cards-grid">
+                      @for (link of youtubeLinks(); track link.url) {
+                        <a
+                          [href]="link.url"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="yt-card"
+                          [attr.aria-label]="'Assistir: ' + link.label"
+                        >
+                          <div class="yt-card-thumbnail">
+                            <img
+                              [src]="getYoutubeThumbnail(link.youtubeId!)"
+                              [alt]="link.label"
+                              loading="lazy"
+                            />
+                            <div class="yt-play-btn" aria-hidden="true">
+                              <svg viewBox="0 0 68 48" xmlns="http://www.w3.org/2000/svg">
+                                <path class="yt-play-bg" d="M66.5 7.7c-.8-2.9-2.9-5.1-5.7-5.9C55.8.5 34 .5 34 .5S12.2.5 7.2 1.8c-2.8.8-4.9 3-5.7 5.9C.2 12.6.2 24 .2 24s0 11.4 1.3 16.3c.8 2.9 2.9 5.1 5.7 5.9 5 1.3 26.8 1.3 26.8 1.3s21.8 0 26.8-1.3c2.8-.8 4.9-3 5.7-5.9C67.8 35.4 67.8 24 67.8 24s0-11.4-1.3-16.3z"/>
+                                <path class="yt-play-arrow" d="M27.1 34.6L46.8 24 27.1 13.4v21.2z"/>
+                              </svg>
+                            </div>
+                          </div>
+                          <div class="yt-card-info">
+                            <p class="yt-card-title">{{ link.label }}</p>
+                            <span class="yt-card-badge">YouTube</span>
+                          </div>
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (activeTopicDetail()?.examples?.length) {
+              <div class="topic-detail-section">
+                <h5>💡 Exemplos e aplicação</h5>
+                @for (example of activeTopicDetail()?.examples; track example.question) {
+                  <div class="topic-example-card">
+                    <p><strong>❓ {{ example.question }}</strong></p>
+                    <p><span class="example-label">Resposta:</span> {{ example.answer }}</p>
+
+                    @if (example.application || example.aplication) {
+                      <p>
+                        <span class="example-label">Na prática:</span>
+                        {{ example.application ?? example.aplication }}
+                      </p>
+                    }
+
+                    @if (example.code) {
+                      <div class="example-code-editor" aria-label="Bloco de exemplo prático">
+                        <div class="example-code-toolbar">
+                          <span class="example-code-dots" aria-hidden="true">
+                            <i></i><i></i><i></i>
+                          </span>
+                          <span class="example-code-language">{{ example.language || 'Código' }}</span>
+                        </div>
+                        <pre class="example-code-pre"><code>{{ example.code }}</code></pre>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+
+            @if (activeTopicDetail()?.errosComuns?.length) {
+              <div class="topic-detail-section topic-erros-section">
+                <h5>⚠️ Erros comuns na prova</h5>
+                <ul class="erros-list">
+                  @for (item of activeTopicDetail()?.errosComuns; track item) {
+                    <li>{{ item }}</li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Question Toolbar -->
+    <div class="question-toolbar">
+      <label>
+        BUSCAR TERMO
+        <input type="text" placeholder="Ex: concordância, Spring, docker..."
+          [value]="searchQuery()" (input)="onSearch($any($event.target).value)">
+      </label>
+      <label>
+        FILTRAR STATUS
+        <select [value]="statusFilter()" (change)="onFilter($any($event.target).value)">
+          <option value="todos">Todos</option>
+          <option value="nao_resolvidas">Não respondidas</option>
+          <option value="resolvidas">Respondidas</option>
+          <option value="corretas">Acertos</option>
+          <option value="incorretas">Erros</option>
+        </select>
+      </label>
+      <span class="results-count">{{ filteredQuestions().length }} questões encontradas</span>
+    </div>
+
+    <!-- Question List -->
+    <div class="subject-questions">
+      @if (filteredQuestions().length === 0) {
+        <div class="no-results">
+          <p>Nenhuma questão correspondente aos filtros aplicados.</p>
+        </div>
+      }
+      @for (q of filteredQuestions(); track q.number) {
+        <div class="question-list-card" [ngClass]="getQuestionStatus(q)" (click)="openQuestion(q)">
+          <div class="q-list-card-header">
+            <span class="q-number">Questão {{ q.number }}</span>
+            <span class="q-badge" [ngClass]="'badge-' + getQuestionStatus(q)">{{ getBadge(q) }}</span>
+          </div>
+          <h4>{{ q.title }}</h4>
+          <span class="q-link">Resolver questão →</span>
+        </div>
+      }
+    </div>
+  </div>
+}

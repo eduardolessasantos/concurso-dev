@@ -1,0 +1,61 @@
+<section class="section">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">MAPA DE PRIORIDADES</p>
+      <h2>Disciplinas da prova</h2>
+    </div>
+    <p>Acompanhe seu progresso em cada matéria e resolva as questões conceituais comentadas da banca FGV.</p>
+  </div>
+
+  <div class="category-section">
+    <h3 class="category-title">Conhecimentos Gerais</h3>
+    <div class="subjects-grid">
+      @for (subject of subjectsWithProgress().gerais; track subject.id) {
+        <button class="subject-card" [class.major]="subject.major" (click)="openSubject(subject.id)">
+          <span class="number">{{ subject.number }}</span>
+          <h3>{{ subject.name }}</h3>
+          <p>{{ subject.description }}</p>
+
+          <div class="subject-progress-bar">
+            <div class="bar-outer">
+              <div class="bar-inner" [style.width.%]="subject.pct"></div>
+            </div>
+            <small>{{ subject.answered }} de {{ subject.total }} resolvidas ({{ subject.pct }}%)</small>
+          </div>
+
+          <footer>
+            <b>{{ metaPrimary(subject.meta) }}</b>
+            <span class="weight">{{ metaSecondary(subject.meta) }}</span>
+          </footer>
+          <span class="open-subject">Abrir conteúdo →</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="category-section">
+    <h3 class="category-title">Conhecimentos Específicos</h3>
+    <div class="subjects-grid">
+      @for (subject of subjectsWithProgress().especificos; track subject.id) {
+        <button class="subject-card major" (click)="openSubject(subject.id)">
+          <span class="number">{{ subject.number }}</span>
+          <h3>{{ subject.name }}</h3>
+          <p>{{ subject.description }}</p>
+
+          <div class="subject-progress-bar">
+            <div class="bar-outer">
+              <div class="bar-inner" [style.width.%]="subject.pct"></div>
+            </div>
+            <small>{{ subject.answered }} de {{ subject.total }} resolvidas ({{ subject.pct }}%)</small>
+          </div>
+
+          <footer>
+            <b>{{ metaPrimary(subject.meta) }}</b>
+            <span class="weight">{{ metaSecondary(subject.meta) }}</span>
+          </footer>
+          <span class="open-subject">Abrir conteúdo →</span>
+        </button>
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,68 @@
+@if (question && subject) {
+  <div class="question-detail-view">
+    <div class="breadcrumb">
+      <a routerLink="/">Início</a> ›
+      <a routerLink="/disciplinas">Disciplinas</a> ›
+      <a [routerLink]="['/disciplinas', subject.id]">{{ subject.name }}</a> ›
+      <span>Questão {{ question.number }}</span>
+    </div>
+
+    <div class="detail-head-question">
+      <button class="back-button" (click)="goBack()">← Voltar para {{ subject.name }}</button>
+      <div class="question-navigator">
+        <button class="nav-btn" [disabled]="!prevNum" (click)="prevNum && navigate(prevNum)">← Anterior</button>
+        <span class="navigator-info">Questão {{ question.number }} de {{ subject.range[1] }}</span>
+        <button class="nav-btn" [disabled]="!nextNum" (click)="nextNum && navigate(nextNum)">Próxima →</button>
+      </div>
+    </div>
+
+    <div class="question-main-card">
+      <header class="q-card-header">
+        <span class="q-label">QUESTÃO {{ question.number }}</span>
+        <span class="q-topic-badge">{{ question.title }}</span>
+      </header>
+
+      <h3 class="q-prompt">{{ question.prompt }}</h3>
+
+      <div class="q-options-container">
+        @for (option of question.options; track option; let i = $index) {
+          <button class="q-option-btn" [ngClass]="optionClass(letters[i])"
+            [disabled]="!!answered"
+            (click)="selectOption(letters[i])">
+            <span class="letter-circle">{{ letters[i] }}</span>
+            <span class="option-text">{{ option }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="action-bar">
+        @if (!answered) {
+          <button class="submit-answer-btn" [disabled]="!selectedOption()" (click)="submit()">
+            Confirmar Resposta
+          </button>
+        } @else {
+          <div class="feedback-indicator" [ngClass]="answered.correct ? 'correct' : 'wrong'">
+            @if (answered.correct) {
+              <strong>✓ Resposta Correta!</strong>
+            } @else {
+              <strong>✗ Resposta Incorreta.</strong> Gabarito oficial: {{ question.answer }}
+            }
+          </div>
+        }
+      </div>
+
+      @if (answered) {
+        <div class="solution-area">
+          <div class="solution-comment">
+            <h5>EXPLICAÇÃO DO GABARITO</h5>
+            <p><strong>Gabarito {{ question.answer }}.</strong> {{ question.comment }}</p>
+          </div>
+          <div class="solution-concept">
+            <h5>CONCEITO-CHAVE</h5>
+            <p>{{ question.concept }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,112 @@
+@if (session) {
+  <div class="sim-report-container">
+    <div class="report-header">
+      <button class="back-button" (click)="goBack()">← Voltar aos Simulados</button>
+      <h2>Resultado do Simulado</h2>
+      <p>{{ session.type === 'complete' ? 'Simulado Completo' : 'Treino Rápido' }} finalizado em {{ session.finishedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+    </div>
+
+    <div class="report-dashboard">
+      <div class="chart-box">
+        <svg width="150" height="150" viewBox="0 0 120 120" class="donut-chart">
+          <circle cx="60" cy="60" r="50" fill="transparent" stroke="var(--line)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="50" fill="transparent"
+            stroke="var(--blue)" stroke-width="10"
+            [attr.stroke-dasharray]="314"
+            [attr.stroke-dashoffset]="strokeOffset"
+            transform="rotate(-90 60 60)"/>
+          <text x="60" y="64" text-anchor="middle" font-size="24" font-weight="800" fill="var(--ink)" font-family="Manrope">
+            {{ results.pct }}%
+          </text>
+        </svg>
+      </div>
+
+      <div class="stats-box">
+        <div class="stat-card">
+          <span>DESEMPENHO GLOBAL</span>
+          <strong [ngClass]="results.pct >= 60 ? 'green-lbl' : 'red-lbl'">{{ results.correct }} de {{ session.questions.length }}</strong>
+          <small>questões corretas</small>
+        </div>
+        <div class="stat-card">
+          <span>DETALHAMENTO</span>
+          <div class="stats-breakdown">
+            <span class="stat-color-lbl green-lbl">✓ {{ results.correct }} Acertos</span>
+            <span class="stat-color-lbl red-lbl">✗ {{ results.wrong }} Erros</span>
+            <span class="stat-color-lbl gray-lbl">○ {{ results.unanswered }} Em branco</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-review-section">
+      <h3>Revisão Questão a Questão</h3>
+      <p>Clique no mapa abaixo para conferir o gabarito oficial e seus erros e acertos.</p>
+
+      <div class="report-nav-grid">
+        @for (q of session.questions; track q; let idx = $index) {
+          <button class="sim-nav-btn" 
+            [ngClass]="navBtnClass(idx)"
+            (click)="selectedQuestionIdx.set(idx)">
+            {{ idx + 1 }}
+          </button>
+        }
+      </div>
+
+      <div class="report-review-card-viewport">
+        @if (selectedQuestion) {
+          <div class="question-main-card">
+            <header class="q-card-header">
+              <span class="q-label">QUESTÃO {{ selectedQuestionIdx()! + 1 }} / {{ session.questions.length }}</span>
+              <span class="q-topic-badge">{{ selectedQuestion.title }}</span>
+            </header>
+
+            <h3 class="q-prompt">{{ selectedQuestion.prompt }}</h3>
+
+            <div class="q-options-container">
+              @for (option of selectedQuestion.options; track option; let i = $index) {
+                <div class="q-option-btn" [ngClass]="optionClass(letters[i])">
+                  <span class="letter-circle">{{ letters[i] }}</span>
+                  <span class="option-text">{{ option }}</span>
+                  
+                  @if (optionClass(letters[i]) === 'correct') {
+                    <span style="margin-left:auto; font-size:12px; font-weight:700;">GABARITO OFICIAL</span>
+                  }
+                  @if (optionClass(letters[i]) === 'wrong') {
+                    <span style="margin-left:auto; font-size:12px; font-weight:700;">SUA RESPOSTA</span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="action-bar">
+              <div class="feedback-indicator" [ngClass]="selectedQuestionAnswer === selectedQuestion.answer ? 'correct' : 'wrong'">
+                @if (selectedQuestionAnswer === selectedQuestion.answer) {
+                  <strong>✓ Você acertou esta questão!</strong>
+                } @else if (selectedQuestionAnswer) {
+                  <strong>✗ Você errou.</strong> Resposta correta: {{ selectedQuestion.answer }}
+                } @else {
+                  <strong>○ Você deixou esta questão em branco.</strong> Resposta correta: {{ selectedQuestion.answer }}
+                }
+              </div>
+            </div>
+
+            <div class="solution-area">
+              <div class="solution-comment">
+                <h5>EXPLICAÇÃO DO GABARITO</h5>
+                <p><strong>Gabarito {{ selectedQuestion.answer }}.</strong> {{ selectedQuestion.comment }}</p>
+              </div>
+              <div class="solution-concept">
+                <h5>CONCEITO-CHAVE</h5>
+                <p>{{ selectedQuestion.concept }}</p>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="select-question-notice">
+            <p>Selecione uma questão no mapa acima para visualizar a correção.</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
