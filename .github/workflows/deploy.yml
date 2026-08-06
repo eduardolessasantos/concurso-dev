@@ -1,0 +1,46 @@
+name: Deploy Angular to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências e fazer o Build
+        run: |
+          cd dataprev-estudos/angular-app
+          npm ci
+          npx ng build --configuration production --base-href /concurso-dev/
+
+      - name: Upload artefato para o Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dataprev-estudos/angular-app/dist/angular-app/browser' # Se usar Angular 17/18/19
+          # Nota: Se o seu build gerar os arquivos direto dentro de 'dist/angular-app' sem a pasta 'browser',
+          # altere a linha acima para: 'dataprev-estudos/angular-app/dist/angular-app'
+
+      - name: Deploy para GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
