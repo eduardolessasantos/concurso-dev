@@ -435,7 +435,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[AVISO] InicializaÃ§Ã£o do banco via SeedData.json: {ex.Message}");
+        Console.WriteLine($"[AVISO] Inicialização do banco via SeedData.json: {ex.Message}");
     }
 }
 
