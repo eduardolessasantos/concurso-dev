@@ -1,4 +1,4 @@
-﻿name: CI/CD - Monorepo (Backend .NET & Frontend Pages)
+name: Deploy Frontend (GitHub Pages)
 
 on:
   push:
@@ -15,27 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  backend-test:
-    name: Build & Test Backend (.NET 9)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore backend/TeacherTech.sln
-
-      - name: Run Backend Tests
-        run: dotnet test backend/TeacherTech.sln --no-restore --verbosity normal
-
   frontend-deploy:
     name: Build & Deploy Frontend (Angular)
-    needs: backend-test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
