@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using TeacherTech.Application;
@@ -8,8 +8,10 @@ using TeacherTech.Infrastructure;
 using TeacherTech.Infrastructure.Data;
 using TeacherTech.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -129,6 +131,11 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
+// 5. Health Checks Service Configuration
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["ready", "db"])
+    .AddCheck("self", () => HealthCheckResult.Healthy("API process is running."), tags: ["live"]);
+
 // 5. Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -184,6 +191,24 @@ app.UseCors("AllowAngularApp");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Native ASP.NET Core Health Check Endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = WriteHealthCheckJsonResponse
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live"),
+    ResponseWriter = WriteHealthCheckJsonResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+    ResponseWriter = WriteHealthCheckJsonResponse
+});
 
 app.MapControllers();
 
@@ -411,5 +436,33 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+static Task WriteHealthCheckJsonResponse(HttpContext context, HealthReport report)
+{
+    context.Response.ContentType = "application/json";
+    var response = new
+    {
+        status = report.Status.ToString(),
+        totalDuration = report.TotalDuration.ToString(@"hh\:mm\:ss\.fff"),
+        timestamp = DateTime.UtcNow,
+        entries = report.Entries.ToDictionary(
+            e => e.Key,
+            e => new
+            {
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration = e.Value.Duration.ToString(@"hh\:mm\:ss\.fff"),
+                data = e.Value.Data
+            })
+    };
+
+    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
+    return context.Response.WriteAsync(json);
+}
 
 public partial class Program { }

@@ -21,9 +21,10 @@ public static class DependencyInjection
         services.AddScoped<IAccessRequestRepository, AccessRequestRepository>();
         services.AddScoped<ITransactionRepository, TransactionRepository>();
 
-        // Domain Services
+        // Domain Services & Health
         services.AddScoped<IPaymentDomainService, PaymentDomainService>();
         services.AddHttpClient<IAiService, AiService>();
+        services.AddScoped<DatabaseHealthCheck>();
 
         return services;
     }
