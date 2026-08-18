@@ -1,0 +1,113 @@
+<div class="finance-container">
+  <header class="finance-header">
+    <div>
+      <h1>💰 Painel Financeiro & Repasse do Professor</h1>
+      <p>Acompanhe seu saldo acumulado, vendas de cursos e configure sua chave PIX de recebimento.</p>
+    </div>
+  </header>
+
+  @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Carregando dados financeiros...</p>
+    </div>
+  } @else if (balance()) {
+    <!-- Financial Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card primary">
+        <span class="label">Receita Acumulada (90% Liquido)</span>
+        <strong class="value">R$ {{ balance()?.totalRevenue?.toFixed(2) }}</strong>
+        <small class="hint">✓ Taxa de plataforma (10%) já descontada</small>
+      </div>
+
+      <div class="metric-card success">
+        <span class="label">Saldo Disponível para Saque</span>
+        <strong class="value">R$ {{ balance()?.availableBalance?.toFixed(2) }}</strong>
+        <small class="hint">⚡ Transferência via PIX no mesmo dia</small>
+      </div>
+
+      <div class="metric-card info">
+        <span class="label">Total de Vendas de Cursos</span>
+        <strong class="value">{{ balance()?.salesCount }}</strong>
+        <small class="hint">🎓 Alunos matriculados via checkout público</small>
+      </div>
+    </div>
+
+    @if (statusMessage()) {
+      <div class="alert-success">
+        <span>✅ {{ statusMessage() }}</span>
+      </div>
+    }
+
+    <!-- PIX Payout Settings Box -->
+    <div class="card-section">
+      <div class="card-header">
+        <h3>🔑 Chave PIX para Transferências Automáticas</h3>
+        <p>Cadastre sua chave PIX onde o TeacherTech efetuará o repasse dos seus 90% das vendas.</p>
+      </div>
+
+      <form (ngSubmit)="onSavePixKey()" class="pix-form">
+        <div class="form-group">
+          <label for="pixKey">Sua Chave PIX (CPF, E-mail, Celular ou Chave Aleatória)</label>
+          <div class="input-row">
+            <input 
+              type="text" 
+              id="pixKey" 
+              name="pixKey" 
+              [(ngModel)]="pixKey" 
+              placeholder="ex: professor@email.com ou 000.000.000-00" 
+              required />
+            <button type="submit" class="btn-save" [disabled]="isUpdatingPix">
+              {{ isUpdatingPix ? 'Salvando...' : '💾 Salvar Chave PIX' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Sales & Split Transactions History Table -->
+    <div class="card-section">
+      <div class="card-header">
+        <h3>📜 Histórico de Vendas & Split de Receita</h3>
+        <p>Detalhamento de cada transação com retenção automática da taxa de plataforma.</p>
+      </div>
+
+      @if (balance()!.transactions.length > 0) {
+        <div class="table-container">
+          <table class="finance-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Curso / Trilha</th>
+                <th>Comprador</th>
+                <th>Valor Bruto</th>
+                <th>Seu Repasse (90%)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tx of balance()!.transactions; track tx.id) {
+                <tr>
+                  <td>{{ tx.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td><strong>{{ tx.courseTitle }}</strong></td>
+                  <td>{{ tx.buyerName }}</td>
+                  <td>R$ {{ tx.amount.toFixed(2) }}</td>
+                  <td class="revenue-cell">R$ {{ tx.professorRevenue.toFixed(2) }}</td>
+                  <td>
+                    <span class="status-pill active">Pago</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <div class="icon">💸</div>
+          <h4>Nenhuma venda realizada ainda</h4>
+          <p>Compartilhe o link da sua vitrine pública (`/p/seu-slug`) nas redes sociais para gerar suas primeiras vendas.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

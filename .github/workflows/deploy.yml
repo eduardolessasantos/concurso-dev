@@ -1,4 +1,4 @@
-name: Deploy Angular to GitHub Pages
+﻿name: CI/CD - Monorepo (Backend .NET & Frontend Pages)
 
 on:
   push:
@@ -15,30 +15,54 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  backend-test:
+    name: Build & Test Backend (.NET 9)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/TeacherTech.sln
+
+      - name: Run Backend Tests
+        run: dotnet test backend/TeacherTech.sln --no-restore --verbosity normal
+
+  frontend-deploy:
+    name: Build & Deploy Frontend (Angular)
+    needs: backend-test
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout código
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'angular-app/package-lock.json'
 
-      - name: Instalar dependências e fazer o Build
+      - name: Install dependencies & Build Angular
+        working-directory: ./angular-app
         run: |
           npm ci
           npx ng build --configuration production --base-href /concurso-dev/
+          cp dist/angular-app/browser/index.html dist/angular-app/browser/404.html
 
-      - name: Upload artefato para o Pages
+      - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist/angular-app/browser'
+          path: 'angular-app/dist/angular-app/browser'
 
-      - name: Deploy para GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

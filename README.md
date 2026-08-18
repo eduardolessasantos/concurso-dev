@@ -1,65 +1,83 @@
-# Concurso Dev · Plano de Estudos
+﻿# TeacherTech / Concurso Dev - Monorepo
 
-Esta aplicação foi criada para funcionar como um painel de estudos personalizado para candidatos que estão se preparando para concursos na área de Tecnologia da Informação, especialmente nas disciplinas relacionadas a desenvolvimento de software, arquitetura de software, banco de dados, business intelligence, gestão e governança de TI.
+Este repositório contém a solução completa da plataforma **TeacherTech / Concurso Dev**, unificando o **Frontend (Angular)** e o **Backend (.NET 9 Web API)** em uma arquitetura monorepo com automação de CI/CD via **GitHub Actions** e deploy do frontend no **GitHub Pages**.
 
-## Objetivo da aplicação
+---
 
-O principal objetivo do projeto é organizar e facilitar o estudo de forma estruturada, ajudando o usuário a:
+## Estrutura do Repositório
 
-- acompanhar o conteúdo programático de cada disciplina;
-- revisar conceitos-chave por tópico;
-- estudar com foco em provas e concursos;
-- visualizar uma trilha de estudo com organização por matérias e temas;
-- praticar com questões e acompanhar o desempenho ao longo do processo de preparação.
+```
+dataprev-estudos/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml       # Pipeline CI/CD (Testes .NET + Build/Deploy Angular Pages)
+├── .gitignore               # Regras de ignore para Node, .NET, IDEs e backups
+├── README.md                # Documentação geral do monorepo
+├── angular-app/             # Aplicação Frontend (Angular 22)
+│   ├── src/
+│   ├── package.json
+│   └── angular.json
+└── backend/                 # Aplicação Backend (.NET 9 Web API)
+    ├── src/
+    │   ├── TeacherTech.Api/
+    │   ├── TeacherTech.Application/
+    │   ├── TeacherTech.Domain/
+    │   └── TeacherTech.Infrastructure/
+    ├── tests/
+    │   └── TeacherTech.Tests/
+    └── TeacherTech.sln
+```
 
-A proposta é transformar o estudo em uma experiência mais visual, prática e orientada a resultados, reduzindo a dispersão e oferecendo uma base de revisão mais consistente, para uma melhor performance nos estudos.
+---
 
-## O que a aplicação oferece
+## Como Executar Localmente
 
-- Visão geral das disciplinas do concurso;
-- Organização por tópicos de estudo;
-- Detalhamento de cada tópico com resumo, conceitos importantes, dicas e exemplos;
-- Acesso a questões relacionadas à disciplina;
-- Funcionalidade de filtro e busca para localizar questões com mais agilidade;
-- Estrutura de cronograma e simulado para apoiar o planejamento de estudos;
-- Interface simples, moderna e voltada à navegação rápida.
-
-## Público-alvo
-
-A aplicação é especialmente útil para:
-
-- estudantes de tecnologia;
-- candidatos a concursos de analista de TI;
-- profissionais que querem revisar conteúdos técnicos de forma organizada;
-- pessoas que buscam uma ferramenta prática para organizar seus estudos.
-
-## Valor do projeto
-
-Além de servir como ferramenta de estudo, a aplicação representa uma solução personalizada para quem precisa estudar de forma disciplinada, com foco em aprendizado ativo. Ela combina organização, revisão e prática em um único ambiente, tornando o processo de preparação mais eficiente e menos fragmentado.
-
-## Como executar localmente
-
-Para iniciar o projeto em modo de desenvolvimento, execute:
+### 1. Backend (.NET 9 Web API)
+Requisitos: [.NET SDK 9.0+](https://dotnet.microsoft.com/download)
 
 ```bash
+# Navegar até a pasta backend
+cd backend
+
+# Restaurar pacotes e rodar a suíte de testes
+dotnet restore
+dotnet test
+
+# Executar a API
+dotnet run --project src/TeacherTech.Api
+```
+A API estará disponível por padrão em `http://localhost:5000` (Swagger: `http://localhost:5000/swagger`).
+
+---
+
+### 2. Frontend (Angular 22)
+Requisitos: [Node.js 22+](https://nodejs.org/) e npm
+
+```bash
+# Navegar até a pasta angular-app
+cd angular-app
+
+# Instalar dependências
 npm install
+
+# Iniciar servidor de desenvolvimento
 npm start
 ```
+O app estará acessível em `http://localhost:4200/`.
 
-Depois, abra o navegador em:
+---
 
-```text
-http://localhost:4200/
-```
+## Pipeline CI/CD (GitHub Actions & GitHub Pages)
 
-## Construção para produção
+O workflow `.github/workflows/deploy.yml` é executado a cada push na branch `main` e realiza:
 
-Para gerar a versão otimizada da aplicação:
-
-```bash
-npm run build
-```
-
-## Observação
-
-Este projeto foi pensado como uma ferramenta de apoio ao estudo, com foco em produtividade, organização e revisão contínua do conteúdo técnico exigido nas provas.
+1. **Validação do Backend (.NET 9):**
+   - Restauração de dependências NuGet.
+   - Execução de todos os testes unitários e de integração (`TeacherTech.Tests`).
+2. **Build do Frontend (Angular):**
+   - Configuração do Node.js 22.
+   - Instalação limpa das dependências (`npm ci`).
+   - Build de produção configurado com `--base-href /concurso-dev/`.
+   - Criação automática de `404.html` para suporte a roteamento SPA (Client-side routing) no GitHub Pages.
+3. **Deploy no GitHub Pages:**
+   - Publicação automática do pacote estático em `https://eduardolessasantos.github.io/concurso-dev/`.

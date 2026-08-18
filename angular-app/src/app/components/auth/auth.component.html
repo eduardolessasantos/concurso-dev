@@ -1,0 +1,148 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo-badge">
+        <span class="logo-text">TT</span>
+      </div>
+      <h2>TeacherTech</h2>
+      <p class="subtitle">Plataforma Inteligente de Ensino & Estudos</p>
+
+      <div class="tab-switcher">
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'login'" 
+          (click)="switchTab('login')">
+          Entrar
+        </button>
+        <button 
+          type="button" 
+          class="tab-btn" 
+          [class.active]="activeTab() === 'register'" 
+          (click)="switchTab('register')">
+          Criar Conta
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (errorMessage()) {
+      <div class="alert alert-error">
+        <span>⚠️ {{ errorMessage() }}</span>
+      </div>
+    }
+
+    @if (successMessage()) {
+      <div class="alert alert-success">
+        <span>✅ {{ successMessage() }}</span>
+      </div>
+    }
+
+    <form (ngSubmit)="onSubmit()" class="auth-form">
+      @if (activeTab() === 'register') {
+        <!-- Role Selection -->
+        <div class="form-group">
+          <label>Como você deseja usar a plataforma?</label>
+          <div class="role-selector">
+            <button 
+              type="button" 
+              class="role-card" 
+              [class.selected]="selectedRole() === 'PROFESSOR'" 
+              (click)="setRole('PROFESSOR')">
+              <span class="role-icon">👨‍🏫</span>
+              <div class="role-info">
+                <strong>Professor / Criador</strong>
+                <small>Crie disciplinas, use IA e venda ou libere para alunos</small>
+              </div>
+            </button>
+
+            <button 
+              type="button" 
+              class="role-card" 
+              [class.selected]="selectedRole() === 'STUDENT'" 
+              (click)="setRole('STUDENT')">
+              <span class="role-icon">👨‍🎓</span>
+              <div class="role-info">
+                <strong>Aluno / Estudante</strong>
+                <small>Acesse estudos liberados e estude com resumos e flashcards</small>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fullName">Nome Completo</label>
+          <input 
+            type="text" 
+            id="fullName" 
+            name="fullName" 
+            [(ngModel)]="fullName" 
+            placeholder="Ex: Prof. Carlos Eduardo" 
+            required />
+        </div>
+
+        @if (selectedRole() === 'PROFESSOR') {
+          <div class="form-group">
+            <label for="headline">Especialidade / Título</label>
+            <input 
+              type="text" 
+              id="headline" 
+              name="headline" 
+              [(ngModel)]="headline" 
+              placeholder="Ex: Especialista em Concursos TI & Engenharia de Software" />
+          </div>
+        } @else {
+          <div class="form-group">
+            <label for="goalExam">Objetivo de Concurso / Certame</label>
+            <input 
+              type="text" 
+              id="goalExam" 
+              name="goalExam" 
+              [(ngModel)]="goalExam" 
+              placeholder="Ex: DataPrev, Receita Federal, Caixa, INSS" />
+          </div>
+        }
+      }
+
+      <div class="form-group">
+        <label for="email">E-mail</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          [(ngModel)]="email" 
+          placeholder="seu@email.com" 
+          required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Senha</label>
+        <div class="password-input-wrapper">
+          <input 
+            [type]="showPassword() ? 'text' : 'password'" 
+            id="password" 
+            name="password" 
+            [(ngModel)]="password" 
+            placeholder="Mínimo 6 caracteres" 
+            required />
+          <button 
+            type="button" 
+            class="btn-toggle-password" 
+            (click)="toggleShowPassword()" 
+            [title]="showPassword() ? 'Ocultar Senha' : 'Mostrar Senha'"
+            aria-label="Alternar visibilidade da senha">
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" [disabled]="isLoading">
+        @if (isLoading) {
+          <span class="spinner"></span> Processando...
+        } @else {
+          {{ activeTab() === 'login' ? 'Entrar no Painel' : 'Criar Conta Grátis' }}
+        }
+      </button>
+    </form>
+  </div>
+</div>

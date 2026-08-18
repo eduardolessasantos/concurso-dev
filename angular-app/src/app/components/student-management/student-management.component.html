@@ -1,0 +1,171 @@
+<div class="management-container">
+  <header class="management-header">
+    <div>
+      <h1>👥 Gestão de Alunos & Permissões</h1>
+      <p>Exporte o seu curso por e-mail para alunos específicos ou aprove solicitações de acesso.</p>
+    </div>
+
+    <div class="tabs-bar">
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'invite'" 
+        (click)="switchTab('invite')">
+        ✉️ Convidar por E-mail
+      </button>
+      
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'requests'" 
+        (click)="switchTab('requests')">
+        🙋 Solicitantes Pendentes ({{ pendingRequests().length }})
+      </button>
+
+      <button 
+        type="button" 
+        class="tab-btn" 
+        [class.active]="activeTab() === 'enrolled'" 
+        (click)="switchTab('enrolled')">
+        🎓 Alunos Matriculados
+      </button>
+    </div>
+  </header>
+
+  @if (alertMessage()) {
+    <div class="alert" [class.alert-success]="alertMessage()?.type === 'success'" [class.alert-error]="alertMessage()?.type === 'error'">
+      <span>{{ alertMessage()?.text }}</span>
+    </div>
+  }
+
+  <!-- TAB 1: INVITE BY EMAIL -->
+  @if (activeTab() === 'invite') {
+    <div class="card-section">
+      <div class="card-header">
+        <h3>✉️ Exportar Estudo por E-mail</h3>
+        <p>Envie o acesso individual ao estudo do seu curso. O aluno receberá um e-mail com instrução de entrada.</p>
+      </div>
+
+      <form (ngSubmit)="onSendInvite()" class="form-grid">
+        <div class="form-group">
+          <label for="studentEmail">E-mail do Aluno</label>
+          <input 
+            type="email" 
+            id="studentEmail" 
+            name="studentEmail" 
+            [(ngModel)]="studentEmail" 
+            placeholder="aluno@exemplo.com" 
+            required />
+        </div>
+
+        <div class="form-group">
+          <label for="welcomeMessage">Mensagem Personalizada de Boas-Vindas (Opcional)</label>
+          <textarea 
+            id="welcomeMessage" 
+            name="welcomeMessage" 
+            [(ngModel)]="welcomeMessage" 
+            rows="3" 
+            placeholder="Ex: Olá! Liberando o acesso exclusivo à nossa Trilha de Estudos do concurso. Bons estudos!"></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isLoading">
+          @if (isLoading) {
+            <span class="spinner"></span> Enviando Acesso...
+          } @else {
+            🚀 Liberar & Enviar por E-mail
+          }
+        </button>
+      </form>
+    </div>
+  }
+
+  <!-- TAB 2: PENDING REQUESTS -->
+  @if (activeTab() === 'requests') {
+    <div class="card-section">
+      <div class="card-header">
+        <h3>🙋 Solicitações de Acesso Pendentes</h3>
+        <p>Alunos que solicitaram a liberação do estudo através da sua vitrine pública.</p>
+      </div>
+
+      @if (pendingRequests().length > 0) {
+        <div class="requests-list">
+          @for (req of pendingRequests(); track req.id) {
+            <div class="request-card">
+              <div class="user-avatar">🎓</div>
+              <div class="request-details">
+                <strong>{{ req.studentName }}</strong>
+                <small>{{ req.studentEmail }} · Solicitação em {{ req.requestedAt | date:'dd/MM/yyyy HH:mm' }}</small>
+                <p class="req-msg">"{{ req.message }}"</p>
+                <span class="course-tag">📚 Curso: {{ req.courseTitle }}</span>
+              </div>
+              <div class="request-actions">
+                <button type="button" class="btn-approve" (click)="onApprove(req)">✓ Aprovar Acesso</button>
+                <button type="button" class="btn-reject" (click)="onReject(req)">✕ Rejeitar</button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <div class="icon">✅</div>
+          <h4>Nenhuma solicitação pendente</h4>
+          <p>Todas as solicitações de alunos já foram analisadas.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TAB 3: ENROLLED STUDENTS LIST -->
+  @if (activeTab() === 'enrolled') {
+    <div class="card-section">
+      <div class="card-header">
+        <h3>🎓 Alunos com Acesso Liberado</h3>
+        <p>Gerencie as permissões e o status de acesso dos alunos aos seus cursos.</p>
+      </div>
+
+      @if (enrolledStudents().length > 0) {
+        <div class="table-container">
+          <table class="students-table">
+            <thead>
+              <tr>
+                <th>Aluno</th>
+                <th>Origem da Concessão</th>
+                <th>Data de Início</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (st of enrolledStudents(); track st.id) {
+                <tr>
+                  <td>
+                    <div class="student-info">
+                      <strong>{{ st.studentName }}</strong>
+                      <small>{{ st.studentEmail }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="origin-badge">{{ st.grantedVia === 'EMAIL_INVITE' ? '✉️ Convite por E-mail' : '🌐 Aprovado na Vitrine' }}</span>
+                  </td>
+                  <td>{{ st.createdAt | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span class="status-pill active">Ativo</span>
+                  </td>
+                  <td>
+                    <button type="button" class="btn-revoke" (click)="onRevoke(st)">Revogar Acesso</button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <div class="icon">📫</div>
+          <h4>Nenhum aluno matriculado ainda</h4>
+          <p>Use a aba "Convidar por E-mail" para dar os primeiros acessos aos seus alunos.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

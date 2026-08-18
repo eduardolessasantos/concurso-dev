@@ -1,0 +1,93 @@
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.open]="sidebarOpen()">
+    <a class="brand" routerLink="/" (click)="closeSidebar()">
+      <span class="brand-mark"> TT </span>
+      <span>TeacherTech<br><b>Plataforma de Estudos</b></span>
+    </a>
+    
+    <nav aria-label="Navegação principal">
+      <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="closeSidebar()">
+        <span class="nav-icon">🌐</span> Explorar Cursos
+      </a>
+      <a class="nav-link" routerLink="/meus-estudos" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">📚</span> Meus Estudos Liberados
+      </a>
+
+      <!-- Professor Specific Items -->
+      @if (authService.isProfessor()) {
+        <div class="nav-divider"><span>PAINEL DO PROFESSOR</span></div>
+
+        <a class="nav-link" routerLink="/professor/estudio" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">🤖</span> Estúdio do Professor (IA)
+        </a>
+        <a class="nav-link" routerLink="/professor/alunos" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">👥</span> Gestão de Alunos (Exportar)
+        </a>
+        <a class="nav-link" routerLink="/professor/financeiro" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">💰</span> Financeiro & Repasse PIX
+        </a>
+        <a class="nav-link" routerLink="/p/eduardo-lessa" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">👤</span> Meu Perfil Público
+        </a>
+      }
+
+      <div class="nav-divider"><span>CONTA</span></div>
+
+      @if (authService.isAuthenticated()) {
+        <a class="nav-link" (click)="logout()" style="cursor: pointer;">
+          <span class="nav-icon">🚪</span> Sair
+        </a>
+      } @else {
+        <a class="nav-link" routerLink="/login" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">🔑</span> Entrar / Cadastro
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <!-- Main Area -->
+  <main>
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="menuButton" class="menu-button" (click)="toggleSidebar()" aria-label="Abrir menu">☰</button>
+        <a class="topbar-brand" routerLink="/">
+          <span class="brand-badge">TT</span>
+          <div class="brand-titles">
+            <span class="brand-title">TeacherTech</span>
+            <span class="brand-subtitle">Plataforma de Estudos & Concursos</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="topbar-right">
+        @if (authService.isAuthenticated()) {
+          <div class="user-pill">
+            <span class="user-avatar">👤</span>
+            <span class="user-name">{{ authService.currentUser()?.fullName }}</span>
+            <span class="role-badge">{{ authService.isProfessor() ? 'Professor' : 'Aluno' }}</span>
+          </div>
+
+          <button class="auth-btn logout-btn" (click)="logout()" title="Encerrar Sessão">
+            <span class="btn-icon">🚪</span>
+            <span class="btn-label">Sair</span>
+          </button>
+        } @else {
+          <a routerLink="/login" class="auth-btn login-btn">
+            <span class="btn-icon">🔑</span>
+            <span class="btn-label">Entrar / Cadastrar</span>
+          </a>
+        }
+
+        <button id="themeButton" class="theme-button" (click)="toggleTheme()" aria-label="Alternar tema" title="Alternar Modo Escuro/Claro">◐</button>
+      </div>
+    </header>
+
+    <router-outlet />
+
+    <footer class="app-footer">
+      <span>TeacherTech © 2026</span>
+      <span>Desenvolvido por Eduardo Lessa</span>
+    </footer>
+  </main>
+</div>

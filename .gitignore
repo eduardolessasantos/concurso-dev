@@ -1,44 +1,51 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+﻿# ==========================================
+# Root .gitignore for Monorepo (Angular + .NET)
+# ==========================================
 
-# Compiled output
-/dist
-/tmp
-/out-tsc
-/bazel-out
+# Angular / Node.js
+**/node_modules/
+**/dist/
+**/.angular/cache/
+**/tmp/
+**/out-tsc/
+**/bazel-out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
 
-# Node
-/node_modules
-npm-debug.log
-yarn-error.log
+# .NET / C# / Visual Studio
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.lock.json
+project.lock.json
+project.assets.json
+**/TestResults/
+**/coverage/
 
-# IDEs and editors
+# Legacy / Backup folders
+v1_backup/
+vanilla/
+
+# IDEs & System files
 .idea/
-.project
-.classpath
-.c9/
-*.launch
+.DS_Store
+Thumbs.db
+.history/*
 .settings/
 *.sublime-workspace
+.c9/
 
-# Visual Studio Code
+# VS Code settings
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/mcp.json
-.history/*
-
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
-
-# System files
-.DS_Store
-Thumbs.db

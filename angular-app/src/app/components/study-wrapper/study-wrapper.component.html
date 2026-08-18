@@ -1,0 +1,97 @@
+<div class="study-container">
+  <!-- Study Header Banner -->
+  <header class="study-header">
+    <div class="header-main">
+      <span class="course-badge">📚 Estudo Específico</span>
+      <h1>Plano Estratégico de Estudos - Tecnologia da Informação</h1>
+      <p>Trilha didática completa criada pelo <strong>Prof. Eduardo Lessa</strong> com resumos, flashcards, cronograma e simulados.</p>
+    </div>
+
+    <!-- Navigation Sub-Tabs inside Course Study -->
+    <nav class="study-tabs" aria-label="Abas do Estudo">
+      <button 
+        type="button" 
+        class="tab-link" 
+        [class.active]="activeSubTab() === 'overview'" 
+        (click)="setTab('overview')">
+        <span class="icon">◉</span> Visão Geral
+      </button>
+      <button 
+        type="button" 
+        class="tab-link" 
+        [class.active]="activeSubTab() === 'subjects'" 
+        (click)="setTab('subjects')">
+        <span class="icon">▦</span> Disciplinas (3)
+      </button>
+      <button 
+        type="button" 
+        class="tab-link" 
+        [class.active]="activeSubTab() === 'schedule'" 
+        (click)="setTab('schedule')">
+        <span class="icon">◫</span> Cronograma
+      </button>
+      <button 
+        type="button" 
+        class="tab-link" 
+        [class.active]="activeSubTab() === 'simulated'" 
+        (click)="setTab('simulated')">
+        <span class="icon">⏱</span> Simulado
+      </button>
+    </nav>
+  </header>
+
+  <!-- TAB CONTENT -->
+  <div class="study-content">
+    @if (activeSubTab() === 'overview') {
+      <div class="overview-section">
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-num">3</span>
+            <span class="stat-label">Disciplinas Didáticas</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">12</span>
+            <span class="stat-label">Tópicos em Markdown</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">24</span>
+            <span class="stat-label">Flashcards com Repetição</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-num">15</span>
+            <span class="stat-label">Questões Inéditas</span>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <h3>🎯 Meta de Aprendizado do Estudo</h3>
+          <p>Esta trilha foi elaborada para cobrir os principais tópicos de concursos e certames de Tecnologia da Informação com foco em alto desempenho.</p>
+          <div class="actions">
+            <button type="button" class="btn-primary" (click)="setTab('subjects')">🚀 Começar pelas Disciplinas →</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeSubTab() === 'subjects') {
+      <div class="placeholder-view">
+        <p>Acesse o mapa completo de matérias e resumos:</p>
+        <a routerLink="/disciplinas" class="btn-accent">📖 Abrir Mapa de Disciplinas →</a>
+      </div>
+    }
+
+    @if (activeSubTab() === 'schedule') {
+      <div class="placeholder-view">
+        <p>Acesse o plano semanal de estudos:</p>
+        <a routerLink="/cronograma" class="btn-accent">◫ Abrir Cronograma Completo →</a>
+      </div>
+    }
+
+    @if (activeSubTab() === 'simulated') {
+      <div class="placeholder-view">
+        <p>Realize simulados inéditos com gabarito comentado:</p>
+        <a routerLink="/simulado" class="btn-accent">⏱ Iniciar Simulado →</a>
+      </div>
+    }
+  </div>
+</div>

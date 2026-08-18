@@ -1,0 +1,220 @@
+<div class="studio-container">
+  <!-- Studio Header -->
+  <header class="studio-header">
+    <div class="header-main">
+      <h1>👨‍🏫 Estúdio do Professor · Gerador com IA</h1>
+      <p>Crie disciplinas, resumos didáticos, flashcards e questões personalizadas em segundos.</p>
+    </div>
+
+    <!-- AI Credits Meter -->
+    <div class="credits-meter">
+      <div class="credits-info">
+        <span class="credits-label">Créditos de IA Restantes</span>
+        <strong class="credits-value">⚡ {{ creditsRemaining() }} / {{ creditsLimit() }}</strong>
+      </div>
+      <div class="credits-bar">
+        <div class="credits-fill" [style.width.%]="(creditsRemaining() / creditsLimit()) * 100"></div>
+      </div>
+      <span class="plan-badge">Plano Pro · R$ 49/mês</span>
+    </div>
+  </header>
+
+  @if (statusMessage()) {
+    <div class="status-banner">
+      <span>{{ statusMessage() }}</span>
+    </div>
+  }
+
+  <div class="studio-grid">
+    <!-- Left Column: Controls & AI Prompts -->
+    <div class="control-panel">
+      <div class="panel-card">
+        <h3>📝 Configurar Conteúdo</h3>
+
+        <div class="form-group">
+          <label>Disciplina / Matéria</label>
+          <input 
+            type="text" 
+            [(ngModel)]="subjectName" 
+            placeholder="Ex: Engenharia de Software, Direito Constitucional" />
+        </div>
+
+        <div class="form-group">
+          <label>Título do Tópico de Estudo</label>
+          <input 
+            type="text" 
+            [(ngModel)]="topicTitle" 
+            placeholder="Ex: Arquitetura de Microsserviços e APIs REST" />
+        </div>
+
+        <div class="form-group">
+          <label>Estilo de Banca Organizadora</label>
+          <select [(ngModel)]="examBoard">
+            <option value="Cebraspe">Cebraspe (Certo / Errado & Múltipla Escolha)</option>
+            <option value="FGV">FGV (Casos Práticos)</option>
+            <option value="Vunesp">Vunesp (Foco na Letra da Lei/Texto)</option>
+            <option value="FCC">FCC (Tradicional)</option>
+            <option value="Inédita">Inédita / Geral</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Visibilidade do Conteúdo</label>
+          <div class="visibility-toggle">
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active]="isPublic" 
+              (click)="isPublic = true">
+              🌐 Público (Vitrine de Captação)
+            </button>
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active]="!isPublic" 
+              (click)="isPublic = false">
+              🔒 Privado (Apenas Alunos Convidados)
+            </button>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- AI Action Buttons -->
+        <div class="ai-actions">
+          <button 
+            type="button" 
+            class="btn-ai btn-summary" 
+            (click)="onGenerateSummary()" 
+            [disabled]="isGeneratingSummary">
+            @if (isGeneratingSummary) {
+              <span class="spinner"></span> Gerando Resumo...
+            } @else {
+              🤖 Gerar Resumo Didático (1 Crédito)
+            }
+          </button>
+
+          <button 
+            type="button" 
+            class="btn-ai btn-flashcards" 
+            (click)="onGenerateFlashcards()" 
+            [disabled]="isGeneratingFlashcards">
+            @if (isGeneratingFlashcards) {
+              <span class="spinner"></span> Gerando Flashcards...
+            } @else {
+              🎴 Gerar 5 Flashcards com IA (1 Crédito)
+            }
+          </button>
+
+          <button 
+            type="button" 
+            class="btn-ai btn-questions" 
+            (click)="onGenerateQuestions()" 
+            [disabled]="isGeneratingQuestions">
+            @if (isGeneratingQuestions) {
+              <span class="spinner"></span> Gerando Questões...
+            } @else {
+              ⏱️ Gerar 3 Questões Inéditas (1 Crédito)
+            }
+          </button>
+
+          <hr class="divider" />
+
+          <!-- Save to MySQL Button -->
+          <button 
+            type="button" 
+            class="btn-save-db" 
+            (click)="onSaveToDatabase()" 
+            [disabled]="isSaving">
+            @if (isSaving) {
+              <span class="spinner"></span> Salvando...
+            } @else {
+              💾 Salvar e Publicar no Banco MySQL
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Right Column: Live Output Preview -->
+    <div class="preview-panel">
+      <!-- Generated Summary Section -->
+      @if (generatedSummary()) {
+        <div class="output-card">
+          <div class="card-header">
+            <h3>📖 Resumo Didático Gerado</h3>
+            <span class="badge badge-ai">IA TeacherTech</span>
+          </div>
+          <div class="markdown-preview">
+            <pre>{{ generatedSummary() }}</pre>
+          </div>
+        </div>
+      }
+
+      <!-- Generated Flashcards Section -->
+      @if (generatedFlashcards().length > 0) {
+        <div class="output-card">
+          <div class="card-header">
+            <h3>🎴 Flashcards de Memorização ({{ generatedFlashcards().length }})</h3>
+            <span class="badge badge-purple">Repetição Espaçada</span>
+          </div>
+          <div class="flashcards-grid">
+            @for (fc of generatedFlashcards(); track $index) {
+              <div class="flashcard-item">
+                <div class="card-front">
+                  <span class="q-badge">PERGUNTA</span>
+                  <p>{{ fc.frontText }}</p>
+                </div>
+                <div class="card-back">
+                  <span class="a-badge">RESPOSTA</span>
+                  <p>{{ fc.backText }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Generated Questions Section -->
+      @if (generatedQuestions().length > 0) {
+        <div class="output-card">
+          <div class="card-header">
+            <h3>⏱️ Questões Inéditas com Gabarito ({{ generatedQuestions().length }})</h3>
+            <span class="badge badge-green">Estilo {{ examBoard }}</span>
+          </div>
+          <div class="questions-list">
+            @for (q of generatedQuestions(); track $index) {
+              <div class="question-item">
+                <p class="statement"><strong>Questão {{ $index + 1 }}:</strong> {{ q.statement }}</p>
+                <div class="options-list">
+                  @for (opt of q.options; track opt; let optIndex = $index) {
+                    <div class="option-row" [class.correct]="optIndex === q.correctOptionIndex">
+                      <span class="opt-letter">{{ ['A', 'B', 'C', 'D'][optIndex] }})</span>
+                      <span>{{ opt }}</span>
+                      @if (optIndex === q.correctOptionIndex) {
+                        <span class="correct-badge">✓ Gabarito</span>
+                      }
+                    </div>
+                  }
+                </div>
+                <div class="explanation-box">
+                  <strong>💡 Comentário Didático:</strong>
+                  <p>{{ q.explanation }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (!generatedSummary() && generatedFlashcards().length === 0 && generatedQuestions().length === 0) {
+        <div class="empty-preview">
+          <div class="empty-icon">🤖</div>
+          <h3>Pronto para criar conteúdo didático!</h3>
+          <p>Informe o tópico à esquerda e clique nos botões para gerar resumos, flashcards e questões com IA.</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

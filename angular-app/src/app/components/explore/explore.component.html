@@ -1,0 +1,89 @@
+<div class="explore-container">
+  <!-- Explore Header -->
+  <header class="explore-header">
+    <h1>🌐 Explorar Cursos & Professores</h1>
+    <p>Descubra os melhores planos de estudo criados por professores renomados.</p>
+
+    <!-- Search Bar -->
+    <div class="search-box">
+      <input 
+        type="text" 
+        [(ngModel)]="searchKeyword" 
+        (keyup.enter)="onSearch()" 
+        placeholder="Buscar por disciplina, certame ou nome do professor..." />
+      <button type="button" class="btn-search" (click)="onSearch()">🔍 Buscar</button>
+    </div>
+
+    <!-- Category Pills -->
+    <div class="categories-pills">
+      <button type="button" class="pill" [class.active]="selectedCategory === ''" (click)="onSelectCategory('')">Todos</button>
+      <button type="button" class="pill" [class.active]="selectedCategory === 'Concursos Gerais'" (click)="onSelectCategory('Concursos Gerais')">Concursos Gerais</button>
+      <button type="button" class="pill" [class.active]="selectedCategory === 'Engenharia de Software'" (click)="onSelectCategory('Engenharia de Software')">Engenharia de Software</button>
+      <button type="button" class="pill" [class.active]="selectedCategory === 'Direito'" (click)="onSelectCategory('Direito')">Direito & Legislação</button>
+      <button type="button" class="pill" [class.active]="selectedCategory === 'TI & Dados'" (click)="onSelectCategory('TI & Dados')">TI & Análise de Dados</button>
+    </div>
+  </header>
+
+  @if (requestMessage()) {
+    <div class="alert-success">
+      <span>✅ {{ requestMessage() }}</span>
+    </div>
+  }
+
+  <!-- Courses Grid -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Buscando cursos disponíveis...</p>
+    </div>
+  } @else if (courses().length > 0) {
+    <div class="courses-grid">
+      @for (c of courses(); track c.id) {
+        <div class="course-card">
+          <div class="card-top">
+            <span class="category-badge">{{ c.category }}</span>
+            <span class="price-badge">{{ c.price > 0 ? ('R$ ' + c.price) : 'GRATUITO' }}</span>
+          </div>
+
+          <h3>{{ c.title }}</h3>
+          <p class="desc">{{ c.description || 'Plano de estudos dinâmico gerado com IA e resumos didáticos.' }}</p>
+
+          <!-- Professor Details -->
+          <div class="professor-row">
+            <span class="avatar">👨‍🏫</span>
+            <div class="prof-meta">
+              <strong>{{ c.professorName }}</strong>
+              @if (c.professorSlug) {
+                <a [routerLink]="['/p', c.professorSlug]" class="prof-link">Ver perfil do professor →</a>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="subjects-info">📖 {{ c.subjectsCount }} Disciplinas</span>
+
+            @if (isEnrolled(c.id)) {
+              <a [routerLink]="['/estudo', c.id]" class="btn-access">
+                📖 Acessar Estudo
+              </a>
+            } @else if (isRequested(c.id)) {
+              <button type="button" class="btn-pending" disabled>
+                ⏳ Solicitação Enviada
+              </button>
+            } @else {
+              <button type="button" class="btn-request" (click)="onRequestAccess(c.id)">
+                🙋 Solicitar Acesso
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <div class="icon">🔍</div>
+      <h3>Nenhum curso encontrado</h3>
+      <p>Tente alterar o termo digitado na busca ou selecionar outra categoria.</p>
+    </div>
+  }
+</div>

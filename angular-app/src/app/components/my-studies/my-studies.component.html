@@ -1,0 +1,59 @@
+<div class="studies-container">
+  <header class="studies-header">
+    <div class="header-main">
+      <h1>📚 Meus Estudos Liberados</h1>
+      <p>Cursos e trilhas de estudo liberados pelos seus professores.</p>
+    </div>
+
+    <!-- Search Controls -->
+    <div class="search-box">
+      <input 
+        type="text" 
+        [(ngModel)]="searchKeyword" 
+        (input)="onSearch()"
+        placeholder="🔍 Pesquisar em meus estudos liberados..." />
+      @if (isSearching()) {
+        <span class="searching-badge">Pesquisando...</span>
+      }
+    </div>
+  </header>
+
+  @if (isSearching()) {
+    <div class="loading-state">
+      <div class="spinner-large"></div>
+      <p>Pesquisando nos seus estudos liberados...</p>
+    </div>
+  } @else if (filteredStudies().length > 0) {
+    <div class="studies-grid">
+      @for (study of filteredStudies(); track study.enrollmentId) {
+        <div class="study-card">
+          <div class="card-top">
+            <span class="category-badge">{{ study.category }}</span>
+            <span class="granted-badge">{{ study.grantedVia === 'EMAIL_INVITE' ? '✉️ Convite por E-mail' : '🌐 Aprovado pelo Professor' }}</span>
+          </div>
+
+          <h3>{{ study.courseTitle }}</h3>
+          <p class="description">{{ study.courseDescription || 'Trilha completa com resumos, flashcards e questões ativas.' }}</p>
+
+          <div class="professor-info">
+            <span class="avatar">👨‍🏫</span>
+            <span>Professor: <strong>{{ study.professorName }}</strong></span>
+          </div>
+
+          <div class="card-footer">
+            <span class="subjects-info">📖 {{ study.subjectsCount }} Disciplinas</span>
+            <a [routerLink]="['/disciplinas']" class="btn-open">Acessar Estudos →</a>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <div class="icon">🎓</div>
+      <h3>Nenhum estudo encontrado para essa pesquisa</h3>
+      <p>Tente outros termos ou solicite o acesso ao seu professor.</p>
+      <a routerLink="/" class="btn-primary">Explorar Cursos Públicos</a>
+    </div>
+  }
+</div>
+

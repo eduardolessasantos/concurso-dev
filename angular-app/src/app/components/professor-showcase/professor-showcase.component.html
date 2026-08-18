@@ -1,0 +1,85 @@
+<div class="showcase-container">
+  @if (isLoading()) {
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p>Carregando perfil do professor...</p>
+    </div>
+  } @else if (profile()) {
+    <!-- Hero Banner Profile Header -->
+    <header class="profile-hero">
+      <div class="hero-content">
+        <div class="prof-avatar">
+          <span>{{ profile()?.fullName?.charAt(0) || '👨‍🏫' }}</span>
+        </div>
+        <div class="prof-details">
+          <h1>{{ profile()?.fullName }}</h1>
+          <p class="headline">✨ {{ profile()?.headline }}</p>
+          @if (profile()?.bio) {
+            <p class="bio">{{ profile()?.bio }}</p>
+          }
+          <div class="badges-row">
+            <span class="badge-count">📚 {{ profile()?.publicCoursesCount }} Cursos Públicos</span>
+            <span class="badge-verified">✓ Professor Verificado</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    @if (requestMessage()) {
+      <div class="alert-success">
+        <span>✅ {{ requestMessage() }}</span>
+      </div>
+    }
+
+    <!-- Public Courses Grid -->
+    <section class="courses-section">
+      <h2>📚 Cursos & Trilhas de Estudo Disponíveis</h2>
+
+      @if (profile()!.courses.length > 0) {
+        <div class="courses-grid">
+          @for (course of profile()!.courses; track course.id) {
+            <div class="course-card">
+              <div class="card-header">
+                <span class="category-tag">{{ course.category }}</span>
+                <span class="price-tag">{{ course.price > 0 ? ('R$ ' + course.price) : 'GRATUITO' }}</span>
+              </div>
+
+              <h3>{{ course.title }}</h3>
+              <p class="desc">{{ course.description || 'Trilha didática completa com resumos, flashcards e questões ativas.' }}</p>
+
+              <div class="meta-info">
+                <span>📖 {{ course.subjectsCount }} Disciplinas</span>
+                <span>👥 {{ course.enrollmentsCount }} Alunos Ativos</span>
+              </div>
+
+              <div class="card-actions">
+                @if (isEnrolled(course.id)) {
+                  <a [routerLink]="['/estudo', course.id]" class="btn-access">
+                    📖 Acessar Estudo
+                  </a>
+                } @else if (isRequested(course.id)) {
+                  <button type="button" class="btn-pending" disabled>
+                    ⏳ Solicitação Enviada
+                  </button>
+                } @else {
+                  <button type="button" class="btn-request" (click)="onRequestAccess(course.id)">
+                    🙋 Solicitar Acesso ao Professor
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>Este professor ainda não disponibilizou cursos públicos.</p>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="empty-state">
+      <h3>⚠️ Perfil não encontrado</h3>
+      <p>{{ errorMessage() }}</p>
+    </div>
+  }
+</div>
