@@ -30,7 +30,7 @@ public class TopicsController : ControllerBase
     /// <remarks>
     /// Retorna os tópicos ordenados pelo índice pedagógico de apresentação (`OrderIndex`).
     /// </remarks>
-    /// <param name="subjectId">Identificador único (GUID) da matéria pai.</param>
+    /// <param name="subjectId">Identificador unico (GUID) da matéria pai.</param>
     /// <returns>Lista de tópicos pertencentes à matéria.</returns>
     /// <response code="200">Lista de tópicos retornada com sucesso.</response>
     [HttpGet("subject/{subjectId:guid}")]
