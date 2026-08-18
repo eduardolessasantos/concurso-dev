@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using System.Text.Json;
 using TeacherTech.Application;
@@ -47,7 +47,7 @@ else
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[AVISO] Conexão MySQL indisponível ({ex.Message}). Usando SQLite para resiliência local.");
+        Console.WriteLine($"[AVISO] ConexÃ£o MySQL indisponÃ­vel ({ex.Message}). Usando SQLite para resiliÃªncia local.");
         useMySql = false;
     }
 
@@ -111,7 +111,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
+        policy.WithOrigins(
+                  "http://localhost:4200",
+                  "http://127.0.0.1:4200",
+                  "https://eduardolessasantos.github.io"
+              )
+              .SetIsOriginAllowed(origin => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -246,14 +251,14 @@ using (var scope = app.Services.CreateScope())
                     }
                     catch (Exception colEx)
                     {
-                        Console.WriteLine($"[AVISO] Verificação da coluna `{table}`.`{column}`: {colEx.Message}");
+                        Console.WriteLine($"[AVISO] VerificaÃ§Ã£o da coluna `{table}`.`{column}`: {colEx.Message}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AVISO] Verificação de schema MySQL: {ex.Message}");
+            Console.WriteLine($"[AVISO] VerificaÃ§Ã£o de schema MySQL: {ex.Message}");
         }
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -335,7 +340,7 @@ using (var scope = app.Services.CreateScope())
                             {
                                 Id = courseId,
                                 ProfessorId = user.Id,
-                                Title = courseElem.GetProperty("title").GetString() ?? "Plano Estratégico de Estudos",
+                                Title = courseElem.GetProperty("title").GetString() ?? "Plano EstratÃ©gico de Estudos",
                                 Description = courseElem.GetProperty("description").GetString() ?? "",
                                 Category = courseElem.GetProperty("category").GetString() ?? "TI & Dados",
                                 Price = courseElem.GetProperty("price").GetDecimal(),
@@ -430,7 +435,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[AVISO] Inicialização do banco via SeedData.json: {ex.Message}");
+        Console.WriteLine($"[AVISO] InicializaÃ§Ã£o do banco via SeedData.json: {ex.Message}");
     }
 }
 
