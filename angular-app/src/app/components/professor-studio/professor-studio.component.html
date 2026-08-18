@@ -2,219 +2,318 @@
   <!-- Studio Header -->
   <header class="studio-header">
     <div class="header-main">
-      <h1>👨‍🏫 Estúdio do Professor · Gerador com IA</h1>
-      <p>Crie disciplinas, resumos didáticos, flashcards e questões personalizadas em segundos.</p>
+      <div class="title-with-badge">
+        <h1>👨‍🏫 Studio do Professor & Criador de Estudos</h1>
+        <span class="ai-status-badge" [class.active]="hasUserKey()" (click)="isAiModalOpen.set(true)">
+          {{ hasUserKey() ? '⚡ Chave de IA Pessoal Conectada' : '⚙️ Configurar Minha Chave de IA (BYOK)' }}
+        </span>
+      </div>
+      <p>Gerencie seus planos de estudo, crie conteúdos estruturados e utilize IA generativa com sua própria chave.</p>
     </div>
 
-    <!-- AI Credits Meter -->
-    <div class="credits-meter">
-      <div class="credits-info">
-        <span class="credits-label">Créditos de IA Restantes</span>
-        <strong class="credits-value">⚡ {{ creditsRemaining() }} / {{ creditsLimit() }}</strong>
-      </div>
-      <div class="credits-bar">
-        <div class="credits-fill" [style.width.%]="(creditsRemaining() / creditsLimit()) * 100"></div>
-      </div>
-      <span class="plan-badge">Plano Pro · R$ 49/mês</span>
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button type="button" class="btn-config-ai" (click)="isAiModalOpen.set(true)">
+        ⚙️ Configurar IA & Prompts
+      </button>
+      <button 
+        type="button" 
+        class="btn-new-course" 
+        *ngIf="viewMode() === 'list'" 
+        (click)="openCourseEditor()">
+        ➕ Criar Novo Estudo
+      </button>
+      <button 
+        type="button" 
+        class="btn-secondary" 
+        *ngIf="viewMode() === 'editor'" 
+        (click)="backToList()">
+        ← Voltar aos Meus Estudos
+      </button>
     </div>
   </header>
 
+  <!-- Status Notification Banner -->
   @if (statusMessage()) {
-    <div class="status-banner">
+    <div class="status-banner" [class]="'banner-' + statusType()">
       <span>{{ statusMessage() }}</span>
+      <button class="btn-close-banner" (click)="statusMessage.set(null)">✕</button>
     </div>
   }
 
-  <div class="studio-grid">
-    <!-- Left Column: Controls & AI Prompts -->
-    <div class="control-panel">
-      <div class="panel-card">
-        <h3>📝 Configurar Conteúdo</h3>
-
-        <div class="form-group">
-          <label>Disciplina / Matéria</label>
-          <input 
-            type="text" 
-            [(ngModel)]="subjectName" 
-            placeholder="Ex: Engenharia de Software, Direito Constitucional" />
-        </div>
-
-        <div class="form-group">
-          <label>Título do Tópico de Estudo</label>
-          <input 
-            type="text" 
-            [(ngModel)]="topicTitle" 
-            placeholder="Ex: Arquitetura de Microsserviços e APIs REST" />
-        </div>
-
-        <div class="form-group">
-          <label>Estilo de Banca Organizadora</label>
-          <select [(ngModel)]="examBoard">
-            <option value="Cebraspe">Cebraspe (Certo / Errado & Múltipla Escolha)</option>
-            <option value="FGV">FGV (Casos Práticos)</option>
-            <option value="Vunesp">Vunesp (Foco na Letra da Lei/Texto)</option>
-            <option value="FCC">FCC (Tradicional)</option>
-            <option value="Inédita">Inédita / Geral</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Visibilidade do Conteúdo</label>
-          <div class="visibility-toggle">
-            <button 
-              type="button" 
-              class="toggle-btn" 
-              [class.active]="isPublic" 
-              (click)="isPublic = true">
-              🌐 Público (Vitrine de Captação)
-            </button>
-            <button 
-              type="button" 
-              class="toggle-btn" 
-              [class.active]="!isPublic" 
-              (click)="isPublic = false">
-              🔒 Privado (Apenas Alunos Convidados)
-            </button>
+  <!-- ========================================== -->
+  <!-- VIEW 1: LIST OF COURSES / STUDIES IN CARDS -->
+  <!-- ========================================== -->
+  @if (viewMode() === 'list') {
+    <section class="studies-list-section">
+      <div class="section-toolbar">
+        <div class="stats-summary">
+          <div class="stat-pill">
+            <span class="stat-num">{{ coursesService.myCourses().length }}</span>
+            <span class="stat-label">Estudos Cadastrados</span>
           </div>
-        </div>
-
-        <hr class="divider" />
-
-        <!-- AI Action Buttons -->
-        <div class="ai-actions">
-          <button 
-            type="button" 
-            class="btn-ai btn-summary" 
-            (click)="onGenerateSummary()" 
-            [disabled]="isGeneratingSummary">
-            @if (isGeneratingSummary) {
-              <span class="spinner"></span> Gerando Resumo...
-            } @else {
-              🤖 Gerar Resumo Didático (1 Crédito)
-            }
-          </button>
-
-          <button 
-            type="button" 
-            class="btn-ai btn-flashcards" 
-            (click)="onGenerateFlashcards()" 
-            [disabled]="isGeneratingFlashcards">
-            @if (isGeneratingFlashcards) {
-              <span class="spinner"></span> Gerando Flashcards...
-            } @else {
-              🎴 Gerar 5 Flashcards com IA (1 Crédito)
-            }
-          </button>
-
-          <button 
-            type="button" 
-            class="btn-ai btn-questions" 
-            (click)="onGenerateQuestions()" 
-            [disabled]="isGeneratingQuestions">
-            @if (isGeneratingQuestions) {
-              <span class="spinner"></span> Gerando Questões...
-            } @else {
-              ⏱️ Gerar 3 Questões Inéditas (1 Crédito)
-            }
-          </button>
-
-          <hr class="divider" />
-
-          <!-- Save to MySQL Button -->
-          <button 
-            type="button" 
-            class="btn-save-db" 
-            (click)="onSaveToDatabase()" 
-            [disabled]="isSaving">
-            @if (isSaving) {
-              <span class="spinner"></span> Salvando...
-            } @else {
-              💾 Salvar e Publicar no Banco MySQL
-            }
-          </button>
         </div>
       </div>
-    </div>
 
-
-    <!-- Right Column: Live Output Preview -->
-    <div class="preview-panel">
-      <!-- Generated Summary Section -->
-      @if (generatedSummary()) {
-        <div class="output-card">
-          <div class="card-header">
-            <h3>📖 Resumo Didático Gerado</h3>
-            <span class="badge badge-ai">IA TeacherTech</span>
-          </div>
-          <div class="markdown-preview">
-            <pre>{{ generatedSummary() }}</pre>
-          </div>
-        </div>
-      }
-
-      <!-- Generated Flashcards Section -->
-      @if (generatedFlashcards().length > 0) {
-        <div class="output-card">
-          <div class="card-header">
-            <h3>🎴 Flashcards de Memorização ({{ generatedFlashcards().length }})</h3>
-            <span class="badge badge-purple">Repetição Espaçada</span>
-          </div>
-          <div class="flashcards-grid">
-            @for (fc of generatedFlashcards(); track $index) {
-              <div class="flashcard-item">
-                <div class="card-front">
-                  <span class="q-badge">PERGUNTA</span>
-                  <p>{{ fc.frontText }}</p>
-                </div>
-                <div class="card-back">
-                  <span class="a-badge">RESPOSTA</span>
-                  <p>{{ fc.backText }}</p>
-                </div>
+      <!-- Grid of Course Cards -->
+      <div class="courses-cards-grid">
+        @for (course of coursesService.myCourses(); track course.id) {
+          <div class="course-card" (click)="openCourseEditor(course)">
+            <!-- Card Header -->
+            <div class="card-top">
+              <span class="category-badge">{{ course.category || 'Geral' }}</span>
+              <div class="badges-row">
+                <span class="visibility-badge" [class.public]="course.isPublic">
+                  {{ course.isPublic ? '🌐 Público' : '🔒 Privado' }}
+                </span>
+                <span class="price-badge" [class.free]="course.price === 0">
+                  {{ course.price === 0 ? 'Gratuito' : ('R$ ' + course.price.toFixed(2)) }}
+                </span>
               </div>
-            }
+            </div>
+
+            <!-- Card Content -->
+            <div class="card-body">
+              <h3 class="course-title">{{ course.title }}</h3>
+              <p class="course-desc">{{ course.description }}</p>
+            </div>
+
+            <!-- Card Meta & Metrics -->
+            <div class="card-meta">
+              <div class="meta-item">
+                <span class="meta-icon">📚</span>
+                <span><strong>{{ course.subjectsCount || 1 }}</strong> Disciplinas</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">👥</span>
+                <span><strong>{{ course.enrollmentsCount || 0 }}</strong> Alunos</span>
+              </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="card-actions" (click)="$event.stopPropagation()">
+              <button 
+                type="button" 
+                class="btn-card-action btn-edit" 
+                (click)="openCourseEditor(course)">
+                ✏️ Editar / Conteúdos
+              </button>
+              <button 
+                type="button" 
+                class="btn-card-action btn-delete" 
+                (click)="deleteCourse(course, $event)" 
+                title="Excluir estudo">
+                🗑️
+              </button>
+            </div>
           </div>
+        }
+      </div>
+
+      <!-- Empty State -->
+      @if (coursesService.myCourses().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📂</div>
+          <h3>Você ainda não possui estudos criados</h3>
+          <p>Clique no botão abaixo para criar seu primeiro plano de estudos e gerar conteúdos com IA.</p>
+          <button type="button" class="btn-primary" (click)="openCourseEditor()">
+            ➕ Criar Meu Primeiro Estudo
+          </button>
         </div>
       }
+    </section>
+  }
 
-      <!-- Generated Questions Section -->
-      @if (generatedQuestions().length > 0) {
-        <div class="output-card">
-          <div class="card-header">
-            <h3>⏱️ Questões Inéditas com Gabarito ({{ generatedQuestions().length }})</h3>
-            <span class="badge badge-green">Estilo {{ examBoard }}</span>
+  <!-- ========================================== -->
+  <!-- VIEW 2: HIERARCHICAL STUDIO & AI GENERATOR -->
+  <!-- ========================================== -->
+  @if (viewMode() === 'editor') {
+    <section class="editor-section">
+      <div class="editor-grid">
+        <!-- Left Column: 4-Level Hierarchy Form -->
+        <div class="hierarchy-column">
+          <!-- Level 1: Course -->
+          <div class="level-card level-1">
+            <div class="level-badge">Nível 1 · Plano de Estudos / Curso</div>
+            <div class="form-group">
+              <label>Título do Estudo / Curso</label>
+              <input type="text" [(ngModel)]="courseTitle" placeholder="Ex: Preparação Dataprev 2026" class="form-control" />
+            </div>
+            <div class="form-row-2">
+              <div class="form-group">
+                <label>Categoria</label>
+                <select [(ngModel)]="courseCategory" class="form-control">
+                  <option value="TI & Dados">TI & Dados</option>
+                  <option value="Direito">Direito</option>
+                  <option value="Administração">Administração</option>
+                  <option value="Geral">Geral</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Preço (R$)</label>
+                <input type="number" [(ngModel)]="coursePrice" min="0" step="0.01" class="form-control" />
+              </div>
+            </div>
           </div>
-          <div class="questions-list">
-            @for (q of generatedQuestions(); track $index) {
-              <div class="question-item">
-                <p class="statement"><strong>Questão {{ $index + 1 }}:</strong> {{ q.statement }}</p>
-                <div class="options-list">
-                  @for (opt of q.options; track opt; let optIndex = $index) {
-                    <div class="option-row" [class.correct]="optIndex === q.correctOptionIndex">
-                      <span class="opt-letter">{{ ['A', 'B', 'C', 'D'][optIndex] }})</span>
-                      <span>{{ opt }}</span>
-                      @if (optIndex === q.correctOptionIndex) {
-                        <span class="correct-badge">✓ Gabarito</span>
+
+          <!-- Level 2: Subject -->
+          <div class="level-card level-2">
+            <div class="level-badge">Nível 2 · Disciplina / Matéria</div>
+            <div class="form-group">
+              <label>Nome da Disciplina</label>
+              <input type="text" [(ngModel)]="subjectName" placeholder="Ex: Engenharia de Software, Direito Constitucional" class="form-control" />
+            </div>
+          </div>
+
+          <!-- Level 3: Topic & Exam Board -->
+          <div class="level-card level-3">
+            <div class="level-badge">Nível 3 · Tópico de Estudo & Banca</div>
+            <div class="form-group">
+              <label>Título do Tópico</label>
+              <input type="text" [(ngModel)]="topicTitle" placeholder="Ex: Arquitetura de Microsserviços e APIs REST" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Banca Examinadora</label>
+              <select [(ngModel)]="examBoard" class="form-control">
+                <option value="Cebraspe">Cebraspe (Certo/Errado & Múltipla Escolha)</option>
+                <option value="FGV">FGV (Casos Práticos)</option>
+                <option value="FCC">FCC (Tradicional / Doutrina)</option>
+                <option value="Vunesp">Vunesp (Letra da Lei)</option>
+                <option value="Inédita">Inédita / Geral</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Level 4: AI Generation Actions -->
+          <div class="level-card level-4">
+            <div class="level-badge">Nível 4 · Geração e Publicação de Conteúdos</div>
+            
+            <div class="ai-buttons-group">
+              <button 
+                type="button" 
+                class="btn-ai-primary" 
+                (click)="onGenerateAllWithAi()" 
+                [disabled]="isGeneratingAll">
+                @if (isGeneratingAll) {
+                  <span class="spinner"></span> Gerando Tudo com IA...
+                } @else {
+                  ✨ Gerar Tudo com IA (Resumo + Flashcards + Questões)
+                }
+              </button>
+
+              <div class="individual-ai-row">
+                <button type="button" class="btn-ai-sub" (click)="onGenerateSummary()" [disabled]="isGeneratingSummary">
+                  📖 Resumo
+                </button>
+                <button type="button" class="btn-ai-sub" (click)="onGenerateFlashcards()" [disabled]="isGeneratingFlashcards">
+                  🎴 Flashcards
+                </button>
+                <button type="button" class="btn-ai-sub" (click)="onGenerateQuestions()" [disabled]="isGeneratingQuestions">
+                  ⏱️ Questões
+                </button>
+              </div>
+            </div>
+
+            <hr class="form-divider" />
+
+            <!-- Save & Publish Button -->
+            <button 
+              type="button" 
+              class="btn-save-publish" 
+              (click)="onSaveStudio()" 
+              [disabled]="isSaving">
+              @if (isSaving) {
+                <span class="spinner"></span> Salvando...
+              } @else {
+                💾 Salvar e Publicar no Curso
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Content Preview -->
+        <div class="preview-column">
+          <!-- Summary Preview -->
+          @if (generatedSummary()) {
+            <div class="preview-card">
+              <div class="preview-card-header">
+                <h3>📖 Resumo Teórico</h3>
+                <span class="badge badge-ai">Markdown Rico</span>
+              </div>
+              <textarea [(ngModel)]="generatedSummary" rows="10" class="editor-textarea"></textarea>
+            </div>
+          }
+
+          <!-- Flashcards Preview -->
+          @if (generatedFlashcards().length > 0) {
+            <div class="preview-card">
+              <div class="preview-card-header">
+                <h3>🎴 Flashcards Gerados ({{ generatedFlashcards().length }})</h3>
+                <span class="badge badge-purple">Repetição Espaçada</span>
+              </div>
+              <div class="flashcards-grid">
+                @for (fc of generatedFlashcards(); track $index) {
+                  <div class="flashcard-item">
+                    <div class="fc-front">
+                      <span class="tag-q">PERGUNTA</span>
+                      <p>{{ fc.frontText }}</p>
+                    </div>
+                    <div class="fc-back">
+                      <span class="tag-a">RESPOSTA</span>
+                      <p>{{ fc.backText }}</p>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Questions Preview -->
+          @if (generatedQuestions().length > 0) {
+            <div class="preview-card">
+              <div class="preview-card-header">
+                <h3>⏱️ Questões Inéditas Comentadas ({{ generatedQuestions().length }})</h3>
+                <span class="badge badge-green">{{ examBoard }}</span>
+              </div>
+              <div class="questions-list">
+                @for (q of generatedQuestions(); track $index) {
+                  <div class="question-box">
+                    <p class="q-statement"><strong>Questão {{ $index + 1 }}:</strong> {{ q.statement }}</p>
+                    <div class="q-options">
+                      @for (opt of q.options; track opt; let optIdx = $index) {
+                        <div class="q-opt" [class.correct]="optIdx === q.correctOptionIndex">
+                          <span>{{ opt }}</span>
+                          @if (optIdx === q.correctOptionIndex) {
+                            <span class="gabarito-tag">✓ Gabarito</span>
+                          }
+                        </div>
                       }
                     </div>
-                  }
-                </div>
-                <div class="explanation-box">
-                  <strong>💡 Comentário Didático:</strong>
-                  <p>{{ q.explanation }}</p>
-                </div>
+                    <div class="q-explanation">
+                      <strong>💡 Explicação:</strong>
+                      <p>{{ q.explanation }}</p>
+                    </div>
+                  </div>
+                }
               </div>
-            }
-          </div>
-        </div>
-      }
+            </div>
+          }
 
-      @if (!generatedSummary() && generatedFlashcards().length === 0 && generatedQuestions().length === 0) {
-        <div class="empty-preview">
-          <div class="empty-icon">🤖</div>
-          <h3>Pronto para criar conteúdo didático!</h3>
-          <p>Informe o tópico à esquerda e clique nos botões para gerar resumos, flashcards e questões com IA.</p>
+          <!-- Empty Preview State -->
+          @if (!generatedSummary() && generatedFlashcards().length === 0 && generatedQuestions().length === 0) {
+            <div class="empty-preview-box">
+              <div class="preview-empty-icon">🤖</div>
+              <h3>Pronto para estruturar o estudo!</h3>
+              <p>Preencha os níveis à esquerda e clique em <strong>"Gerar Tudo com IA"</strong> para criar o resumo, flashcards e questões.</p>
+            </div>
+          }
         </div>
-      }
-    </div>
-  </div>
+      </div>
+    </section>
+  }
+
+  <!-- AI BYOK & Prompts Modal -->
+  @if (isAiModalOpen()) {
+    <app-ai-config-modal (closed)="isAiModalOpen.set(false)"></app-ai-config-modal>
+  }
 </div>
