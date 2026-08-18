@@ -47,7 +47,7 @@ else
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[AVISO] ConexÃ£o MySQL indisponÃ­vel ({ex.Message}). Usando SQLite para resiliÃªncia local.");
+        Console.WriteLine($"[AVISO] Conexão MySQL indisponível ({ex.Message}). Usando SQLite para resiliência local/nuvem.");
         useMySql = false;
     }
 
@@ -106,7 +106,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
-// 4. CORS Setup for Angular Frontend
+// 4. CORS Setup for Angular Frontend & GitHub Pages
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
@@ -177,6 +177,9 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// Redirect root URL directly to Swagger UI
+app.MapGet("/", () => Results.Redirect("/swagger"));
+
 app.UseCors("AllowAngularApp");
 
 app.UseAuthentication();
@@ -184,7 +187,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Seed Default Roles & Initial Data from SeedData.json on Startup
+// Seed Default Roles & Initial Data on Startup
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -203,63 +206,6 @@ using (var scope = app.Services.CreateScope())
             await fallbackContext.Database.EnsureCreatedAsync();
         }
 
-        // Ensure missing columns in existing MySQL tables if they were created earlier
-        try
-        {
-            if (dbContext.Database.IsMySql())
-            {
-                var conn = dbContext.Database.GetDbConnection();
-                if (conn.State != System.Data.ConnectionState.Open)
-                {
-                    await conn.OpenAsync();
-                }
-
-                var columnsToEnsure = new (string Table, string Column, string Definition)[]
-                {
-                    ("AspNetUsers", "UpdatedAt", "datetime(6) NULL"),
-                    ("ProfessorProfiles", "UpdatedAt", "datetime(6) NULL"),
-                    ("StudentProfiles", "UpdatedAt", "datetime(6) NULL"),
-                    ("CourseStudyPlans", "UpdatedAt", "datetime(6) NULL"),
-                    ("Subjects", "UpdatedAt", "datetime(6) NULL"),
-                    ("Topics", "UpdatedAt", "datetime(6) NULL"),
-                    ("Flashcards", "UpdatedAt", "datetime(6) NULL"),
-                    ("Questions", "UpdatedAt", "datetime(6) NULL"),
-                    ("StudySchedules", "UpdatedAt", "datetime(6) NULL"),
-                    ("SimulatedTests", "UpdatedAt", "datetime(6) NULL"),
-                    ("SimulatedQuestions", "UpdatedAt", "datetime(6) NULL"),
-                    ("Enrollments", "UpdatedAt", "datetime(6) NULL"),
-                    ("AccessRequests", "UpdatedAt", "datetime(6) NULL"),
-                    ("Transactions", "UpdatedAt", "datetime(6) NULL"),
-                    ("Transactions", "EnrollmentId", "char(36) NULL")
-                };
-
-                foreach (var (table, column, def) in columnsToEnsure)
-                {
-                    try
-                    {
-                        using var checkCmd = conn.CreateCommand();
-                        checkCmd.CommandText = $"SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{table}' AND COLUMN_NAME = '{column}';";
-                        var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-                        if (count == 0)
-                        {
-                            using var alterCmd = conn.CreateCommand();
-                            alterCmd.CommandText = $"ALTER TABLE `{table}` ADD COLUMN `{column}` {def};";
-                            await alterCmd.ExecuteNonQueryAsync();
-                            Console.WriteLine($"[INFO] Coluna `{table}`.`{column}` sincronizada com sucesso no MySQL.");
-                        }
-                    }
-                    catch (Exception colEx)
-                    {
-                        Console.WriteLine($"[AVISO] VerificaÃ§Ã£o da coluna `{table}`.`{column}`: {colEx.Message}");
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AVISO] VerificaÃ§Ã£o de schema MySQL: {ex.Message}");
-        }
-
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
@@ -272,11 +218,80 @@ using (var scope = app.Services.CreateScope())
             }
         }
 
-        // Search SeedData.json path
+        // Always guarantee Default Professor user exists
+        var profEmail = "eduardolessa2011@gmail.com";
+        var profUser = await userManager.FindByEmailAsync(profEmail);
+        if (profUser == null)
+        {
+            profUser = new ApplicationUser
+            {
+                UserName = profEmail,
+                Email = profEmail,
+                FullName = "Eduardo Lessa",
+                UserRole = UserRoles.Professor,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var profRes = await userManager.CreateAsync(profUser, "TeacherTech2026!");
+            if (profRes.Succeeded)
+            {
+                await userManager.AddToRoleAsync(profUser, UserRoles.Professor);
+
+                var profProfile = new ProfessorProfile
+                {
+                    UserId = profUser.Id,
+                    Headline = "Especialista em TI & Concursos",
+                    Bio = "Professor e mentor especializado em tecnologia e concursos públicos.",
+                    CustomSlug = "eduardo-lessa",
+                    AiCreditsLimit = 1000,
+                    AiCreditsUsed = 0,
+                    PublicVisibility = true,
+                    PixKey = profEmail
+                };
+                dbContext.ProfessorProfiles.Add(profProfile);
+                await dbContext.SaveChangesAsync();
+                Console.WriteLine($"[INFO] Usuário Professor padrão criado: {profEmail}");
+            }
+        }
+
+        // Always guarantee Default Student user exists
+        var studentEmail = "aluno@teachertech.com";
+        var studentUser = await userManager.FindByEmailAsync(studentEmail);
+        if (studentUser == null)
+        {
+            studentUser = new ApplicationUser
+            {
+                UserName = studentEmail,
+                Email = studentEmail,
+                FullName = "Aluno Concurseiro",
+                UserRole = UserRoles.Student,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var studRes = await userManager.CreateAsync(studentUser, "TeacherTech2026!");
+            if (studRes.Succeeded)
+            {
+                await userManager.AddToRoleAsync(studentUser, UserRoles.Student);
+
+                var studProfile = new StudentProfile
+                {
+                    UserId = studentUser.Id,
+                    GoalExam = "Dataprev 2026",
+                    Bio = "Estudante focado em concursos de TI.",
+                    UpdatedAt = DateTime.UtcNow
+                };
+                dbContext.StudentProfiles.Add(studProfile);
+                await dbContext.SaveChangesAsync();
+                Console.WriteLine($"[INFO] Usuário Aluno padrão criado: {studentEmail}");
+            }
+        }
+
+        // Search and load SeedData.json if available
         string[] possiblePaths = [
             Path.Combine(AppContext.BaseDirectory, "SeedData.json"),
             Path.Combine(Directory.GetCurrentDirectory(), "SeedData.json"),
-            Path.Combine(Directory.GetCurrentDirectory(), "..", "TeacherTech.Infrastructure", "Data", "SeedData.json")
+            Path.Combine(Directory.GetCurrentDirectory(), "..", "TeacherTech.Infrastructure", "Data", "SeedData.json"),
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "TeacherTech.Infrastructure", "Data", "SeedData.json")
         ];
 
         string? seedJsonPath = possiblePaths.FirstOrDefault(File.Exists);
@@ -288,142 +303,99 @@ using (var scope = app.Services.CreateScope())
             using var jsonDoc = JsonDocument.Parse(jsonContent);
             var root = jsonDoc.RootElement;
 
-            // Seed Professor
-            if (root.TryGetProperty("professor", out var profElem))
+            if (profUser != null && root.TryGetProperty("course", out var courseElem))
             {
-                var profEmail = profElem.GetProperty("email").GetString() ?? "eduardolessa2011@gmail.com";
-                var user = await userManager.FindByEmailAsync(profEmail);
-
-                if (user == null)
+                var courseId = Guid.Parse(courseElem.GetProperty("id").GetString() ?? "00000000-0000-0000-0000-000000000001");
+                var course = await dbContext.CourseStudyPlans.FirstOrDefaultAsync(c => c.Id == courseId);
+                if (course == null)
                 {
-                    user = new ApplicationUser
+                    course = new CourseStudyPlan
                     {
-                        UserName = profEmail,
-                        Email = profEmail,
-                        FullName = profElem.GetProperty("fullName").GetString() ?? "Eduardo Lessa",
-                        UserRole = UserRoles.Professor,
+                        Id = courseId,
+                        ProfessorId = profUser.Id,
+                        Title = courseElem.GetProperty("title").GetString() ?? "Plano Estratégico de Estudos",
+                        Description = courseElem.GetProperty("description").GetString() ?? "",
+                        Category = courseElem.GetProperty("category").GetString() ?? "TI & Dados",
+                        Price = courseElem.GetProperty("price").GetDecimal(),
+                        IsPublic = courseElem.GetProperty("isPublic").GetBoolean(),
+                        Status = courseElem.GetProperty("status").GetString() ?? "PUBLISHED",
                         CreatedAt = DateTime.UtcNow
                     };
-
-                    var result = await userManager.CreateAsync(user, "TeacherTech2026!");
-                    if (result.Succeeded)
-                    {
-                        await userManager.AddToRoleAsync(user, UserRoles.Professor);
-
-                        var profProfile = new ProfessorProfile
-                        {
-                            UserId = user.Id,
-                            Headline = profElem.GetProperty("headline").GetString() ?? "Especialista em TI",
-                            Bio = profElem.GetProperty("bio").GetString() ?? "Professor e mentor especializado.",
-                            CustomSlug = profElem.GetProperty("customSlug").GetString() ?? "eduardo-lessa",
-                            AiCreditsLimit = 1000,
-                            AiCreditsUsed = 12,
-                            PublicVisibility = true,
-                            PixKey = profElem.GetProperty("pixKey").GetString() ?? profEmail
-                        };
-                        dbContext.ProfessorProfiles.Add(profProfile);
-                        await dbContext.SaveChangesAsync();
-                    }
+                    dbContext.CourseStudyPlans.Add(course);
+                    await dbContext.SaveChangesAsync();
                 }
 
-                if (user != null)
+                // Seed Subjects & Topics
+                if (root.TryGetProperty("subjects", out var subjectsElem) && subjectsElem.ValueKind == JsonValueKind.Array)
                 {
-                    // Seed Course
-                    if (root.TryGetProperty("course", out var courseElem))
+                    foreach (var subjElem in subjectsElem.EnumerateArray())
                     {
-                        var courseId = Guid.Parse(courseElem.GetProperty("id").GetString() ?? "00000000-0000-0000-0000-000000000001");
-                        var course = await dbContext.CourseStudyPlans.FirstOrDefaultAsync(c => c.Id == courseId);
-                        if (course == null)
+                        var subjId = Guid.Parse(subjElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString());
+                        var existingSubj = await dbContext.Subjects.FirstOrDefaultAsync(s => s.Id == subjId);
+                        if (existingSubj == null)
                         {
-                            course = new CourseStudyPlan
+                            existingSubj = new Subject
                             {
-                                Id = courseId,
-                                ProfessorId = user.Id,
-                                Title = courseElem.GetProperty("title").GetString() ?? "Plano EstratÃ©gico de Estudos",
-                                Description = courseElem.GetProperty("description").GetString() ?? "",
-                                Category = courseElem.GetProperty("category").GetString() ?? "TI & Dados",
-                                Price = courseElem.GetProperty("price").GetDecimal(),
-                                IsPublic = courseElem.GetProperty("isPublic").GetBoolean(),
-                                Status = courseElem.GetProperty("status").GetString() ?? "PUBLISHED",
-                                CreatedAt = DateTime.UtcNow
+                                Id = subjId,
+                                CourseId = courseId,
+                                Name = subjElem.GetProperty("name").GetString() ?? "",
+                                Description = subjElem.GetProperty("description").GetString() ?? "",
+                                OrderIndex = subjElem.GetProperty("orderIndex").GetInt32()
                             };
-                            dbContext.CourseStudyPlans.Add(course);
+                            dbContext.Subjects.Add(existingSubj);
                             await dbContext.SaveChangesAsync();
                         }
 
-                        // Seed Subjects & Topics
-                        if (root.TryGetProperty("subjects", out var subjectsElem) && subjectsElem.ValueKind == JsonValueKind.Array)
+                        if (subjElem.TryGetProperty("topics", out var topicsElem) && topicsElem.ValueKind == JsonValueKind.Array)
                         {
-                            foreach (var subjElem in subjectsElem.EnumerateArray())
+                            foreach (var topElem in topicsElem.EnumerateArray())
                             {
-                                var subjId = Guid.Parse(subjElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString());
-                                var existingSubj = await dbContext.Subjects.FirstOrDefaultAsync(s => s.Id == subjId);
-                                if (existingSubj == null)
+                                var topId = Guid.Parse(topElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString());
+                                var existingTopic = await dbContext.Topics.FirstOrDefaultAsync(t => t.Id == topId);
+                                if (existingTopic == null)
                                 {
-                                    existingSubj = new Subject
+                                    existingTopic = new Topic
                                     {
-                                        Id = subjId,
-                                        CourseId = courseId,
-                                        Name = subjElem.GetProperty("name").GetString() ?? "",
-                                        Description = subjElem.GetProperty("description").GetString() ?? "",
-                                        OrderIndex = subjElem.GetProperty("orderIndex").GetInt32()
+                                        Id = topId,
+                                        SubjectId = subjId,
+                                        Title = topElem.GetProperty("title").GetString() ?? "",
+                                        ExamBoard = topElem.GetProperty("examBoard").GetString() ?? "FGV",
+                                        OrderIndex = topElem.GetProperty("orderIndex").GetInt32(),
+                                        ContentMarkdown = topElem.GetProperty("contentMarkdown").GetString() ?? ""
                                     };
-                                    dbContext.Subjects.Add(existingSubj);
+                                    dbContext.Topics.Add(existingTopic);
                                     await dbContext.SaveChangesAsync();
-                                }
 
-                                if (subjElem.TryGetProperty("topics", out var topicsElem) && topicsElem.ValueKind == JsonValueKind.Array)
-                                {
-                                    foreach (var topElem in topicsElem.EnumerateArray())
+                                    if (topElem.TryGetProperty("flashcards", out var fcArray) && fcArray.ValueKind == JsonValueKind.Array)
                                     {
-                                        var topId = Guid.Parse(topElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString());
-                                        var existingTopic = await dbContext.Topics.FirstOrDefaultAsync(t => t.Id == topId);
-                                        if (existingTopic == null)
+                                        foreach (var fc in fcArray.EnumerateArray())
                                         {
-                                            existingTopic = new Topic
+                                            dbContext.Flashcards.Add(new Flashcard
                                             {
-                                                Id = topId,
-                                                SubjectId = subjId,
-                                                Title = topElem.GetProperty("title").GetString() ?? "",
-                                                ExamBoard = topElem.GetProperty("examBoard").GetString() ?? "FGV",
-                                                OrderIndex = topElem.GetProperty("orderIndex").GetInt32(),
-                                                ContentMarkdown = topElem.GetProperty("contentMarkdown").GetString() ?? ""
-                                            };
-                                            dbContext.Topics.Add(existingTopic);
-                                            await dbContext.SaveChangesAsync();
-
-                                            if (topElem.TryGetProperty("flashcards", out var fcArray) && fcArray.ValueKind == JsonValueKind.Array)
-                                            {
-                                                foreach (var fc in fcArray.EnumerateArray())
-                                                {
-                                                    dbContext.Flashcards.Add(new Flashcard
-                                                    {
-                                                        TopicId = topId,
-                                                        FrontText = fc.GetProperty("frontText").GetString() ?? "",
-                                                        BackText = fc.GetProperty("backText").GetString() ?? "",
-                                                        Difficulty = fc.GetProperty("difficulty").GetString() ?? "MEDIUM"
-                                                    });
-                                                }
-                                            }
-
-                                            if (topElem.TryGetProperty("questions", out var qArray) && qArray.ValueKind == JsonValueKind.Array)
-                                            {
-                                                foreach (var q in qArray.EnumerateArray())
-                                                {
-                                                    dbContext.Questions.Add(new Question
-                                                    {
-                                                        TopicId = topId,
-                                                        Statement = q.GetProperty("statement").GetString() ?? "",
-                                                        OptionsJson = q.GetProperty("optionsJson").GetString() ?? "[]",
-                                                        CorrectOptionIndex = q.GetProperty("correctOptionIndex").GetInt32(),
-                                                        Explanation = q.GetProperty("explanation").GetString() ?? "",
-                                                        ExamBoard = q.GetProperty("examBoard").GetString() ?? "FGV"
-                                                    });
-                                                }
-                                            }
-                                            await dbContext.SaveChangesAsync();
+                                                TopicId = topId,
+                                                FrontText = fc.GetProperty("frontText").GetString() ?? "",
+                                                BackText = fc.GetProperty("backText").GetString() ?? "",
+                                                Difficulty = fc.GetProperty("difficulty").GetString() ?? "MEDIUM"
+                                            });
                                         }
                                     }
+
+                                    if (topElem.TryGetProperty("questions", out var qArray) && qArray.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var q in qArray.EnumerateArray())
+                                        {
+                                            dbContext.Questions.Add(new Question
+                                             {
+                                                TopicId = topId,
+                                                Statement = q.GetProperty("statement").GetString() ?? "",
+                                                OptionsJson = q.GetProperty("optionsJson").GetString() ?? "[]",
+                                                CorrectOptionIndex = q.GetProperty("correctOptionIndex").GetInt32(),
+                                                Explanation = q.GetProperty("explanation").GetString() ?? "",
+                                                ExamBoard = q.GetProperty("examBoard").GetString() ?? "FGV"
+                                            });
+                                        }
+                                    }
+                                    await dbContext.SaveChangesAsync();
                                 }
                             }
                         }

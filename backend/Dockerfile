@@ -23,6 +23,8 @@ RUN dotnet build "TeacherTech.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish
 RUN dotnet publish "TeacherTech.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+# Ensure SeedData.json is present in the published output directory
+COPY src/TeacherTech.Infrastructure/Data/SeedData.json /app/publish/SeedData.json
 
 FROM base AS final
 WORKDIR /app
