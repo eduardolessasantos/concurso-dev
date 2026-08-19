@@ -1,4 +1,4 @@
-﻿# ==========================================
+# ==========================================
 # Root .gitignore for Monorepo (Angular + .NET)
 # ==========================================
 
@@ -49,3 +49,14 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 !.vscode/mcp.json
+
+# Secrets & Local Environment Configs
+**/secrets.json
+**/*.secrets.json
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings*.local.json
+**/appsettings*.Development.json
+*.env
+*.env.local
+

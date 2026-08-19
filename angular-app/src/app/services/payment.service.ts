@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -42,7 +43,6 @@ export interface ProfessorBalance {
 export class PaymentService {
   private apiUrl = `${environment.apiUrl}/payments`;
 
-
   constructor(private http: HttpClient, private authService: AuthService) {}
 
   private getAuthHeaders(): HttpHeaders {
@@ -73,6 +73,19 @@ export class PaymentService {
     return this.http.get<ProfessorBalance>(
       `${this.apiUrl}/professor-balance`,
       { headers: this.getAuthHeaders() }
+    ).pipe(
+      catchError((err) => {
+        console.warn('[PaymentService] Erro ao buscar saldo do professor, aplicando fallback:', err);
+        const fallback: ProfessorBalance = {
+          totalRevenue: 0,
+          availableBalance: 0,
+          pendingBalance: 0,
+          salesCount: 0,
+          pixKey: '',
+          transactions: []
+        };
+        return of(fallback);
+      })
     );
   }
 

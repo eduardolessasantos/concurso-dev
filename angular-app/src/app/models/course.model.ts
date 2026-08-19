@@ -51,15 +51,35 @@ export interface TopicHierarchyDto {
   examBoard: string;
   contentMarkdown?: string;
   orderIndex: number;
+  flashcards?: {
+    id?: string;
+    topicId?: string;
+    frontText: string;
+    backText: string;
+    difficulty?: string;
+  }[];
+  questions?: {
+    id?: string;
+    topicId?: string;
+    statement: string;
+    optionsJson?: string;
+    options?: string[];
+    correctOptionIndex: number;
+    explanation?: string;
+    examBoard?: string;
+  }[];
 }
 
 export interface CourseStudyPlan {
   id: string;
   professorId: string;
+  professorName?: string;
   title: string;
   description: string;
   category: string;
   price: number;
   isPublic: boolean;
   subjects: SubjectHierarchyDto[];
+  studySchedules?: any[];
+  simulatedTests?: any[];
 }

@@ -27,25 +27,21 @@ if (builder.Environment.IsEnvironment("Testing"))
 }
 else
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Server=localhost;Database=teachertech_db;User=root;Password=270523;";
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Trim() == "EMPTY VALUE")
+    {
+        connectionString = "Server=localhost;Database=teachertech_db;User=root;Password=270523;";
+    }
 
     bool useMySql = false;
     try
     {
-        var builderConn = new MySqlConnector.MySqlConnectionStringBuilder(connectionString);
-        var targetDbName = string.IsNullOrEmpty(builderConn.Database) ? "teachertech_db" : builderConn.Database;
-        builderConn.Database = ""; // Connect to MySQL server root
-
-        using (var serverConn = new MySqlConnector.MySqlConnection(builderConn.ConnectionString))
+        using (var serverConn = new MySqlConnector.MySqlConnection(connectionString))
         {
             serverConn.Open();
-            using var cmd = serverConn.CreateCommand();
-            cmd.CommandText = $"CREATE DATABASE IF NOT EXISTS `{targetDbName}`;";
-            cmd.ExecuteNonQuery();
         }
         useMySql = true;
-        Console.WriteLine($"[INFO] Conectado ao MySQL com sucesso! Base de dados `{targetDbName}` garantida.");
+        Console.WriteLine("[INFO] Conectado ao MySQL/TiDB Cloud com sucesso!");
     }
     catch (Exception ex)
     {
@@ -57,7 +53,13 @@ else
     {
         if (useMySql)
         {
-            options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)));
+            options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)), mySqlOptions =>
+            {
+                mySqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null);
+            });
         }
         else
         {
@@ -425,6 +427,102 @@ using (var scope = app.Services.CreateScope())
                             }
                         }
                     }
+                }
+
+                // Seed Study Schedules
+                if (root.TryGetProperty("studySchedule", out var scheduleElem) && scheduleElem.ValueKind == JsonValueKind.Array)
+                {
+                    if (!await dbContext.StudySchedules.AnyAsync(s => s.CourseId == courseId))
+                    {
+                        foreach (var item in scheduleElem.EnumerateArray())
+                        {
+                            dbContext.StudySchedules.Add(new StudySchedule
+                            {
+                                CourseId = courseId,
+                                WeekNumber = item.TryGetProperty("weekNumber", out var wn) ? wn.GetInt32() : 1,
+                                DayOfWeek = item.GetProperty("dayOfWeek").GetString() ?? "Segunda-feira",
+                                SubjectName = item.GetProperty("subjectName").GetString() ?? "",
+                                TopicTitle = item.GetProperty("topicTitle").GetString() ?? "",
+                                GoalMinutes = item.TryGetProperty("goalMinutes", out var gm) ? gm.GetInt32() : 60,
+                                Notes = item.GetProperty("notes").GetString() ?? ""
+                            });
+                        }
+                        await dbContext.SaveChangesAsync();
+                        Console.WriteLine($"[INFO] Cronograma de estudos semeado para o curso {courseId}");
+                    }
+                }
+
+                // Seed Simulated Test
+                if (root.TryGetProperty("simulatedTest", out var simElem) && simElem.ValueKind == JsonValueKind.Object)
+                {
+                    if (!await dbContext.SimulatedTests.AnyAsync(st => st.CourseId == courseId))
+                    {
+                        var simulated = new SimulatedTest
+                        {
+                            CourseId = courseId,
+                            Title = simElem.GetProperty("title").GetString() ?? "Simulado Inédito",
+                            Description = simElem.TryGetProperty("description", out var desc) ? desc.GetString() ?? "" : "",
+                            TimeLimitMinutes = simElem.TryGetProperty("timeLimitMinutes", out var tlm) ? tlm.GetInt32() : 60,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        dbContext.SimulatedTests.Add(simulated);
+                        await dbContext.SaveChangesAsync();
+
+                        if (simElem.TryGetProperty("questions", out var simQArray) && simQArray.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var sq in simQArray.EnumerateArray())
+                            {
+                                dbContext.SimulatedQuestions.Add(new SimulatedQuestion
+                                {
+                                    SimulatedTestId = simulated.Id,
+                                    Statement = sq.GetProperty("statement").GetString() ?? "",
+                                    OptionsJson = sq.GetProperty("optionsJson").GetString() ?? "[]",
+                                    CorrectOptionIndex = sq.GetProperty("correctOptionIndex").GetInt32(),
+                                    Explanation = sq.GetProperty("explanation").GetString() ?? "",
+                                    ExamBoard = sq.GetProperty("examBoard").GetString() ?? "Inédita"
+                                });
+                            }
+                            await dbContext.SaveChangesAsync();
+                        }
+                        Console.WriteLine($"[INFO] Simulado inédito semeado para o curso {courseId}");
+                    }
+                }
+
+                // Seed Student Enrollment for demo student
+                if (studentUser != null && !await dbContext.Enrollments.AnyAsync(e => e.StudentId == studentUser.Id && e.CourseId == courseId))
+                {
+                    var enrollment = new Enrollment
+                    {
+                        StudentId = studentUser.Id,
+                        CourseId = courseId,
+                        GrantedBy = profUser?.Id ?? "system",
+                        GrantedVia = "EMAIL_INVITE",
+                        Status = EnrollmentStatus.Active,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    dbContext.Enrollments.Add(enrollment);
+                    await dbContext.SaveChangesAsync();
+                    Console.WriteLine($"[INFO] Matrícula de demonstração criada para {studentUser.Email} no curso {courseId}");
+                }
+
+                // Seed Initial Test Transaction for Professor Financial Balance
+                if (studentUser != null && profUser != null && !await dbContext.Transactions.AnyAsync(t => t.UserId == studentUser.Id && t.CourseId == courseId))
+                {
+                    var initialTx = new Transaction
+                    {
+                        UserId = studentUser.Id,
+                        CourseId = courseId,
+                        Amount = 49.90m,
+                        PlatformFee = 4.99m,
+                        ProfessorRevenue = 44.91m,
+                        PaymentGateway = "ASAAS",
+                        GatewayTransactionId = $"demo-tx-{Guid.NewGuid():N}",
+                        Status = TransactionStatus.Paid,
+                        CreatedAt = DateTime.UtcNow.AddDays(-2)
+                    };
+                    dbContext.Transactions.Add(initialTx);
+                    await dbContext.SaveChangesAsync();
+                    Console.WriteLine($"[INFO] Transação de demonstração criada para o saldo do professor.");
                 }
             }
         }

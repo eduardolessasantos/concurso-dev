@@ -158,20 +158,71 @@
 
           <!-- Level 2: Subject -->
           <div class="level-card level-2">
-            <div class="level-badge">Nível 2 · Disciplina / Matéria</div>
-            <div class="form-group">
-              <label>Nome da Disciplina</label>
-              <input type="text" [(ngModel)]="subjectName" placeholder="Ex: Engenharia de Software, Direito Constitucional" class="form-control" />
+            <div class="level-badge-row">
+              <div class="level-badge">Nível 2 · Disciplina / Matéria</div>
+              @if (!isSubjectNew()) {
+                <span class="status-pill-small active">Disciplina Existente</span>
+              } @else {
+                <span class="status-pill-small new">Nova Disciplina</span>
+              }
             </div>
+
+            @if (availableSubjects().length > 0) {
+              <div class="form-group">
+                <label>Selecionar Disciplina</label>
+                <select 
+                  [ngModel]="selectedSubjectId()" 
+                  (ngModelChange)="onSubjectDropdownChange($event)" 
+                  class="form-control select-hierarchy">
+                  @for (subj of availableSubjects(); track subj.id) {
+                    <option [value]="subj.id">📚 {{ subj.name }} ({{ subj.topics?.length || 0 }} tópicos)</option>
+                  }
+                  <option value="NEW">➕ [Criar Nova Disciplina...]</option>
+                </select>
+              </div>
+            }
+
+            @if (isSubjectNew() || selectedSubjectId() === 'NEW' || availableSubjects().length === 0) {
+              <div class="form-group">
+                <label>Nome da Nova Disciplina</label>
+                <input type="text" [(ngModel)]="subjectName" placeholder="Ex: Engenharia de Software, Banco de Dados" class="form-control" />
+              </div>
+            }
           </div>
 
           <!-- Level 3: Topic & Exam Board -->
           <div class="level-card level-3">
-            <div class="level-badge">Nível 3 · Tópico de Estudo & Banca</div>
-            <div class="form-group">
-              <label>Título do Tópico</label>
-              <input type="text" [(ngModel)]="topicTitle" placeholder="Ex: Arquitetura de Microsserviços e APIs REST" class="form-control" />
+            <div class="level-badge-row">
+              <div class="level-badge">Nível 3 · Tópico de Estudo & Banca</div>
+              @if (!isTopicNew()) {
+                <span class="status-pill-small active">Editando Conteúdo Salvo</span>
+              } @else {
+                <span class="status-pill-small new">Novo Conteúdo Inédito</span>
+              }
             </div>
+
+            @if (availableTopics().length > 0) {
+              <div class="form-group">
+                <label>Selecionar Tópico da Disciplina</label>
+                <select 
+                  [ngModel]="selectedTopicId()" 
+                  (ngModelChange)="onTopicDropdownChange($event)" 
+                  class="form-control select-hierarchy">
+                  @for (top of availableTopics(); track top.id) {
+                    <option [value]="top.id">📄 {{ top.title }} ({{ top.examBoard }})</option>
+                  }
+                  <option value="NEW">➕ [Criar Novo Tópico...]</option>
+                </select>
+              </div>
+            }
+
+            @if (isTopicNew() || selectedTopicId() === 'NEW' || availableTopics().length === 0) {
+              <div class="form-group">
+                <label>Título do Novo Tópico</label>
+                <input type="text" [(ngModel)]="topicTitle" placeholder="Ex: Arquitetura de Microsserviços e APIs REST" class="form-control" />
+              </div>
+            }
+
             <div class="form-group">
               <label>Banca Examinadora</label>
               <select [(ngModel)]="examBoard" class="form-control">

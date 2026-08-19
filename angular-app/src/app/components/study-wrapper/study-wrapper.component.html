@@ -2,9 +2,12 @@
   <!-- Study Header Banner -->
   <header class="study-header">
     <div class="header-main">
-      <span class="course-badge">📚 Estudo Específico</span>
-      <h1>Plano Estratégico de Estudos - Tecnologia da Informação</h1>
-      <p>Trilha didática completa criada pelo <strong>Prof. Eduardo Lessa</strong> com resumos, flashcards, cronograma e simulados.</p>
+      <span class="course-badge">📚 {{ course()?.category || 'TI & Dados' }}</span>
+      <h1>{{ course()?.title || 'Plano Estratégico de Estudos - Tecnologia da Informação' }}</h1>
+      <p>{{ course()?.description || 'Trilha didática completa com resumos teóricos, flashcards, cronograma e simulados.' }}</p>
+      @if (course()?.professorName) {
+        <small class="prof-tag">Mentor: <strong>{{ course()?.professorName }}</strong></small>
+      }
     </div>
 
     <!-- Navigation Sub-Tabs inside Course Study -->
@@ -21,7 +24,7 @@
         class="tab-link" 
         [class.active]="activeSubTab() === 'subjects'" 
         (click)="setTab('subjects')">
-        <span class="icon">▦</span> Disciplinas (3)
+        <span class="icon">▦</span> Disciplinas ({{ subjectsCount }})
       </button>
       <button 
         type="button" 
@@ -46,43 +49,117 @@
       <div class="overview-section">
         <div class="stats-row">
           <div class="stat-card">
-            <span class="stat-num">3</span>
+            <span class="stat-num">{{ subjectsCount }}</span>
             <span class="stat-label">Disciplinas Didáticas</span>
           </div>
           <div class="stat-card">
-            <span class="stat-num">12</span>
-            <span class="stat-label">Tópicos em Markdown</span>
+            <span class="stat-num">{{ topicsCount }}</span>
+            <span class="stat-label">Tópicos Teóricos</span>
           </div>
           <div class="stat-card">
-            <span class="stat-num">24</span>
+            <span class="stat-num">{{ flashcardsCount }}</span>
             <span class="stat-label">Flashcards com Repetição</span>
           </div>
           <div class="stat-card">
-            <span class="stat-num">15</span>
+            <span class="stat-num">{{ questionsCount }}</span>
             <span class="stat-label">Questões Inéditas</span>
           </div>
         </div>
 
         <div class="card-box">
           <h3>🎯 Meta de Aprendizado do Estudo</h3>
-          <p>Esta trilha foi elaborada para cobrir os principais tópicos de concursos e certames de Tecnologia da Informação com foco em alto desempenho.</p>
+          <p>Esta trilha foi elaborada pelo seu professor mentor para cobrir com profundidade os pontos mais cobrados nos certames com resumos em Markdown, repetição espaçada e questões comentadas.</p>
           <div class="actions">
-            <button type="button" class="btn-primary" (click)="setTab('subjects')">🚀 Começar pelas Disciplinas →</button>
+            <button type="button" class="btn-primary" (click)="setTab('subjects')">🚀 Explorar Disciplinas e Tópicos →</button>
           </div>
         </div>
       </div>
     }
 
+    <!-- TAB 2: DISCIPLINES & TOPICS HIERARCHY TREE -->
     @if (activeSubTab() === 'subjects') {
-      <div class="placeholder-view">
-        <p>Acesse o mapa completo de matérias e resumos:</p>
-        <a routerLink="/disciplinas" class="btn-accent">📖 Abrir Mapa de Disciplinas →</a>
+      <div class="subjects-tree-container">
+        @if (course() && course()!.subjects && course()!.subjects.length > 0) {
+          <div class="subjects-list">
+            @for (subj of course()!.subjects; track subj.id) {
+              <div class="subject-card">
+                <div class="subject-header" (click)="toggleSubject(subj.id)">
+                  <div class="subj-title-group">
+                    <span class="folder-icon">📂</span>
+                    <div>
+                      <h3>{{ subj.name }}</h3>
+                      <p>{{ subj.description || 'Tópicos e conteúdos cadastrados para esta disciplina' }}</p>
+                    </div>
+                  </div>
+                  <div class="subj-meta">
+                    <span class="topics-badge">{{ subj.topics?.length || 0 }} Tópicos</span>
+                    <span class="arrow-indicator">{{ expandedSubjects()[subj.id] ? '▲' : '▼' }}</span>
+                  </div>
+                </div>
+
+                @if (expandedSubjects()[subj.id]) {
+                  <div class="topics-grid">
+                    @for (top of subj.topics; track top.id) {
+                      <div class="topic-item-card" [class.selected]="selectedTopic()?.id === top.id" (click)="selectTopic(top)">
+                        <div class="topic-top">
+                          <span class="board-badge">{{ top.examBoard }}</span>
+                          <span class="topic-order">Tópico #{{ top.orderIndex }}</span>
+                        </div>
+                        <h4>{{ top.title }}</h4>
+                        <div class="topic-badges">
+                          @if (top.flashcards && top.flashcards.length > 0) {
+                            <span class="pill pill-fc">🎴 {{ top.flashcards.length }} Flashcards</span>
+                          }
+                          @if (top.questions && top.questions.length > 0) {
+                            <span class="pill pill-q">⏱ {{ top.questions.length }} Questões</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Active Topic Content Drawer / Modal Preview -->
+          @if (selectedTopic()) {
+            <div class="topic-detail-drawer">
+              <div class="drawer-header">
+                <div>
+                  <span class="board-badge">{{ selectedTopic()!.examBoard }}</span>
+                  <h2>📖 {{ selectedTopic()!.title }}</h2>
+                </div>
+                <button type="button" class="btn-close" (click)="selectedTopic.set(null)">✕</button>
+              </div>
+
+              <div class="drawer-body">
+                @if (selectedTopic()!.contentMarkdown) {
+                  <div class="markdown-preview">
+                    <pre class="markdown-text">{{ selectedTopic()!.contentMarkdown }}</pre>
+                  </div>
+                } @else {
+                  <p class="no-content">Conteúdo teórico em formatação pelo professor.</p>
+                }
+
+                <div class="drawer-actions">
+                  <a routerLink="/disciplinas" class="btn-direct-link">📖 Abrir Prática de Flashcards & Questões →</a>
+                </div>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="placeholder-view">
+            <p>Nenhuma disciplina detalhada cadastrada neste plano ainda.</p>
+            <a routerLink="/disciplinas" class="btn-accent">📖 Abrir Disciplinas Gerais →</a>
+          </div>
+        }
       </div>
     }
 
     @if (activeSubTab() === 'schedule') {
       <div class="placeholder-view">
-        <p>Acesse o plano semanal de estudos:</p>
+        <p>Acesse o plano semanal de estudos deste certame:</p>
         <a routerLink="/cronograma" class="btn-accent">◫ Abrir Cronograma Completo →</a>
       </div>
     }
@@ -95,3 +172,4 @@
     }
   </div>
 </div>
+

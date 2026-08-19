@@ -29,13 +29,29 @@ export class FinancialDashboardComponent implements OnInit {
     this.paymentService.getProfessorBalance().subscribe({
       next: (res) => {
         this.isLoading = false;
-        this.balance.set(res);
-        if (res.pixKey) {
-          this.pixKey = res.pixKey;
+        const safeBalance = res || {
+          totalRevenue: 0,
+          availableBalance: 0,
+          pendingBalance: 0,
+          salesCount: 0,
+          pixKey: '',
+          transactions: []
+        };
+        this.balance.set(safeBalance);
+        if (safeBalance.pixKey) {
+          this.pixKey = safeBalance.pixKey;
         }
       },
       error: () => {
         this.isLoading = false;
+        this.balance.set({
+          totalRevenue: 0,
+          availableBalance: 0,
+          pendingBalance: 0,
+          salesCount: 0,
+          pixKey: '',
+          transactions: []
+        });
       }
     });
   }

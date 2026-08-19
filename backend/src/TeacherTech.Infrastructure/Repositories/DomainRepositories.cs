@@ -30,6 +30,13 @@ public class CourseRepository : Repository<CourseStudyPlan, Guid>, ICourseReposi
             .Include(c => c.Professor)
             .Include(c => c.Subjects.OrderBy(s => s.OrderIndex))
                 .ThenInclude(s => s.Topics.OrderBy(t => t.OrderIndex))
+                    .ThenInclude(t => t.Flashcards)
+            .Include(c => c.Subjects.OrderBy(s => s.OrderIndex))
+                .ThenInclude(s => s.Topics.OrderBy(t => t.OrderIndex))
+                    .ThenInclude(t => t.Questions)
+            .Include(c => c.StudySchedules)
+            .Include(c => c.SimulatedTests)
+                .ThenInclude(st => st.Questions)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 

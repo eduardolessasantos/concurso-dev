@@ -25,6 +25,17 @@
       </div>
     </div>
 
+    <!-- Special Invitation Banner -->
+    @if (invitedCourseTitle()) {
+      <div class="invite-banner">
+        <span class="invite-icon">🎓</span>
+        <div class="invite-info">
+          <strong>Acesso Concedido ao Estudo!</strong>
+          <p>Você foi convidado para acessar <strong>"{{ invitedCourseTitle() }}"</strong>. Conecte-se ou cadastre-se para iniciar seus estudos.</p>
+        </div>
+      </div>
+    }
+
     <!-- Alert Messages -->
     @if (errorMessage()) {
       <div class="alert alert-error">

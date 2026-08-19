@@ -397,16 +397,48 @@
   padding: 1.25rem;
   position: relative;
 
+  .level-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.85rem;
+  }
+
   .level-badge {
     font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #38bdf8;
-    margin-bottom: 0.85rem;
     display: flex;
     align-items: center;
     gap: 0.4rem;
+  }
+
+  .status-pill-small {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+
+    &.active {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    &.new {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+  }
+
+  .select-hierarchy {
+    background-color: #0f172a;
+    border-color: #3b82f6;
+    font-weight: 500;
+    color: #f1f5f9;
   }
 
   &.level-1 { border-left: 3px solid #38bdf8; }

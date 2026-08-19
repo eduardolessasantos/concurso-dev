@@ -1,8 +1,26 @@
 <div class="management-container">
   <header class="management-header">
-    <div>
-      <h1>👥 Gestão de Alunos & Permissões</h1>
-      <p>Exporte o seu curso por e-mail para alunos específicos ou aprove solicitações de acesso.</p>
+    <div class="header-intro">
+      <h1>👥 Gestão de Alunos & Acessos</h1>
+      <p>Gerencie permissões, envie convites direcionados e compartilhe links de acesso aos seus planos de estudo.</p>
+    </div>
+
+    <!-- Course Selector Banner -->
+    <div class="course-selector-bar">
+      <div class="selector-label">
+        <span class="icon">📚</span>
+        <span>Estudo Selecionado:</span>
+      </div>
+      <select 
+        [ngModel]="selectedCourseId()" 
+        (ngModelChange)="onCourseChange($event)" 
+        class="form-control course-dropdown">
+        @for (course of coursesService.myCourses(); track course.id) {
+          <option [value]="course.id">
+            {{ course.title }} ({{ course.subjectsCount || 1 }} disciplinas · {{ course.enrollmentsCount || 0 }} alunos)
+          </option>
+        }
+      </select>
     </div>
 
     <div class="tabs-bar">
@@ -11,7 +29,7 @@
         class="tab-btn" 
         [class.active]="activeTab() === 'invite'" 
         (click)="switchTab('invite')">
-        ✉️ Convidar por E-mail
+        ✉️ Convidar & Compartilhar
       </button>
       
       <button 
@@ -27,7 +45,7 @@
         class="tab-btn" 
         [class.active]="activeTab() === 'enrolled'" 
         (click)="switchTab('enrolled')">
-        🎓 Alunos Matriculados
+        🎓 Alunos Matriculados ({{ enrolledStudents().length }})
       </button>
     </div>
   </header>
@@ -38,44 +56,86 @@
     </div>
   }
 
-  <!-- TAB 1: INVITE BY EMAIL -->
+  <!-- TAB 1: INVITE BY EMAIL & SHARE LINK -->
   @if (activeTab() === 'invite') {
-    <div class="card-section">
-      <div class="card-header">
-        <h3>✉️ Exportar Estudo por E-mail</h3>
-        <p>Envie o acesso individual ao estudo do seu curso. O aluno receberá um e-mail com instrução de entrada.</p>
+    <div class="invite-grid-layout">
+      <!-- Left Column: Form & Actions -->
+      <div class="card-section">
+        <div class="card-header">
+          <h3>✉️ Liberar Acesso ao Estudo</h3>
+          <p>Conceda acesso direto para um aluno ou gere um link personalizado para envio imediato.</p>
+        </div>
+
+        <form (ngSubmit)="onSendInvite()" class="form-grid">
+          <div class="form-group">
+            <label for="studentEmail">E-mail do Aluno *</label>
+            <input 
+              type="email" 
+              id="studentEmail" 
+              name="studentEmail" 
+              [(ngModel)]="studentEmail" 
+              placeholder="ex: aluno@concurseiro.com" 
+              required />
+          </div>
+
+          <div class="form-group">
+            <label for="welcomeMessage">Mensagem Personalizada de Boas-Vindas (Opcional)</label>
+            <textarea 
+              id="welcomeMessage" 
+              name="welcomeMessage" 
+              [(ngModel)]="welcomeMessage" 
+              rows="3" 
+              placeholder="Ex: Olá! Liberando seu acesso exclusivo à nossa Trilha de Estudos para o Dataprev 2026. Bons estudos!"></textarea>
+          </div>
+
+          <div class="invite-actions-row">
+            <button type="submit" class="btn-primary" [disabled]="isLoading">
+              @if (isLoading) {
+                <span class="spinner"></span> Enviando Acesso...
+              } @else {
+                🚀 Liberar Acesso & Enviar E-mail
+              }
+            </button>
+
+            <button 
+              type="button" 
+              class="btn-copy-link" 
+              (click)="copyShareableLink()">
+              {{ isCopied() ? '✓ Link Copiado!' : '🔗 Copiar Link Direto (WhatsApp/Mensagem)' }}
+            </button>
+          </div>
+        </form>
       </div>
 
-      <form (ngSubmit)="onSendInvite()" class="form-grid">
-        <div class="form-group">
-          <label for="studentEmail">E-mail do Aluno</label>
-          <input 
-            type="email" 
-            id="studentEmail" 
-            name="studentEmail" 
-            [(ngModel)]="studentEmail" 
-            placeholder="aluno@exemplo.com" 
-            required />
-        </div>
+      <!-- Right Column: Interactive Live Preview Card -->
+      <div class="preview-invite-card">
+        <div class="preview-tag">👁️ Prévia do Convite do Aluno</div>
+        <div class="invite-preview-box">
+          <div class="preview-header">
+            <span class="badge-cat">{{ getSelectedCourse()?.category || 'TI & Concursos' }}</span>
+            <span class="badge-status">Acesso VIP Liberado</span>
+          </div>
+          <h4 class="preview-title">{{ getSelectedCourse()?.title || 'Selecione um Estudo' }}</h4>
+          <p class="preview-desc">{{ getSelectedCourse()?.description || 'Descrição detalhada do plano estratégico de estudos...' }}</p>
+          
+          <div class="preview-dest">
+            <small>Destinatário:</small>
+            <strong>{{ studentEmail || 'aluno@exemplo.com' }}</strong>
+          </div>
 
-        <div class="form-group">
-          <label for="welcomeMessage">Mensagem Personalizada de Boas-Vindas (Opcional)</label>
-          <textarea 
-            id="welcomeMessage" 
-            name="welcomeMessage" 
-            [(ngModel)]="welcomeMessage" 
-            rows="3" 
-            placeholder="Ex: Olá! Liberando o acesso exclusivo à nossa Trilha de Estudos do concurso. Bons estudos!"></textarea>
-        </div>
-
-        <button type="submit" class="btn-primary" [disabled]="isLoading">
-          @if (isLoading) {
-            <span class="spinner"></span> Enviando Acesso...
-          } @else {
-            🚀 Liberar & Enviar por E-mail
+          @if (welcomeMessage) {
+            <div class="preview-msg">
+              <small>Mensagem do Professor:</small>
+              <p>"{{ welcomeMessage }}"</p>
+            </div>
           }
-        </button>
-      </form>
+
+          <div class="preview-btn-mock">
+            <span>Acessar Estudo →</span>
+          </div>
+          <small class="preview-footer">O aluno entrará diretamente na tela do estudo após fazer login ou criar sua conta.</small>
+        </div>
+      </div>
     </div>
   }
 
@@ -118,9 +178,19 @@
   <!-- TAB 3: ENROLLED STUDENTS LIST -->
   @if (activeTab() === 'enrolled') {
     <div class="card-section">
-      <div class="card-header">
-        <h3>🎓 Alunos com Acesso Liberado</h3>
-        <p>Gerencie as permissões e o status de acesso dos alunos aos seus cursos.</p>
+      <div class="card-header-with-action">
+        <div>
+          <h3>🎓 Alunos Matriculados: {{ getSelectedCourse()?.title || 'Estudo' }}</h3>
+          <p>Relação de alunos com acesso liberado a este estudo.</p>
+        </div>
+
+        <button 
+          type="button" 
+          class="btn-export-csv" 
+          (click)="exportToCsv()" 
+          [disabled]="enrolledStudents().length === 0">
+          📥 Exportar Alunos (CSV)
+        </button>
       </div>
 
       @if (enrolledStudents().length > 0) {
@@ -162,10 +232,11 @@
       } @else {
         <div class="empty-state">
           <div class="icon">📫</div>
-          <h4>Nenhum aluno matriculado ainda</h4>
-          <p>Use a aba "Convidar por E-mail" para dar os primeiros acessos aos seus alunos.</p>
+          <h4>Nenhum aluno matriculado neste estudo ainda</h4>
+          <p>Use a aba "Convidar & Compartilhar" para liberar o acesso aos seus alunos.</p>
         </div>
       }
     </div>
   }
 </div>
+
