@@ -70,7 +70,8 @@ export class SubjectDetailComponent implements OnInit {
     if (!this.subject) { this.router.navigate(['/disciplinas']); return; }
 
     this.activeTopicIndex.set(null);
-    this.allSubjectQuestions = this.questionsService.getBySubjectRange(this.subject.range[0], this.subject.range[1]);
+    const range = this.subject.range || [1, 70];
+    this.allSubjectQuestions = this.questionsService.getBySubjectRange(range[0], range[1]);
     this.updateList();
   }
 

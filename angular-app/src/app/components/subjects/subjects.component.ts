@@ -24,7 +24,8 @@ export class SubjectsComponent implements OnInit {
   subjectsWithProgress = computed(() => {
     const answers = this.store.state().answers;
     const all = this.subjectsService.getAll().map(subject => {
-      const qs = this.questionsService.getBySubjectRange(subject.range[0], subject.range[1]);
+      const range = subject.range || [1, 70];
+      const qs = this.questionsService.getBySubjectRange(range[0], range[1]);
       const total = qs.length;
       const answered = qs.filter(q => answers[q.number]).length;
       const correct = qs.filter(q => answers[q.number]?.correct).length;
@@ -33,13 +34,13 @@ export class SubjectsComponent implements OnInit {
     });
 
     return {
-      gerais: all.filter(s => parseInt(s.number) <= 5),
-      especificos: all.filter(s => parseInt(s.number) > 5)
+      gerais: all.filter(s => s.sessionGroup === 'Conhecimentos Gerais' || (s.number && parseInt(s.number) <= 5)),
+      especificos: all.filter(s => s.sessionGroup !== 'Conhecimentos Gerais' && (!s.number || parseInt(s.number) > 5))
     };
   });
 
 
   openSubject(id: string) { this.router.navigate(['/disciplinas', id]); }
-  metaPrimary(meta: string) { return meta.split(' · ')[0]; }
-  metaSecondary(meta: string) { return meta.split(' · ')[1]; }
+  metaPrimary(meta?: string) { return (meta || '').split(' · ')[0] || ''; }
+  metaSecondary(meta?: string) { return (meta || '').split(' · ')[1] || ''; }
 }

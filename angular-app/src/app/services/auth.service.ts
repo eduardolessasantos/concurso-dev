@@ -31,7 +31,7 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
   
   public currentUser = signal<UserProfile | null>(this.loadUserFromStorage());
-  public token = signal<string | null>(localStorage.getItem('teachertech_token'));
+  public token = signal<string | null>(sessionStorage.getItem('teachertech_token'));
 
   constructor(
     private http: HttpClient,
@@ -51,8 +51,8 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('teachertech_token');
-    localStorage.removeItem('teachertech_user');
+    sessionStorage.removeItem('teachertech_token');
+    sessionStorage.removeItem('teachertech_user');
     this.token.set(null);
     this.currentUser.set(null);
     this.router.navigate(['/login']);
@@ -81,15 +81,15 @@ export class AuthService {
       customSlug: res.customSlug
     };
 
-    localStorage.setItem('teachertech_token', res.token);
-    localStorage.setItem('teachertech_user', JSON.stringify(user));
+    sessionStorage.setItem('teachertech_token', res.token);
+    sessionStorage.setItem('teachertech_user', JSON.stringify(user));
     
     this.token.set(res.token);
     this.currentUser.set(user);
   }
 
   private loadUserFromStorage(): UserProfile | null {
-    const storedUser = localStorage.getItem('teachertech_user');
+    const storedUser = sessionStorage.getItem('teachertech_user');
     if (!storedUser) return null;
     try {
       return JSON.parse(storedUser);

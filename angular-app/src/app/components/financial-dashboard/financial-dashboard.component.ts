@@ -1,75 +1,50 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { PaymentService, ProfessorBalance } from '../../services/payment.service';
+import { StudentManagementService, ProfessorDashboard } from '../../services/student-management.service';
 
 @Component({
   selector: 'app-financial-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './financial-dashboard.component.html',
   styleUrls: ['./financial-dashboard.component.scss']
 })
 export class FinancialDashboardComponent implements OnInit {
-  public balance = signal<ProfessorBalance | null>(null);
-  public pixKey = '';
-  public isLoading = true;
-  public isUpdatingPix = false;
-  public statusMessage = signal<string | null>(null);
+  private studentService = inject(StudentManagementService);
 
-  constructor(private paymentService: PaymentService) {}
+  public dashboard = signal<ProfessorDashboard | null>(null);
+  public isLoading = signal<boolean>(true);
+  public error = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.loadBalance();
+    this.loadDashboard();
   }
 
-  loadBalance(): void {
-    this.isLoading = true;
-    this.paymentService.getProfessorBalance().subscribe({
-      next: (res) => {
-        this.isLoading = false;
-        const safeBalance = res || {
-          totalRevenue: 0,
-          availableBalance: 0,
-          pendingBalance: 0,
-          salesCount: 0,
-          pixKey: '',
-          transactions: []
-        };
-        this.balance.set(safeBalance);
-        if (safeBalance.pixKey) {
-          this.pixKey = safeBalance.pixKey;
-        }
-      },
-      error: () => {
-        this.isLoading = false;
-        this.balance.set({
-          totalRevenue: 0,
-          availableBalance: 0,
-          pendingBalance: 0,
-          salesCount: 0,
-          pixKey: '',
-          transactions: []
-        });
-      }
-    });
-  }
-
-  onSavePixKey(): void {
-    if (!this.pixKey.trim()) return;
-
-    this.isUpdatingPix = true;
-    this.paymentService.updatePixKey(this.pixKey).subscribe({
-      next: (res) => {
-        this.isUpdatingPix = false;
-        this.statusMessage.set(res.message);
-        this.loadBalance();
+  loadDashboard(): void {
+    this.isLoading.set(true);
+    this.studentService.getProfessorDashboard().subscribe({
+      next: (data) => {
+        this.dashboard.set(data);
+        this.isLoading.set(false);
       },
       error: (err) => {
-        this.isUpdatingPix = false;
-        alert(err.error?.message || 'Erro ao atualizar chave PIX.');
+        this.error.set(err.error?.message || 'Erro ao carregar métricas do painel.');
+        this.isLoading.set(false);
       }
     });
+  }
+
+  getPlanName(type?: number): string {
+    if (type === 1) return 'Plano Basic (R$ 29,90/mês)';
+    if (type === 2) return 'Plano Pro (R$ 59,90/mês)';
+    return 'Sem Assinatura Ativa';
+  }
+
+  getStatusName(status?: number): string {
+    if (status === 1) return 'Ativo';
+    if (status === 2) return 'Pendente';
+    if (status === 3) return 'Inadimplente (Atrasado)';
+    return 'Inativo';
   }
 }

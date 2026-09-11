@@ -76,23 +76,11 @@ export class ProfessorShowcaseComponent implements OnInit {
   }
 
   onRequestAccess(courseId: string): void {
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
-      return;
+    const token = prompt('Informe o código de convite (8 caracteres) fornecido pelo professor:');
+    if (token && token.trim()) {
+      this.router.navigate(['/convite', token.trim()]);
+    } else if (token !== null) {
+      alert('Solicite seu link de acesso exclusivo diretamente ao professor via WhatsApp.');
     }
-
-    this.studentService.requestAccess(courseId, 'Gostaria de estudar por esta trilha de conteúdos!').subscribe({
-      next: (res) => {
-        this.requestMessage.set(res.message);
-        this.requestedCourseIds.update(set => {
-          const updated = new Set(set);
-          updated.add(courseId);
-          return updated;
-        });
-      },
-      error: (err) => {
-        alert(err.error?.message || 'Erro ao solicitar acesso.');
-      }
-    });
   }
 }

@@ -35,10 +35,21 @@ export interface CreateTopicDto {
   examBoard: string;
 }
 
-export interface SubjectHierarchyDto {
+export interface StudySessionHierarchyDto {
   id: string;
   courseId: string;
   name: string;
+  orderIndex: number;
+  subjects?: SubjectHierarchyDto[];
+}
+
+export interface SubjectHierarchyDto {
+  id: string;
+  courseId: string;
+  sessionId?: string;
+  sessionName?: string;
+  name: string;
+  meta?: string;
   description: string;
   orderIndex: number;
   topics: TopicHierarchyDto[];
@@ -51,6 +62,18 @@ export interface TopicHierarchyDto {
   examBoard: string;
   contentMarkdown?: string;
   orderIndex: number;
+  topicDetail?: {
+    id?: string;
+    topicId?: string;
+    title: string;
+    summary: string;
+    detail: string;
+    peso?: string;
+    examples?: { question: string; answer: string; application?: string }[];
+    keyPoints?: string[];
+    tips?: string[];
+    usefulLinks?: { label: string; url: string; type: string; youtubeId?: string }[];
+  };
   flashcards?: {
     id?: string;
     topicId?: string;
@@ -79,6 +102,7 @@ export interface CourseStudyPlan {
   category: string;
   price: number;
   isPublic: boolean;
+  studySessions?: StudySessionHierarchyDto[];
   subjects: SubjectHierarchyDto[];
   studySchedules?: any[];
   simulatedTests?: any[];

@@ -80,23 +80,11 @@ export class ExploreComponent implements OnInit {
   }
 
   onRequestAccess(courseId: string): void {
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
-      return;
+    const token = prompt('Informe o código de convite (8 caracteres) recebido pelo WhatsApp ou link:');
+    if (token && token.trim()) {
+      this.router.navigate(['/convite', token.trim()]);
+    } else if (token !== null) {
+      alert('Solicite seu link exclusivo de acesso diretamente ao professor.');
     }
-
-    this.studentService.requestAccess(courseId, 'Gostaria de estudar por este curso!').subscribe({
-      next: (res) => {
-        this.requestMessage.set(res.message);
-        this.requestedCourseIds.update(set => {
-          const updated = new Set(set);
-          updated.add(courseId);
-          return updated;
-        });
-      },
-      error: (err) => {
-        alert(err.error?.message || 'Erro ao solicitar acesso.');
-      }
-    });
   }
 }

@@ -41,7 +41,8 @@ export class DashboardComponent {
   subjectProgress = computed(() => {
     const answers = this.store.state().answers;
     return this.subjects.map(subject => {
-      const qs = this.questionsService.getBySubjectRange(subject.range[0], subject.range[1]);
+      const range = subject.range || [1, 70];
+      const qs = this.questionsService.getBySubjectRange(range[0], range[1]);
       const total = qs.length;
       const answered = qs.filter(q => answers[q.number]).length;
       const correct = qs.filter(q => answers[q.number]?.correct).length;

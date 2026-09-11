@@ -34,8 +34,8 @@ export class QuestionDetailComponent implements OnInit {
   }
 
   get answered() { return this.question ? this.store.state().answers[this.question.number] : null; }
-  get prevNum() { return this.question && this.subject && this.question.number > this.subject.range[0] ? this.question.number - 1 : null; }
-  get nextNum() { return this.question && this.subject && this.question.number < this.subject.range[1] ? this.question.number + 1 : null; }
+  get prevNum() { const r = this.subject?.range || [1, 70]; return this.question && this.subject && this.question.number > r[0] ? this.question.number - 1 : null; }
+  get nextNum() { const r = this.subject?.range || [1, 70]; return this.question && this.subject && this.question.number < r[1] ? this.question.number + 1 : null; }
 
   optionClass(letter: string): string {
     const a = this.answered;

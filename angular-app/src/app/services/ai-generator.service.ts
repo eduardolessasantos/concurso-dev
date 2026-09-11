@@ -40,13 +40,14 @@ export class AiGeneratorService {
     private aiKeyStorage: AiKeyStorageService
   ) {}
 
-  generateSummary(topicTitle: string, subjectName: string = 'Geral', contextText: string = ''): Observable<AiResponse<string>> {
+  generateSummary(topicTitle: string, subjectName: string = 'Geral', contextText: string = '', customPrompt: string = ''): Observable<AiResponse<string>> {
     const config = this.aiKeyStorage.config();
     const prompts = this.aiKeyStorage.prompts();
+    const basePrompt = customPrompt.trim() ? customPrompt : prompts.summaryPrompt;
 
     if (config.apiKey && config.apiKey.trim().length > 5) {
       return from(this.callDirectAi(
-        `${prompts.summaryPrompt}\n\nDisciplina: ${subjectName}\nTópico: ${topicTitle}\nContexto adicional: ${contextText}\n\nInstrução: Retorne um resumo completo e bem estruturado em Markdown com seções, destaques em negrito, tabelas e dicas práticas.`
+        `${basePrompt}\n\nDisciplina: ${subjectName}\nTópico: ${topicTitle}\nContexto adicional: ${contextText}\n\nInstrução: Retorne um resumo completo e bem estruturado em Markdown com seções, destaques em negrito, tabelas e dicas práticas.`
       )).pipe(
         map(text => ({
           success: true,
@@ -79,12 +80,13 @@ export class AiGeneratorService {
     );
   }
 
-  generateFlashcards(topicTitle: string, summaryText: string = '', count: number = 4): Observable<AiResponse<GeneratedFlashcard[]>> {
+  generateFlashcards(topicTitle: string, summaryText: string = '', count: number = 4, customPrompt: string = ''): Observable<AiResponse<GeneratedFlashcard[]>> {
     const config = this.aiKeyStorage.config();
     const prompts = this.aiKeyStorage.prompts();
+    const basePrompt = customPrompt.trim() ? customPrompt : prompts.flashcardsPrompt;
 
     if (config.apiKey && config.apiKey.trim().length > 5) {
-      const prompt = `${prompts.flashcardsPrompt}\n\nTópico: ${topicTitle}\nConteúdo de referência:\n${summaryText.slice(0, 1500)}\n\nInstrução: Gere exatamente ${count} flashcards no formato JSON rigoroso: [{"frontText": "pergunta", "backText": "resposta", "difficultyLevel": "Fácil|Médio|Difícil"}]. Responda APENAS o JSON puro sem formatação markdown.`;
+      const prompt = `${basePrompt}\n\nTópico: ${topicTitle}\nConteúdo de referência:\n${summaryText.slice(0, 1500)}\n\nInstrução: Gere exatamente ${count} flashcards no formato JSON rigoroso: [{"frontText": "pergunta", "backText": "resposta", "difficultyLevel": "Fácil|Médio|Difícil"}]. Responda APENAS o JSON puro sem formatação markdown.`;
 
       return from(this.callDirectAi(prompt)).pipe(
         map(text => {
@@ -104,7 +106,8 @@ export class AiGeneratorService {
     return this.http.post<any>(`${this.apiUrl}/generate-flashcards`, {
       topicTitle,
       subjectName: 'Geral',
-      examBoard: 'Geral'
+      examBoard: 'Geral',
+      promptCustom: customPrompt
     }).pipe(
       map(res => ({
         success: true,
@@ -117,12 +120,13 @@ export class AiGeneratorService {
     );
   }
 
-  generateQuestions(topicTitle: string, summaryText: string = '', examBoard: string = 'FGV', count: number = 3): Observable<AiResponse<GeneratedQuestion[]>> {
+  generateQuestions(topicTitle: string, summaryText: string = '', examBoard: string = 'FGV', count: number = 3, customPrompt: string = ''): Observable<AiResponse<GeneratedQuestion[]>> {
     const config = this.aiKeyStorage.config();
     const prompts = this.aiKeyStorage.prompts();
+    const basePrompt = customPrompt.trim() ? customPrompt : prompts.questionsPrompt;
 
     if (config.apiKey && config.apiKey.trim().length > 5) {
-      const prompt = `${prompts.questionsPrompt}\n\nTópico: ${topicTitle}\nBanca: ${examBoard}\nContexto:\n${summaryText.slice(0, 1500)}\n\nInstrução: Crie exatamente ${count} questões de múltipla escolha no formato JSON rigoroso: [{"statement": "Enunciado da questão", "options": ["A) ...", "B) ...", "C) ...", "D) ...", "E) ..."], "correctOptionIndex": 0, "explanation": "Justificativa detalhada", "examBoard": "${examBoard}"}]. Responda APENAS o JSON puro.`;
+      const prompt = `${basePrompt}\n\nTópico: ${topicTitle}\nBanca: ${examBoard}\nContexto:\n${summaryText.slice(0, 1500)}\n\nInstrução: Crie exatamente ${count} questões de múltipla escolha no formato JSON rigoroso: [{"statement": "Enunciado da questão", "options": ["A) ...", "B) ...", "C) ...", "D) ...", "E) ..."], "correctOptionIndex": 0, "explanation": "Justificativa detalhada", "examBoard": "${examBoard}"}]. Responda APENAS o JSON puro.`;
 
       return from(this.callDirectAi(prompt)).pipe(
         map(text => {
@@ -142,7 +146,8 @@ export class AiGeneratorService {
     return this.http.post<any>(`${this.apiUrl}/generate-questions`, {
       topicTitle,
       subjectName: 'Geral',
-      examBoard
+      examBoard,
+      promptCustom: customPrompt
     }).pipe(
       map(res => ({
         success: true,

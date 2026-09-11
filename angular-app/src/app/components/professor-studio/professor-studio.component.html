@@ -156,6 +156,21 @@
             </div>
           </div>
 
+          <!-- Level 1.5: Session / Module -->
+          <div class="level-card level-1-5">
+            <div class="level-badge">Nível 1.5 · Sessão / Módulo de Estudos</div>
+            <div class="form-group">
+              <label>Sessão de Estudos (Módulo do Curso)</label>
+              <select [(ngModel)]="sessionName" class="form-control mb-2">
+                @for (sess of commonSessions; track sess) {
+                  <option [value]="sess">{{ sess }}</option>
+                }
+              </select>
+              <input type="text" [(ngModel)]="sessionName" placeholder="Ou digite o nome da Sessão/Módulo customizado" class="form-control" />
+              <small class="form-help">Exemplo: Conhecimentos Específicos, Conhecimentos Gerais, Ciências Humanas, Ciências Biológicas, etc.</small>
+            </div>
+          </div>
+
           <!-- Level 2: Subject -->
           <div class="level-card level-2">
             <div class="level-badge-row">
@@ -185,9 +200,19 @@
             @if (isSubjectNew() || selectedSubjectId() === 'NEW' || availableSubjects().length === 0) {
               <div class="form-group">
                 <label>Nome da Nova Disciplina</label>
-                <input type="text" [(ngModel)]="subjectName" placeholder="Ex: Engenharia de Software, Banco de Dados" class="form-control" />
+                <input type="text" [(ngModel)]="subjectName" placeholder="Ex: Engenharia de Software, Raciocínio Lógico" class="form-control" />
               </div>
             }
+
+            <div class="form-group">
+              <label>Metadados da Disciplina (Meta)</label>
+              <input type="text" [(ngModel)]="subjectMeta" placeholder="Ex: 25% das específicas · peso 3" class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label>Descrição da Disciplina</label>
+              <textarea [(ngModel)]="subjectDescription" rows="2" placeholder="Resumo do programa e tópicos abrangidos..." class="form-control"></textarea>
+            </div>
           </div>
 
           <!-- Level 3: Topic & Exam Board -->
@@ -233,12 +258,93 @@
                 <option value="Inédita">Inédita / Geral</option>
               </select>
             </div>
+
+            <!-- Topic Detail Fields (Vanilla Static Prototype Schema) -->
+            <div class="topic-details-subcard">
+              <h4>📝 Detalhamento do Tópico (Fixo & Opcionais)</h4>
+              
+              <div class="form-group">
+                <label>Resumo Sintético (Summary)</label>
+                <textarea [(ngModel)]="topicSummary" rows="2" placeholder="Resumo curto para rápida revisão..." class="form-control"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Detalhamento Teórico Aprofundado (Detail)</label>
+                <textarea [(ngModel)]="topicDetailFull" rows="4" placeholder="Exposição teórica completa do tópico..." class="form-control"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Peso / Relevância em Provas</label>
+                <input type="text" [(ngModel)]="topicPeso" placeholder="Ex: Alta (⚖️ ⚖️ ⚖️ ⚖️)" class="form-control" />
+              </div>
+
+              <div class="form-group">
+                <label>Pontos-Chave (1 por linha)</label>
+                <textarea [(ngModel)]="keyPointsText" rows="3" placeholder="Ponto 1&#10;Ponto 2" class="form-control"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label>Dicas de Prova (1 por linha)</label>
+                <textarea [(ngModel)]="tipsText" rows="3" placeholder="Dica 1&#10;Dica 2" class="form-control"></textarea>
+              </div>
+
+              <!-- Examples Section -->
+              <div class="examples-section mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="mb-0">💡 Exemplos Práticos / Questões Exemplo</label>
+                  <button type="button" class="btn-sm-action" (click)="addExample()">+ Adicionar Exemplo</button>
+                </div>
+                @for (ex of examplesList; track $index) {
+                  <div class="example-box-form mb-2">
+                    <input type="text" [(ngModel)]="ex.question" placeholder="Pergunta / Situação" class="form-control mb-1" />
+                    <textarea [(ngModel)]="ex.answer" rows="2" placeholder="Resposta / Explicação" class="form-control mb-1"></textarea>
+                    <input type="text" [(ngModel)]="ex.application" placeholder="Aplicação prática (opcional)" class="form-control mb-1" />
+                    <button type="button" class="btn-remove-sm" (click)="removeExample($index)">Remover Exemplo</button>
+                  </div>
+                }
+              </div>
+
+              <!-- Useful Links Section (Optional) -->
+              <div class="links-section mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="mb-0">🔗 Links Úteis (Opcional)</label>
+                  <button type="button" class="btn-sm-action" (click)="addUsefulLink()">+ Adicionar Link</button>
+                </div>
+                @for (link of usefulLinksList; track $index) {
+                  <div class="link-box-form mb-2">
+                    <input type="text" [(ngModel)]="link.label" placeholder="Título do Link (ex: Documentação Spring)" class="form-control mb-1" />
+                    <input type="url" [(ngModel)]="link.url" placeholder="URL (https://...)" class="form-control mb-1" />
+                    <select [(ngModel)]="link.type" class="form-control mb-1">
+                      <option value="estudo">Material de Estudo</option>
+                      <option value="documentacao">Documentação Oficial</option>
+                      <option value="video">Vídeo / Aula (YouTube)</option>
+                    </select>
+                    <button type="button" class="btn-remove-sm" (click)="removeUsefulLink($index)">Remover Link</button>
+                  </div>
+                }
+              </div>
+            </div>
           </div>
 
-          <!-- Level 4: AI Generation Actions -->
+          <!-- Level 4: AI Generation Actions & Custom Section Prompts -->
           <div class="level-card level-4">
-            <div class="level-badge">Nível 4 · Geração e Publicação de Conteúdos</div>
+            <div class="level-badge">Nível 4 · Geração por IA com Prompts Customizados</div>
             
+            <div class="custom-prompt-box mb-2">
+              <label>Prompt Personalizado para o Resumo / Detalhe (opcional)</label>
+              <input type="text" [(ngModel)]="summaryPromptCustom" placeholder="Ex: Dê foco em Clean Architecture e exemplos em Java 21..." class="form-control" />
+            </div>
+
+            <div class="custom-prompt-box mb-2">
+              <label>Prompt Personalizado para Flashcards (opcional)</label>
+              <input type="text" [(ngModel)]="flashcardsPromptCustom" placeholder="Ex: Crie flashcards focados em pegadinhas conceituais..." class="form-control" />
+            </div>
+
+            <div class="custom-prompt-box mb-3">
+              <label>Prompt Personalizado para Questões (opcional)</label>
+              <input type="text" [(ngModel)]="questionsPromptCustom" placeholder="Ex: Questões de casos práticos estilo FGV 2026..." class="form-control" />
+            </div>
+
             <div class="ai-buttons-group">
               <button 
                 type="button" 
@@ -246,9 +352,9 @@
                 (click)="onGenerateAllWithAi()" 
                 [disabled]="isGeneratingAll">
                 @if (isGeneratingAll) {
-                  <span class="spinner"></span> Gerando Tudo com IA...
+                  <span class="spinner"></span> Gerando Conteúdos com IA...
                 } @else {
-                  ✨ Gerar Tudo com IA (Resumo + Flashcards + Questões)
+                  ✨ Gerar Conteúdos com IA (Resumo + Flashcards + Questões)
                 }
               </button>
 

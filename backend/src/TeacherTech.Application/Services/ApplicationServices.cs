@@ -177,6 +177,7 @@ public class AuthApplicationService : IAuthApplicationService
 public class CourseApplicationService : ICourseApplicationService
 {
     private readonly ICourseRepository _courseRepo;
+    private readonly ICourseModuleRepository _moduleRepo;
     private readonly ISubjectRepository _subjectRepo;
     private readonly ITopicRepository _topicRepo;
     private readonly IProfessorProfileRepository _professorRepo;
@@ -184,12 +185,14 @@ public class CourseApplicationService : ICourseApplicationService
 
     public CourseApplicationService(
         ICourseRepository courseRepo,
+        ICourseModuleRepository moduleRepo,
         ISubjectRepository subjectRepo,
         ITopicRepository topicRepo,
         IProfessorProfileRepository professorRepo,
         IUnitOfWork unitOfWork)
     {
         _courseRepo = courseRepo;
+        _moduleRepo = moduleRepo;
         _subjectRepo = subjectRepo;
         _topicRepo = topicRepo;
         _professorRepo = professorRepo;
@@ -297,6 +300,25 @@ public class CourseApplicationService : ICourseApplicationService
             await _unitOfWork.CommitAsync();
         }
 
+        // 1.1 Find or create CourseModule if SessionName is provided
+        CourseModule? module = null;
+        if (!string.IsNullOrWhiteSpace(dto.SessionName))
+        {
+            module = await _moduleRepo.FindByCourseAndNameAsync(course.Id, dto.SessionName);
+            if (module == null)
+            {
+                var moduleCount = await _moduleRepo.CountByCourseIdAsync(course.Id);
+                module = new CourseModule
+                {
+                    CourseId = course.Id,
+                    Name = dto.SessionName,
+                    OrderIndex = moduleCount + 1
+                };
+                await _moduleRepo.AddAsync(module);
+                await _unitOfWork.CommitAsync();
+            }
+        }
+
         // 2. Find or create Subject
         var subject = await _subjectRepo.FindByCourseAndNameAsync(course.Id, dto.SubjectName);
         if (subject == null)
@@ -305,11 +327,21 @@ public class CourseApplicationService : ICourseApplicationService
             subject = new Subject
             {
                 CourseId = course.Id,
+                ModuleId = module?.Id ?? dto.SessionId,
                 Name = string.IsNullOrWhiteSpace(dto.SubjectName) ? "Disciplina Geral" : dto.SubjectName,
-                Description = "Disciplina cadastrada pelo professor mentor.",
+                Meta = dto.SubjectMeta,
+                Description = string.IsNullOrWhiteSpace(dto.SubjectDescription) ? "Disciplina cadastrada pelo professor mentor." : dto.SubjectDescription,
                 OrderIndex = subjectCount + 1
             };
             await _subjectRepo.AddAsync(subject);
+            await _unitOfWork.CommitAsync();
+        }
+        else
+        {
+            if (module != null) subject.ModuleId = module.Id;
+            if (!string.IsNullOrWhiteSpace(dto.SubjectMeta)) subject.Meta = dto.SubjectMeta;
+            if (!string.IsNullOrWhiteSpace(dto.SubjectDescription)) subject.Description = dto.SubjectDescription;
+            _subjectRepo.Update(subject);
             await _unitOfWork.CommitAsync();
         }
 
@@ -335,6 +367,32 @@ public class CourseApplicationService : ICourseApplicationService
             _topicRepo.Update(topic);
         }
         await _unitOfWork.CommitAsync();
+
+        // 3.1 Persist TopicContent if present
+        if (dto.TopicDetail != null)
+        {
+            var examplesJson = dto.TopicDetail.Examples != null ? JsonSerializer.Serialize(dto.TopicDetail.Examples) : "[]";
+            var keyPointsJson = dto.TopicDetail.KeyPoints != null ? JsonSerializer.Serialize(dto.TopicDetail.KeyPoints) : "[]";
+            var tipsJson = dto.TopicDetail.Tips != null ? JsonSerializer.Serialize(dto.TopicDetail.Tips) : "[]";
+            var linksJson = dto.TopicDetail.UsefulLinks != null ? JsonSerializer.Serialize(dto.TopicDetail.UsefulLinks) : "[]";
+
+            var content = new TopicContent
+            {
+                TopicId = topic.Id,
+                Title = string.IsNullOrWhiteSpace(dto.TopicDetail.Title) ? topic.Title : dto.TopicDetail.Title,
+                Summary = dto.TopicDetail.Summary ?? string.Empty,
+                Detail = dto.TopicDetail.Detail ?? string.Empty,
+                Peso = dto.TopicDetail.Peso ?? string.Empty,
+                ContentMarkdown = dto.ContentMarkdown,
+                ExamplesJson = examplesJson,
+                KeyPointsJson = keyPointsJson,
+                TipsJson = tipsJson,
+                UsefulLinksJson = linksJson,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _topicRepo.AddOrUpdateTopicContentAsync(content);
+            await _unitOfWork.CommitAsync();
+        }
 
         // 4. Persist Flashcards
         int flashcardsSavedCount = 0;
@@ -845,158 +903,36 @@ public class AccessRequestApplicationService : IAccessRequestApplicationService
 
 public class PaymentApplicationService : IPaymentApplicationService
 {
-    private readonly ITransactionRepository _transactionRepo;
     private readonly ICourseRepository _courseRepo;
     private readonly IEnrollmentRepository _enrollmentRepo;
     private readonly IProfessorProfileRepository _professorProfileRepo;
-    private readonly IPaymentDomainService _paymentDomainService;
     private readonly IUnitOfWork _unitOfWork;
 
     public PaymentApplicationService(
-        ITransactionRepository transactionRepo,
         ICourseRepository courseRepo,
         IEnrollmentRepository enrollmentRepo,
         IProfessorProfileRepository professorProfileRepo,
-        IPaymentDomainService paymentDomainService,
         IUnitOfWork unitOfWork)
     {
-        _transactionRepo = transactionRepo;
         _courseRepo = courseRepo;
         _enrollmentRepo = enrollmentRepo;
         _professorProfileRepo = professorProfileRepo;
-        _paymentDomainService = paymentDomainService;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<ServiceResult<CheckoutResponseDto>> CreateCheckoutAsync(string userId, CreateCheckoutDto dto)
     {
-        if (string.IsNullOrEmpty(userId)) return ServiceResult<CheckoutResponseDto>.Fail("Não autorizado.", 401);
-
-        var course = await _courseRepo.GetByIdAsync(dto.CourseId);
-        if (course == null) return ServiceResult<CheckoutResponseDto>.Fail("Curso não encontrado.", 404);
-
-        var (amount, platformFee, professorRevenue) = _paymentDomainService.CalculateSplit(course.Price);
-
-        var transaction = new Transaction
-        {
-            UserId = userId,
-            CourseId = course.Id,
-            Amount = amount,
-            PlatformFee = platformFee,
-            ProfessorRevenue = professorRevenue,
-            PaymentGateway = "ASAAS",
-            GatewayTransactionId = $"TX-{Guid.NewGuid().ToString()[..8].ToUpper()}",
-            Status = "PENDING",
-            CreatedAt = DateTime.UtcNow
-        };
-
-        await _transactionRepo.AddAsync(transaction);
-        await _unitOfWork.CommitAsync();
-
-        var pixPayload = _paymentDomainService.GeneratePixPayload(transaction.Id, transaction.Amount);
-        var result = new CheckoutResponseDto
-        {
-            TransactionId = transaction.Id,
-            CourseTitle = course.Title,
-            Amount = transaction.Amount,
-            PlatformFee = transaction.PlatformFee,
-            ProfessorRevenue = transaction.ProfessorRevenue,
-            PaymentMethod = "PIX",
-            PixQrCodeCode = pixPayload,
-            PixQrCodeImageUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={Uri.EscapeDataString(pixPayload)}",
-            Status = "PENDING",
-            ExpiresAt = DateTime.UtcNow.AddMinutes(30)
-        };
-
-        return ServiceResult<CheckoutResponseDto>.Ok(result);
+        return await Task.FromResult(ServiceResult<CheckoutResponseDto>.Fail("O checkout individual de cursos foi descontinuado no modelo SaaS B2B. Alunos acessam via convite do professor.", 400));
     }
 
     public async Task<ServiceResult<string>> ProcessWebhookAsync(PaymentWebhookDto dto)
     {
-        if (!Guid.TryParse(dto.TransactionId, out var transactionId))
-            return ServiceResult<string>.Fail("ID de transação inválido.");
-
-        var transaction = await _transactionRepo.GetByIdWithCourseAsync(transactionId);
-        if (transaction == null) return ServiceResult<string>.Fail("Transação não encontrada.", 404);
-
-        if (dto.Status.ToUpper() == "PAID" || dto.Status.ToUpper() == "CONFIRMED")
-        {
-            transaction.Status = TransactionStatus.Paid;
-            transaction.UpdatedAt = DateTime.UtcNow;
-            _transactionRepo.Update(transaction);
-
-            if (transaction.CourseId.HasValue)
-            {
-                var existingEnrollment = await _enrollmentRepo.GetByStudentAndCourseAsync(transaction.UserId, transaction.CourseId.Value);
-                if (existingEnrollment == null)
-                {
-                    var enrollment = new Enrollment
-                    {
-                        StudentId = transaction.UserId,
-                        CourseId = transaction.CourseId.Value,
-                        GrantedBy = transaction.Course!.ProfessorId,
-                        GrantedVia = "PURCHASE",
-                        Status = EnrollmentStatus.Active,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    await _enrollmentRepo.AddAsync(enrollment);
-                    await _unitOfWork.CommitAsync();
-                    transaction.EnrollmentId = enrollment.Id;
-                }
-                else
-                {
-                    existingEnrollment.Status = EnrollmentStatus.Active;
-                    existingEnrollment.UpdatedAt = DateTime.UtcNow;
-                    _enrollmentRepo.Update(existingEnrollment);
-                    transaction.EnrollmentId = existingEnrollment.Id;
-                }
-            }
-
-            await _unitOfWork.CommitAsync();
-            return ServiceResult<string>.Ok("Pagamento confirmado e acesso liberado ao aluno!");
-        }
-
-        return ServiceResult<string>.Ok("Evento processado.");
+        return await Task.FromResult(ServiceResult<string>.Ok("Webhook Asaas registrado com sucesso."));
     }
 
     public async Task<ServiceResult<string>> ConfirmSimulatedPaymentAsync(Guid transactionId)
     {
-        var transaction = await _transactionRepo.GetByIdWithCourseAsync(transactionId);
-        if (transaction == null) return ServiceResult<string>.Fail("Transação não encontrada.", 404);
-
-        transaction.Status = TransactionStatus.Paid;
-        transaction.UpdatedAt = DateTime.UtcNow;
-        _transactionRepo.Update(transaction);
-
-        if (transaction.CourseId.HasValue)
-        {
-            var existingEnrollment = await _enrollmentRepo.GetByStudentAndCourseAsync(transaction.UserId, transaction.CourseId.Value);
-            if (existingEnrollment == null)
-            {
-                var enrollment = new Enrollment
-                {
-                    StudentId = transaction.UserId,
-                    CourseId = transaction.CourseId.Value,
-                    GrantedBy = transaction.Course!.ProfessorId,
-                    GrantedVia = "PURCHASE",
-                    Status = EnrollmentStatus.Active,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await _enrollmentRepo.AddAsync(enrollment);
-                await _unitOfWork.CommitAsync();
-                transaction.EnrollmentId = enrollment.Id;
-            }
-            else
-            {
-                existingEnrollment.Status = EnrollmentStatus.Active;
-                existingEnrollment.UpdatedAt = DateTime.UtcNow;
-                _enrollmentRepo.Update(existingEnrollment);
-                transaction.EnrollmentId = existingEnrollment.Id;
-            }
-        }
-
-        await _unitOfWork.CommitAsync();
-        return ServiceResult<string>.Ok("✨ Pagamento via PIX confirmado instantaneamente! Acesso liberado ao curso.");
+        return await Task.FromResult(ServiceResult<string>.Ok("Simulação concluída."));
     }
 
     public async Task<ServiceResult<ProfessorBalanceDto>> GetProfessorBalanceAsync(string professorId)
@@ -1004,30 +940,15 @@ public class PaymentApplicationService : IPaymentApplicationService
         if (string.IsNullOrEmpty(professorId)) return ServiceResult<ProfessorBalanceDto>.Fail("Não autorizado.", 401);
 
         var profProfile = await _professorProfileRepo.GetByUserIdAsync(professorId);
-        var sales = await _transactionRepo.GetPaidTransactionsByProfessorIdAsync(professorId);
-
-        var totalRevenue = sales.Sum(s => s.ProfessorRevenue);
-        var salesCount = sales.Count;
-
-        var history = sales.Select(s => new TransactionHistoryDto
-        {
-            Id = s.Id,
-            CourseTitle = s.Course?.Title ?? string.Empty,
-            BuyerName = s.User.FullName,
-            Amount = s.Amount,
-            ProfessorRevenue = s.ProfessorRevenue,
-            Status = s.Status,
-            Date = s.CreatedAt
-        }).ToList();
 
         var result = new ProfessorBalanceDto
         {
-            TotalRevenue = totalRevenue,
-            AvailableBalance = totalRevenue,
+            TotalRevenue = 0m,
+            AvailableBalance = 0m,
             PendingBalance = 0.00m,
-            SalesCount = salesCount,
+            SalesCount = 0,
             PixKey = profProfile?.PixKey,
-            Transactions = history
+            Transactions = new List<TransactionHistoryDto>()
         };
 
         return ServiceResult<ProfessorBalanceDto>.Ok(result);

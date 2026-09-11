@@ -1,15 +1,15 @@
 <div class="management-container">
   <header class="management-header">
     <div class="header-intro">
-      <h1>👥 Gestão de Alunos & Acessos</h1>
-      <p>Gerencie permissões, envie convites direcionados e compartilhe links de acesso aos seus planos de estudo.</p>
+      <h1>👥 Gestão de Alunos & Convites SaaS</h1>
+      <p>Distribua acessos sem atrito através de links exclusivos, disparos automáticos via WhatsApp e QR Codes para seus alunos.</p>
     </div>
 
     <!-- Course Selector Banner -->
     <div class="course-selector-bar">
       <div class="selector-label">
         <span class="icon">📚</span>
-        <span>Estudo Selecionado:</span>
+        <span>Plano de Estudo:</span>
       </div>
       <select 
         [ngModel]="selectedCourseId()" 
@@ -17,36 +17,10 @@
         class="form-control course-dropdown">
         @for (course of coursesService.myCourses(); track course.id) {
           <option [value]="course.id">
-            {{ course.title }} ({{ course.subjectsCount || 1 }} disciplinas · {{ course.enrollmentsCount || 0 }} alunos)
+            {{ course.title }} ({{ course.enrollmentsCount || enrolledStudents().length }} alunos matriculados)
           </option>
         }
       </select>
-    </div>
-
-    <div class="tabs-bar">
-      <button 
-        type="button" 
-        class="tab-btn" 
-        [class.active]="activeTab() === 'invite'" 
-        (click)="switchTab('invite')">
-        ✉️ Convidar & Compartilhar
-      </button>
-      
-      <button 
-        type="button" 
-        class="tab-btn" 
-        [class.active]="activeTab() === 'requests'" 
-        (click)="switchTab('requests')">
-        🙋 Solicitantes Pendentes ({{ pendingRequests().length }})
-      </button>
-
-      <button 
-        type="button" 
-        class="tab-btn" 
-        [class.active]="activeTab() === 'enrolled'" 
-        (click)="switchTab('enrolled')">
-        🎓 Alunos Matriculados ({{ enrolledStudents().length }})
-      </button>
     </div>
   </header>
 
@@ -56,187 +30,181 @@
     </div>
   }
 
-  <!-- TAB 1: INVITE BY EMAIL & SHARE LINK -->
-  @if (activeTab() === 'invite') {
-    <div class="invite-grid-layout">
-      <!-- Left Column: Form & Actions -->
-      <div class="card-section">
-        <div class="card-header">
-          <h3>✉️ Liberar Acesso ao Estudo</h3>
-          <p>Conceda acesso direto para um aluno ou gere um link personalizado para envio imediato.</p>
-        </div>
-
-        <form (ngSubmit)="onSendInvite()" class="form-grid">
-          <div class="form-group">
-            <label for="studentEmail">E-mail do Aluno *</label>
-            <input 
-              type="email" 
-              id="studentEmail" 
-              name="studentEmail" 
-              [(ngModel)]="studentEmail" 
-              placeholder="ex: aluno@concurseiro.com" 
-              required />
-          </div>
-
-          <div class="form-group">
-            <label for="welcomeMessage">Mensagem Personalizada de Boas-Vindas (Opcional)</label>
-            <textarea 
-              id="welcomeMessage" 
-              name="welcomeMessage" 
-              [(ngModel)]="welcomeMessage" 
-              rows="3" 
-              placeholder="Ex: Olá! Liberando seu acesso exclusivo à nossa Trilha de Estudos para o Dataprev 2026. Bons estudos!"></textarea>
-          </div>
-
-          <div class="invite-actions-row">
-            <button type="submit" class="btn-primary" [disabled]="isLoading">
-              @if (isLoading) {
-                <span class="spinner"></span> Enviando Acesso...
-              } @else {
-                🚀 Liberar Acesso & Enviar E-mail
-              }
-            </button>
-
-            <button 
-              type="button" 
-              class="btn-copy-link" 
-              (click)="copyShareableLink()">
-              {{ isCopied() ? '✓ Link Copiado!' : '🔗 Copiar Link Direto (WhatsApp/Mensagem)' }}
-            </button>
-          </div>
-        </form>
+  <!-- ACTION CARDS: COPIAR LINK / ENVIAR WHATSAPP / GERAR QR -->
+  <section class="invite-hub-grid">
+    <!-- Card 1: Copiar Link -->
+    <div class="hub-card link-card">
+      <div class="card-icon">🔗</div>
+      <div class="card-content">
+        <h3>Link Rápido</h3>
+        <p>Gere um link direto com token de 8 caracteres (válido por 7 dias, até 10 utilizações).</p>
       </div>
+      <button 
+        type="button" 
+        class="btn-action btn-link" 
+        [disabled]="isCopyingLink"
+        (click)="onCopyLink()">
+        @if (isCopyingLink) {
+          <span class="spinner"></span> Gerando...
+        } @else {
+          📋 Copiar Link de Convite
+        }
+      </button>
+    </div>
 
-      <!-- Right Column: Interactive Live Preview Card -->
-      <div class="preview-invite-card">
-        <div class="preview-tag">👁️ Prévia do Convite do Aluno</div>
-        <div class="invite-preview-box">
-          <div class="preview-header">
-            <span class="badge-cat">{{ getSelectedCourse()?.category || 'TI & Concursos' }}</span>
-            <span class="badge-status">Acesso VIP Liberado</span>
-          </div>
-          <h4 class="preview-title">{{ getSelectedCourse()?.title || 'Selecione um Estudo' }}</h4>
-          <p class="preview-desc">{{ getSelectedCourse()?.description || 'Descrição detalhada do plano estratégico de estudos...' }}</p>
-          
-          <div class="preview-dest">
-            <small>Destinatário:</small>
-            <strong>{{ studentEmail || 'aluno@exemplo.com' }}</strong>
-          </div>
-
-          @if (welcomeMessage) {
-            <div class="preview-msg">
-              <small>Mensagem do Professor:</small>
-              <p>"{{ welcomeMessage }}"</p>
-            </div>
-          }
-
-          <div class="preview-btn-mock">
-            <span>Acessar Estudo →</span>
-          </div>
-          <small class="preview-footer">O aluno entrará diretamente na tela do estudo após fazer login ou criar sua conta.</small>
+    <!-- Card 2: Enviar WhatsApp -->
+    <div class="hub-card whatsapp-card">
+      <div class="card-icon">📱</div>
+      <div class="card-content">
+        <h3>WhatsApp Cloud API</h3>
+        <p>Dispare o convite personalizado diretamente no celular do concurseiro.</p>
+        <div class="phone-input-group">
+          <input 
+            type="tel" 
+            [(ngModel)]="targetPhone" 
+            placeholder="DDD + Número (ex: 11987654321)" 
+            class="phone-input" />
         </div>
+      </div>
+      <button 
+        type="button" 
+        class="btn-action btn-whatsapp" 
+        [disabled]="isSendingWhatsApp"
+        (click)="onSendWhatsApp()">
+        @if (isSendingWhatsApp) {
+          <span class="spinner"></span> Enviando...
+        } @else {
+          🚀 Enviar no WhatsApp
+        }
+      </button>
+    </div>
+
+    <!-- Card 3: Gerar QR Code -->
+    <div class="hub-card qrcode-card">
+      <div class="card-icon">📷</div>
+      <div class="card-content">
+        <h3>QR Code Instantâneo</h3>
+        <p>Ideal para projetar em aulas ao vivo, materiais em PDF ou slides de apresentação.</p>
+      </div>
+      <button 
+        type="button" 
+        class="btn-action btn-qr" 
+        [disabled]="isGeneratingQr"
+        (click)="onGenerateQr()">
+        @if (isGeneratingQr) {
+          <span class="spinner"></span> Criando QR...
+        } @else {
+          ⚡ Visualizar QR Code
+        }
+      </button>
+    </div>
+  </section>
+
+  <!-- ÚLTIMO CONVITE GERADO -->
+  @if (lastInviteGenerated()) {
+    <div class="recent-invite-box">
+      <div class="badge-status">Convite Ativo</div>
+      <div class="invite-info-row">
+        <span class="info-item"><strong>Token:</strong> <code>{{ lastInviteGenerated()?.token }}</code></span>
+        <span class="info-item"><strong>Validade:</strong> 7 dias</span>
+        <span class="info-item"><strong>Usos Restantes:</strong> {{ (lastInviteGenerated()?.maxUses || 10) - (lastInviteGenerated()?.usedCount || 0) }}</span>
+      </div>
+      <div class="invite-url-display">
+        <input type="text" [value]="lastInviteGenerated()?.inviteUrl" readonly class="url-input" />
+        <button type="button" class="btn-copy-small" (click)="onCopyLink()">Copiar Novamente</button>
       </div>
     </div>
   }
 
-  <!-- TAB 2: PENDING REQUESTS -->
-  @if (activeTab() === 'requests') {
-    <div class="card-section">
-      <div class="card-header">
-        <h3>🙋 Solicitações de Acesso Pendentes</h3>
-        <p>Alunos que solicitaram a liberação do estudo através da sua vitrine pública.</p>
+  <!-- TABELA DE ALUNOS MATRICULADOS -->
+  <section class="students-section">
+    <div class="section-header">
+      <div>
+        <h2>🎓 Alunos Matriculados ({{ enrolledStudents().length }})</h2>
+        <p>Estudantes que resgataram convites ou ingressaram na sua trilha.</p>
       </div>
-
-      @if (pendingRequests().length > 0) {
-        <div class="requests-list">
-          @for (req of pendingRequests(); track req.id) {
-            <div class="request-card">
-              <div class="user-avatar">🎓</div>
-              <div class="request-details">
-                <strong>{{ req.studentName }}</strong>
-                <small>{{ req.studentEmail }} · Solicitação em {{ req.requestedAt | date:'dd/MM/yyyy HH:mm' }}</small>
-                <p class="req-msg">"{{ req.message }}"</p>
-                <span class="course-tag">📚 Curso: {{ req.courseTitle }}</span>
-              </div>
-              <div class="request-actions">
-                <button type="button" class="btn-approve" (click)="onApprove(req)">✓ Aprovar Acesso</button>
-                <button type="button" class="btn-reject" (click)="onReject(req)">✕ Rejeitar</button>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="empty-state">
-          <div class="icon">✅</div>
-          <h4>Nenhuma solicitação pendente</h4>
-          <p>Todas as solicitações de alunos já foram analisadas.</p>
-        </div>
-      }
-    </div>
-  }
-
-  <!-- TAB 3: ENROLLED STUDENTS LIST -->
-  @if (activeTab() === 'enrolled') {
-    <div class="card-section">
-      <div class="card-header-with-action">
-        <div>
-          <h3>🎓 Alunos Matriculados: {{ getSelectedCourse()?.title || 'Estudo' }}</h3>
-          <p>Relação de alunos com acesso liberado a este estudo.</p>
-        </div>
-
-        <button 
-          type="button" 
-          class="btn-export-csv" 
-          (click)="exportToCsv()" 
-          [disabled]="enrolledStudents().length === 0">
-          📥 Exportar Alunos (CSV)
-        </button>
-      </div>
-
       @if (enrolledStudents().length > 0) {
-        <div class="table-container">
-          <table class="students-table">
-            <thead>
-              <tr>
-                <th>Aluno</th>
-                <th>Origem da Concessão</th>
-                <th>Data de Início</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (st of enrolledStudents(); track st.id) {
-                <tr>
-                  <td>
-                    <div class="student-info">
-                      <strong>{{ st.studentName }}</strong>
-                      <small>{{ st.studentEmail }}</small>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="origin-badge">{{ st.grantedVia === 'EMAIL_INVITE' ? '✉️ Convite por E-mail' : '🌐 Aprovado na Vitrine' }}</span>
-                  </td>
-                  <td>{{ st.createdAt | date:'dd/MM/yyyy' }}</td>
-                  <td>
-                    <span class="status-pill active">Ativo</span>
-                  </td>
-                  <td>
-                    <button type="button" class="btn-revoke" (click)="onRevoke(st)">Revogar Acesso</button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <div class="empty-state">
-          <div class="icon">📫</div>
-          <h4>Nenhum aluno matriculado neste estudo ainda</h4>
-          <p>Use a aba "Convidar & Compartilhar" para liberar o acesso aos seus alunos.</p>
-        </div>
+        <button type="button" class="btn-export" (click)="exportToCsv()">
+          📥 Exportar CSV
+        </button>
       }
+    </div>
+
+    @if (enrolledStudents().length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>Nenhum aluno matriculado ainda</h3>
+        <p>Compartilhe o link do seu estudo ou envie convites pelo WhatsApp acima para começar a preencher sua turma!</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="students-table">
+          <thead>
+            <tr>
+              <th>Aluno</th>
+              <th>E-mail</th>
+              <th>Origem</th>
+              <th>Data de Entrada</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of enrolledStudents(); track student.id) {
+              <tr>
+                <td class="student-name">
+                  <span class="avatar-placeholder">👤</span>
+                  {{ student.studentName || 'Estudante' }}
+                </td>
+                <td>{{ student.studentEmail || 'Via Convite' }}</td>
+                <td>
+                  <span class="channel-badge" [class.badge-whatsapp]="student.grantedVia.includes('WHATSAPP')" [class.badge-qr]="student.grantedVia.includes('QR')">
+                    {{ student.grantedVia || 'INVITE_LINK' }}
+                  </span>
+                </td>
+                <td>{{ student.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <span class="status-badge active">Ativo</span>
+                </td>
+                <td>
+                  <button type="button" class="btn-revoke" (click)="onRevoke(student)" title="Revogar acesso deste aluno">
+                    🚫 Revogar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <!-- MODAL DO QR CODE -->
+  @if (showQrModal() && lastInviteGenerated()) {
+    <div class="modal-backdrop" (click)="closeQrModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h3>📷 QR Code de Acesso</h3>
+          <button type="button" class="btn-close" (click)="closeQrModal()">✖</button>
+        </header>
+        <div class="modal-body">
+          <p>Aponte a câmera do celular para entrar imediatamente no plano de estudo.</p>
+          <div class="qr-image-wrapper">
+            <img [src]="lastInviteGenerated()?.qrCodeBase64" alt="QR Code de Convite" class="qr-img" />
+          </div>
+          <div class="token-caption">
+            Token: <strong>{{ lastInviteGenerated()?.token }}</strong> ({{ lastInviteGenerated()?.courseTitle }})
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <a [href]="lastInviteGenerated()?.qrCodeBase64" [download]="'qrcode_' + lastInviteGenerated()?.token + '.png'" class="btn-primary">
+            💾 Baixar Imagem do QR
+          </a>
+          <button type="button" class="btn-secondary" (click)="closeQrModal()">
+            Fechar
+          </button>
+        </footer>
+      </div>
     </div>
   }
 </div>
-

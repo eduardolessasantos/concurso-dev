@@ -46,10 +46,24 @@ export class ProfessorStudioComponent implements OnInit {
   public coursePrice: number = 0;
   public isPublic = true;
 
+  // Hierarchy Level 1.5: Session/Module
+  public sessionName: string = 'Conhecimentos Específicos';
+  public commonSessions: string[] = [
+    'Conhecimentos Específicos',
+    'Conhecimentos Gerais',
+    'Ciências Humanas',
+    'Ciências Biológicas',
+    'Ciências Exatas',
+    'Linguagens e Códigos',
+    'Matemática'
+  ];
+
   // Hierarchy Level 2: Subject
   public selectedSubjectId = signal<string>('NEW');
   public isSubjectNew = signal<boolean>(true);
   public subjectName = 'Engenharia de Software';
+  public subjectMeta = '25% das específicas · peso 3';
+  public subjectDescription = 'Foco em desenvolvimento, ciclo de vida, arquitetura e boas práticas.';
 
   // Hierarchy Level 3: Topic & Exam Board
   public selectedTopicId = signal<string>('NEW');
@@ -57,7 +71,21 @@ export class ProfessorStudioComponent implements OnInit {
   public topicTitle = 'Arquitetura de Microsserviços e APIs REST';
   public examBoard = 'Cebraspe';
 
-  // Hierarchy Level 4: Generated Content State
+  // Hierarchy Level 4: Topic Details (Unificado a partir da página estática Vanilla)
+  public topicSummary = '';
+  public topicDetailFull = '';
+  public topicPeso = 'Alta (⚖️ ⚖️ ⚖️ ⚖️)';
+  public keyPointsText = '';
+  public tipsText = '';
+  public examplesList: { question: string; answer: string; application: string }[] = [];
+  public usefulLinksList: { label: string; url: string; type: 'documentacao' | 'video' | 'estudo'; youtubeId?: string }[] = [];
+
+  // Custom AI Prompt Overrides per section
+  public summaryPromptCustom = '';
+  public flashcardsPromptCustom = '';
+  public questionsPromptCustom = '';
+
+  // Hierarchy Level 5: Generated Content State
   public generatedSummary = signal<string>('');
   public generatedFlashcards = signal<GeneratedFlashcard[]>([]);
   public generatedQuestions = signal<GeneratedQuestion[]>([]);
@@ -145,6 +173,8 @@ export class ProfessorStudioComponent implements OnInit {
     if (subjectId === 'NEW') {
       this.isSubjectNew.set(true);
       this.subjectName = '';
+      this.subjectMeta = '';
+      this.subjectDescription = '';
       this.availableTopics.set([]);
       this.onSelectTopic('NEW');
     } else {
@@ -152,6 +182,9 @@ export class ProfessorStudioComponent implements OnInit {
       const subject = this.availableSubjects().find(s => s.id === subjectId);
       if (subject) {
         this.subjectName = subject.name;
+        this.sessionName = subject.sessionName || 'Conhecimentos Específicos';
+        this.subjectMeta = subject.meta || '';
+        this.subjectDescription = subject.description || '';
         const topics = subject.topics || [];
         this.availableTopics.set(topics);
 
@@ -178,6 +211,13 @@ export class ProfessorStudioComponent implements OnInit {
       this.isTopicNew.set(true);
       this.topicTitle = '';
       this.examBoard = 'Cebraspe';
+      this.topicSummary = '';
+      this.topicDetailFull = '';
+      this.topicPeso = 'Alta (⚖️ ⚖️ ⚖️ ⚖️)';
+      this.keyPointsText = '';
+      this.tipsText = '';
+      this.examplesList = [];
+      this.usefulLinksList = [];
       this.generatedSummary.set('');
       this.generatedFlashcards.set([]);
       this.generatedQuestions.set([]);
@@ -188,6 +228,20 @@ export class ProfessorStudioComponent implements OnInit {
         this.topicTitle = topic.title;
         this.examBoard = topic.examBoard || 'Cebraspe';
         this.generatedSummary.set(topic.contentMarkdown || '');
+
+        if (topic.topicDetail) {
+          this.topicSummary = topic.topicDetail.summary || '';
+          this.topicDetailFull = topic.topicDetail.detail || '';
+          this.topicPeso = topic.topicDetail.peso || 'Alta (⚖️ ⚖️ ⚖️ ⚖️)';
+          this.keyPointsText = (topic.topicDetail.keyPoints || []).join('\n');
+          this.tipsText = (topic.topicDetail.tips || []).join('\n');
+          this.examplesList = topic.topicDetail.examples
+            ? topic.topicDetail.examples.map(e => ({ question: e.question, answer: e.answer, application: e.application || '' }))
+            : [];
+          this.usefulLinksList = topic.topicDetail.usefulLinks
+            ? topic.topicDetail.usefulLinks.map(l => ({ label: l.label, url: l.url, type: l.type as any, youtubeId: l.youtubeId }))
+            : [];
+        }
 
         // Load existing flashcards
         if (topic.flashcards && topic.flashcards.length > 0) {
@@ -245,6 +299,33 @@ export class ProfessorStudioComponent implements OnInit {
     }
   }
 
+  // --- Dynamic Examples and Useful Links Helpers ---
+  public addExample(): void {
+    this.examplesList.push({ question: '', answer: '', application: '' });
+  }
+
+  public removeExample(index: number): void {
+    this.examplesList.splice(index, 1);
+  }
+
+  public addUsefulLink(): void {
+    this.usefulLinksList.push({ label: '', url: '', type: 'estudo' });
+  }
+
+  public removeUsefulLink(index: number): void {
+    this.usefulLinksList.splice(index, 1);
+  }
+
+  // --- AI Key Check Helper ---
+  private validateAiKey(): boolean {
+    if (!this.aiStorage.hasUserKey()) {
+      this.showMessage('🔑 Nenhuma Chave de API da IA configurada. Por favor, adicione sua chave para liberar a geração.', 'info');
+      this.isAiModalOpen.set(true);
+      return false;
+    }
+    return true;
+  }
+
   // --- AI Content Generation ---
   public onGenerateAllWithAi(): void {
     if (!this.topicTitle.trim()) {
@@ -252,22 +333,26 @@ export class ProfessorStudioComponent implements OnInit {
       return;
     }
 
-    this.isGeneratingAll = true;
-    this.showMessage('⚡ Gerando Resumo, Flashcards e Questões com Inteligência Artificial...', 'info');
+    if (!this.validateAiKey()) return;
 
-    this.aiService.generateSummary(this.topicTitle, this.subjectName).subscribe({
+    this.isGeneratingAll = true;
+    this.showMessage('⚡ Gerando Resumo, Detalhes, Flashcards e Questões com IA...', 'info');
+
+    this.aiService.generateSummary(this.topicTitle, this.subjectName, '', this.summaryPromptCustom).subscribe({
       next: (summaryRes) => {
         this.generatedSummary.set(summaryRes.data);
+        if (!this.topicSummary) this.topicSummary = summaryRes.data.slice(0, 300);
+        if (!this.topicDetailFull) this.topicDetailFull = summaryRes.data;
 
-        this.aiService.generateFlashcards(this.topicTitle, summaryRes.data, 4).subscribe({
+        this.aiService.generateFlashcards(this.topicTitle, summaryRes.data, 4, this.flashcardsPromptCustom).subscribe({
           next: (fcRes) => {
             this.generatedFlashcards.set(fcRes.data);
 
-            this.aiService.generateQuestions(this.topicTitle, summaryRes.data, this.examBoard, 3).subscribe({
+            this.aiService.generateQuestions(this.topicTitle, summaryRes.data, this.examBoard, 3, this.questionsPromptCustom).subscribe({
               next: (qRes) => {
                 this.generatedQuestions.set(qRes.data);
                 this.isGeneratingAll = false;
-                this.showMessage('✨ Conteúdos gerados com sucesso!', 'success');
+                this.showMessage('✨ Todos os conteúdos foram gerados com sucesso!', 'success');
               },
               error: () => { this.isGeneratingAll = false; }
             });
@@ -284,11 +369,14 @@ export class ProfessorStudioComponent implements OnInit {
 
   public onGenerateSummary(): void {
     if (!this.topicTitle.trim()) return;
+    if (!this.validateAiKey()) return;
     this.isGeneratingSummary = true;
-    this.aiService.generateSummary(this.topicTitle, this.subjectName).subscribe({
+    this.aiService.generateSummary(this.topicTitle, this.subjectName, '', this.summaryPromptCustom).subscribe({
       next: (res) => {
         this.isGeneratingSummary = false;
         this.generatedSummary.set(res.data);
+        if (!this.topicSummary) this.topicSummary = res.data.slice(0, 300);
+        if (!this.topicDetailFull) this.topicDetailFull = res.data;
         this.showMessage('✨ Resumo teórico gerado com sucesso!', 'success');
       },
       error: () => { this.isGeneratingSummary = false; }
@@ -297,8 +385,9 @@ export class ProfessorStudioComponent implements OnInit {
 
   public onGenerateFlashcards(): void {
     if (!this.topicTitle.trim()) return;
+    if (!this.validateAiKey()) return;
     this.isGeneratingFlashcards = true;
-    this.aiService.generateFlashcards(this.topicTitle, this.generatedSummary(), 4).subscribe({
+    this.aiService.generateFlashcards(this.topicTitle, this.generatedSummary() || this.topicDetailFull, 4, this.flashcardsPromptCustom).subscribe({
       next: (res) => {
         this.isGeneratingFlashcards = false;
         this.generatedFlashcards.set(res.data);
@@ -310,8 +399,9 @@ export class ProfessorStudioComponent implements OnInit {
 
   public onGenerateQuestions(): void {
     if (!this.topicTitle.trim()) return;
+    if (!this.validateAiKey()) return;
     this.isGeneratingQuestions = true;
-    this.aiService.generateQuestions(this.topicTitle, this.generatedSummary(), this.examBoard, 3).subscribe({
+    this.aiService.generateQuestions(this.topicTitle, this.generatedSummary() || this.topicDetailFull, this.examBoard, 3, this.questionsPromptCustom).subscribe({
       next: (res) => {
         this.isGeneratingQuestions = false;
         this.generatedQuestions.set(res.data);
@@ -321,7 +411,7 @@ export class ProfessorStudioComponent implements OnInit {
     });
   }
 
-  // --- Save to Backend & Local ---
+  // --- Save to Backend ---
   public onSaveStudio(): void {
     if (!this.courseTitle.trim() || !this.subjectName.trim() || !this.topicTitle.trim()) {
       this.showMessage('Preencha os dados do Curso, Disciplina e Tópico.', 'error');
@@ -331,16 +421,32 @@ export class ProfessorStudioComponent implements OnInit {
     this.isSaving = true;
     this.showMessage('⏳ Salvando estudo e publicando conteúdos na hierarquia...', 'info');
 
+    const keyPoints = this.keyPointsText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    const tips = this.tipsText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
     const payload: SaveStudioContentPayload = {
       courseId: this.selectedCourseId || undefined,
       courseTitle: this.courseTitle,
+      sessionName: this.sessionName,
       subjectId: !this.isSubjectNew() && this.selectedSubjectId() !== 'NEW' ? this.selectedSubjectId() : undefined,
       subjectName: this.subjectName,
+      subjectMeta: this.subjectMeta,
+      subjectDescription: this.subjectDescription,
       topicId: !this.isTopicNew() && this.selectedTopicId() !== 'NEW' ? this.selectedTopicId() : undefined,
       topicTitle: this.topicTitle,
       examBoard: this.examBoard,
       isPublic: this.isPublic,
-      contentMarkdown: this.generatedSummary() || `### ${this.topicTitle}\nConteúdo estruturado pelo professor mentor.`,
+      contentMarkdown: this.generatedSummary() || this.topicDetailFull || `### ${this.topicTitle}\nConteúdo estruturado pelo professor.`,
+      topicDetail: {
+        title: this.topicTitle,
+        summary: this.topicSummary || (this.generatedSummary() ? this.generatedSummary().slice(0, 300) : ''),
+        detail: this.topicDetailFull || this.generatedSummary(),
+        peso: this.topicPeso,
+        keyPoints: keyPoints,
+        tips: tips,
+        examples: this.examplesList.filter(e => e.question.trim().length > 0),
+        usefulLinks: this.usefulLinksList.filter(l => l.url.trim().length > 0)
+      },
       flashcards: this.generatedFlashcards(),
       questions: this.generatedQuestions()
     };
@@ -351,7 +457,6 @@ export class ProfessorStudioComponent implements OnInit {
         this.showMessage(res.message || '🎉 Estudo salvo e publicado com sucesso!', 'success');
         this.loadCourses();
 
-        // Update selectedCourseId if it was newly created
         if (!this.selectedCourseId && res.courseId) {
           this.selectedCourseId = res.courseId;
         }

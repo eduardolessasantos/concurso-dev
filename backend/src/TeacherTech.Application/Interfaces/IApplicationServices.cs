@@ -77,3 +77,28 @@ public interface ITopicApplicationService
     Task<Topic?> GetTopicByIdAsync(Guid id);
     Task<ServiceResult<Topic>> CreateTopicAsync(CreateTopicDto dto);
 }
+
+public interface IBillingService
+{
+    Task<ServiceResult<BillingCheckoutResponseDto>> CreateSubscriptionForProfessor(string professorId, PlanType planType);
+    Task<ServiceResult<string>> ProcessAsaasWebhookAsync(string? webhookTokenHeader, string payloadJson);
+}
+
+public interface IWhatsAppService
+{
+    Task<WhatsAppSendResult> SendInviteAsync(string phone, string courseTitle, string inviteLink, Guid inviteTokenId, CancellationToken cancellationToken = default);
+}
+
+public interface IInviteService
+{
+    Task<ServiceResult<InviteGeneratedResponseDto>> GenerateInviteAsync(string professorId, CreateInviteDto dto, string? appBaseUrl = null);
+    Task<ServiceResult<ValidateInviteResponseDto>> ValidateInviteAsync(string token);
+    Task<ServiceResult<RedeemInviteResponseDto>> RedeemInviteAsync(string studentId, string token);
+    Task<ServiceResult<ProfessorDashboardDto>> GetProfessorDashboardAsync(string professorId);
+}
+
+public interface IProgressService
+{
+    Task<ServiceResult<bool>> RecordAnswerAsync(string studentId, RecordAnswerRequestDto dto);
+    Task<ServiceResult<CourseProgressDto>> GetMyProgressByCourseAsync(string studentId, Guid courseId);
+}

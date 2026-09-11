@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { StudentManagementService, Enrollment, AccessRequest } from '../../services/student-management.service';
+import { StudentManagementService, Enrollment, InviteGenerated } from '../../services/student-management.service';
 import { CoursesService } from '../../services/courses.service';
 import { CourseResponseDto } from '../../models/course.model';
 
@@ -17,17 +17,18 @@ export class StudentManagementComponent implements OnInit {
   public studentService = inject(StudentManagementService);
   public coursesService = inject(CoursesService);
 
-  public activeTab = signal<'invite' | 'requests' | 'enrolled'>('invite');
-
-  public studentEmail = '';
-  public welcomeMessage = '';
   public selectedCourseId = signal<string>('');
-
-  public pendingRequests = signal<AccessRequest[]>([]);
   public enrolledStudents = signal<Enrollment[]>([]);
 
-  public isLoading = false;
-  public isCopied = signal<boolean>(false);
+  // WhatsApp input
+  public targetPhone = '';
+  public lastInviteGenerated = signal<InviteGenerated | null>(null);
+
+  // States
+  public isCopyingLink = false;
+  public isSendingWhatsApp = false;
+  public isGeneratingQr = false;
+  public showQrModal = signal<boolean>(false);
   public alertMessage = signal<{ type: 'success' | 'error'; text: string } | null>(null);
 
   ngOnInit(): void {
@@ -45,87 +46,16 @@ export class StudentManagementComponent implements OnInit {
         }
       }
     });
-    this.loadPendingRequests();
   }
 
   onCourseChange(courseId: string): void {
     this.selectedCourseId.set(courseId);
+    this.lastInviteGenerated.set(null);
     this.loadEnrolledStudents();
   }
 
   getSelectedCourse(): CourseResponseDto | undefined {
     return this.coursesService.myCourses().find(c => c.id === this.selectedCourseId());
-  }
-
-  switchTab(tab: 'invite' | 'requests' | 'enrolled'): void {
-    this.activeTab.set(tab);
-    this.alertMessage.set(null);
-  }
-
-  onSendInvite(): void {
-    if (!this.selectedCourseId()) {
-      this.alertMessage.set({ type: 'error', text: 'Selecione um estudo antes de enviar o convite.' });
-      return;
-    }
-
-    if (!this.studentEmail.trim()) {
-      this.alertMessage.set({ type: 'error', text: 'Por favor, informe o e-mail do aluno.' });
-      return;
-    }
-
-    this.isLoading = true;
-    this.alertMessage.set(null);
-
-    const course = this.getSelectedCourse();
-    const courseTitle = course ? course.title : 'Estudo Exclusivo';
-
-    this.studentService.inviteByEmail(this.selectedCourseId(), this.studentEmail, this.welcomeMessage).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.alertMessage.set({ 
-          type: 'success', 
-          text: `✨ Acesso concedido com sucesso para ${this.studentEmail} no estudo "${courseTitle}"!` 
-        });
-        this.studentEmail = '';
-        this.welcomeMessage = '';
-        this.loadEnrolledStudents();
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao enviar convite por e-mail.' });
-      }
-    });
-  }
-
-  getShareableLink(): string {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const courseId = this.selectedCourseId();
-    const course = this.getSelectedCourse();
-    const title = course ? encodeURIComponent(course.title) : '';
-    const emailParam = this.studentEmail.trim() ? `&email=${encodeURIComponent(this.studentEmail.trim())}` : '';
-    
-    return `${origin}/login?returnUrl=${encodeURIComponent('/estudo/' + courseId)}${emailParam}&courseTitle=${title}`;
-  }
-
-  copyShareableLink(): void {
-    const link = this.getShareableLink();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(link).then(() => {
-        this.isCopied.set(true);
-        this.alertMessage.set({ 
-          type: 'success', 
-          text: '🔗 Link de acesso direto copiado para a área de transferência! Envie pelo WhatsApp ou mensagem.' 
-        });
-        setTimeout(() => this.isCopied.set(false), 4000);
-      });
-    }
-  }
-
-  loadPendingRequests(): void {
-    this.studentService.getPendingAccessRequests().subscribe({
-      next: (res) => this.pendingRequests.set(res),
-      error: () => {}
-    });
   }
 
   loadEnrolledStudents(): void {
@@ -134,42 +64,107 @@ export class StudentManagementComponent implements OnInit {
 
     this.studentService.getCourseEnrollments(courseId).subscribe({
       next: (res) => this.enrolledStudents.set(res),
-      error: () => {
-        this.enrolledStudents.set([]);
+      error: () => this.enrolledStudents.set([])
+    });
+  }
+
+  // 1. Ação Copiar Link
+  onCopyLink(): void {
+    const courseId = this.selectedCourseId();
+    if (!courseId) {
+      this.alertMessage.set({ type: 'error', text: 'Selecione um curso primeiro.' });
+      return;
+    }
+
+    this.isCopyingLink = true;
+    this.alertMessage.set(null);
+
+    this.studentService.generateInvite(courseId, 'Link').subscribe({
+      next: (invite) => {
+        this.isCopyingLink = false;
+        this.lastInviteGenerated.set(invite);
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(invite.inviteUrl).then(() => {
+            this.alertMessage.set({
+              type: 'success',
+              text: `🔗 Link exclusivo copiado para a área de transferência! Token: ${invite.token} (Válido por 7 dias, até 10 utilizações).`
+            });
+          });
+        }
+      },
+      error: (err) => {
+        this.isCopyingLink = false;
+        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao gerar link de convite.' });
       }
     });
   }
 
-  onApprove(request: AccessRequest): void {
-    this.studentService.approveAccessRequest(request.id).subscribe({
-      next: () => {
-        this.alertMessage.set({ type: 'success', text: `Acesso aprovado para ${request.studentEmail}!` });
-        this.loadPendingRequests();
-        this.loadEnrolledStudents();
+  // 2. Ação Enviar WhatsApp
+  onSendWhatsApp(): void {
+    const courseId = this.selectedCourseId();
+    if (!courseId) {
+      this.alertMessage.set({ type: 'error', text: 'Selecione um curso primeiro.' });
+      return;
+    }
+
+    if (!this.targetPhone || this.targetPhone.trim().length < 10) {
+      this.alertMessage.set({ type: 'error', text: 'Informe um número de telefone com DDD (ex: 11987654321).' });
+      return;
+    }
+
+    this.isSendingWhatsApp = true;
+    this.alertMessage.set(null);
+
+    this.studentService.generateInvite(courseId, 'WhatsApp', this.targetPhone.trim()).subscribe({
+      next: (invite) => {
+        this.isSendingWhatsApp = false;
+        this.lastInviteGenerated.set(invite);
+        this.alertMessage.set({
+          type: 'success',
+          text: `📱 Convite enviado com sucesso via WhatsApp Cloud API para ${this.targetPhone}! Token: ${invite.token}`
+        });
+        this.targetPhone = '';
       },
       error: (err) => {
-        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao aprovar solicitação.' });
+        this.isSendingWhatsApp = false;
+        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao disparar convite via WhatsApp.' });
       }
     });
   }
 
-  onReject(request: AccessRequest): void {
-    this.studentService.rejectAccessRequest(request.id).subscribe({
-      next: () => {
-        this.alertMessage.set({ type: 'success', text: `Solicitação de ${request.studentEmail} rejeitada.` });
-        this.loadPendingRequests();
+  // 3. Ação Gerar QR Code
+  onGenerateQr(): void {
+    const courseId = this.selectedCourseId();
+    if (!courseId) {
+      this.alertMessage.set({ type: 'error', text: 'Selecione um curso primeiro.' });
+      return;
+    }
+
+    this.isGeneratingQr = true;
+    this.alertMessage.set(null);
+
+    this.studentService.generateInvite(courseId, 'QrCode').subscribe({
+      next: (invite) => {
+        this.isGeneratingQr = false;
+        this.lastInviteGenerated.set(invite);
+        this.showQrModal.set(true);
       },
       error: (err) => {
-        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao rejeitar solicitação.' });
+        this.isGeneratingQr = false;
+        this.alertMessage.set({ type: 'error', text: err.error?.message || 'Erro ao gerar QR Code.' });
       }
     });
+  }
+
+  closeQrModal(): void {
+    this.showQrModal.set(false);
   }
 
   onRevoke(enrollment: Enrollment): void {
-    if (confirm(`Deseja revogar o acesso do aluno ${enrollment.studentEmail}?`)) {
+    if (confirm(`Deseja revogar o acesso do aluno ${enrollment.studentEmail || enrollment.studentName}?`)) {
       this.studentService.revokeAccess(enrollment.id).subscribe({
         next: () => {
-          this.alertMessage.set({ type: 'success', text: `Acesso do aluno ${enrollment.studentEmail} revogado.` });
+          this.alertMessage.set({ type: 'success', text: `Acesso revogado com sucesso.` });
           this.loadEnrolledStudents();
         },
         error: (err) => {
@@ -189,14 +184,13 @@ export class StudentManagementComponent implements OnInit {
     const course = this.getSelectedCourse();
     const courseTitle = course ? course.title.replace(/[\",]/g, '') : 'Estudo';
 
-    const headers = ['"Nome do Aluno"', '"E-mail"', '"Origem da Concessão"', '"Data da Matrícula"', '"Status"', '"Estudo"'];
+    const headers = ['"Nome do Aluno"', '"E-mail"', '"Origem da Matrícula"', '"Data"', '"Status"'];
     const rows = students.map(s => [
       `"${s.studentName.replace(/"/g, '""')}"`,
       `"${s.studentEmail}"`,
-      `"${s.grantedVia === 'EMAIL_INVITE' ? 'Convite por E-mail' : 'Aprovado na Vitrine'}"`,
+      `"${s.grantedVia}"`,
       `"${new Date(s.createdAt).toLocaleDateString('pt-BR')}"`,
-      `"${s.status === 'ACTIVE' ? 'Ativo' : s.status}"`,
-      `"${courseTitle}"`
+      `"${s.status}"`
     ]);
 
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
@@ -210,4 +204,3 @@ export class StudentManagementComponent implements OnInit {
     document.body.removeChild(link);
   }
 }
-

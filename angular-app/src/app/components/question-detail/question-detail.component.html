@@ -11,7 +11,7 @@
       <button class="back-button" (click)="goBack()">← Voltar para {{ subject.name }}</button>
       <div class="question-navigator">
         <button class="nav-btn" [disabled]="!prevNum" (click)="prevNum && navigate(prevNum)">← Anterior</button>
-        <span class="navigator-info">Questão {{ question.number }} de {{ subject.range[1] }}</span>
+        <span class="navigator-info">Questão {{ question.number }} de {{ subject.range ? subject.range[1] : 70 }}</span>
         <button class="nav-btn" [disabled]="!nextNum" (click)="nextNum && navigate(nextNum)">Próxima →</button>
       </div>
     </div>

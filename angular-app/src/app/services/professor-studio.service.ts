@@ -5,6 +5,8 @@ import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 import { GeneratedFlashcard, GeneratedQuestion } from './ai-generator.service';
 
+import { TopicDetail } from '../models/topic-detail.model';
+
 export interface StudioScheduleInput {
   dayOfWeek: string;
   goalMinutes: number;
@@ -19,13 +21,18 @@ export interface StudioSimulatedInput {
 export interface SaveStudioContentPayload {
   courseId?: string;
   courseTitle: string;
+  sessionId?: string;
+  sessionName?: string;
   subjectId?: string;
   subjectName: string;
+  subjectMeta?: string;
+  subjectDescription?: string;
   topicId?: string;
   topicTitle: string;
   examBoard: string;
   isPublic: boolean;
   contentMarkdown: string;
+  topicDetail?: TopicDetail;
   flashcards: GeneratedFlashcard[];
   questions: GeneratedQuestion[];
   schedule?: StudioScheduleInput;

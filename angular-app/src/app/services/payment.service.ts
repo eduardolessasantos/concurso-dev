@@ -37,11 +37,21 @@ export interface ProfessorBalance {
   transactions: TransactionHistory[];
 }
 
+export interface BillingCheckoutResponse {
+  invoiceUrl: string;
+  subscriptionId: string;
+  asaasSubscriptionId: string;
+  planType: string;
+  price: number;
+  status: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
   private apiUrl = `${environment.apiUrl}/payments`;
+  private billingUrl = `${environment.apiUrl}/billing`;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -93,6 +103,14 @@ export class PaymentService {
     return this.http.put<any>(
       `${this.apiUrl}/update-pix-key`,
       JSON.stringify(pixKey),
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  createSubscriptionCheckout(planType: number): Observable<BillingCheckoutResponse> {
+    return this.http.post<BillingCheckoutResponse>(
+      `${this.billingUrl}/checkout`,
+      { planType },
       { headers: this.getAuthHeaders() }
     );
   }

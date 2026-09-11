@@ -16,13 +16,17 @@ public static class DependencyInjection
         services.AddScoped<IProfessorProfileRepository, ProfessorProfileRepository>();
         services.AddScoped<IStudentProfileRepository, StudentProfileRepository>();
         services.AddScoped<ISubjectRepository, SubjectRepository>();
+        services.AddScoped<ICourseModuleRepository, CourseModuleRepository>();
         services.AddScoped<ITopicRepository, TopicRepository>();
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IAccessRequestRepository, AccessRequestRepository>();
-        services.AddScoped<ITransactionRepository, TransactionRepository>();
+        services.AddScoped<IInviteTokenRepository, InviteTokenRepository>();
+        services.AddScoped<IStudentProgressRepository, StudentProgressRepository>();
+        services.AddScoped<IProfessorSubscriptionRepository, ProfessorSubscriptionRepository>();
+        services.AddScoped<IAsaasWebhookLogRepository, AsaasWebhookLogRepository>();
+        services.AddScoped<IWhatsAppLogRepository, WhatsAppLogRepository>();
 
-        // Domain Services & Health
-        services.AddScoped<IPaymentDomainService, PaymentDomainService>();
+        // AI Services & Health
         services.AddHttpClient<IAiService, AiService>();
         services.AddScoped<DatabaseHealthCheck>();
 

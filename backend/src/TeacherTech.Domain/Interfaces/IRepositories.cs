@@ -39,6 +39,12 @@ public interface IStudentProfileRepository : IRepository<StudentProfile, string>
     Task<StudentProfile?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default);
 }
 
+public interface ICourseModuleRepository : IRepository<CourseModule, Guid>
+{
+    Task<CourseModule?> FindByCourseAndNameAsync(Guid courseId, string name, CancellationToken cancellationToken = default);
+    Task<int> CountByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default);
+}
+
 public interface ISubjectRepository : IRepository<Subject, Guid>
 {
     Task<List<Subject>> GetByCourseIdWithTopicsAsync(Guid courseId, CancellationToken cancellationToken = default);
@@ -54,6 +60,7 @@ public interface ITopicRepository : IRepository<Topic, Guid>
     Task<int> CountBySubjectIdAsync(Guid subjectId, CancellationToken cancellationToken = default);
     Task AddFlashcardAsync(Flashcard flashcard, CancellationToken cancellationToken = default);
     Task AddQuestionAsync(Question question, CancellationToken cancellationToken = default);
+    Task AddOrUpdateTopicContentAsync(TopicContent topicContent, CancellationToken cancellationToken = default);
 }
 
 public interface IEnrollmentRepository : IRepository<Enrollment, Guid>
@@ -71,8 +78,31 @@ public interface IAccessRequestRepository : IRepository<AccessRequest, Guid>
     Task<AccessRequest?> GetByIdWithCourseAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
-public interface ITransactionRepository : IRepository<Transaction, Guid>
+public interface IInviteTokenRepository : IRepository<InviteToken, Guid>
 {
-    Task<Transaction?> GetByIdWithCourseAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<List<Transaction>> GetPaidTransactionsByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+    Task<InviteToken?> GetByTokenWithCourseAsync(string token, CancellationToken cancellationToken = default);
+    Task<List<InviteToken>> GetByCourseIdAsync(Guid courseId, CancellationToken cancellationToken = default);
+    Task<List<InviteToken>> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+}
+
+public interface IStudentProgressRepository : IRepository<StudentProgress, Guid>
+{
+    Task<List<StudentProgress>> GetProgressByStudentAndTopicAsync(string studentId, Guid topicId, CancellationToken cancellationToken = default);
+    Task<List<StudentProgress>> GetProgressByCourseAsync(Guid courseId, string? studentId = null, CancellationToken cancellationToken = default);
+    Task<int> CountAnsweredQuestionsByStudentAsync(string studentId, CancellationToken cancellationToken = default);
+}
+
+public interface IProfessorSubscriptionRepository : IRepository<ProfessorSubscription, Guid>
+{
+    Task<ProfessorSubscription?> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+    Task<ProfessorSubscription?> GetByAsaasSubscriptionIdAsync(string asaasSubscriptionId, CancellationToken cancellationToken = default);
+    Task<ProfessorSubscription?> GetByAsaasCustomerIdAsync(string asaasCustomerId, CancellationToken cancellationToken = default);
+}
+
+public interface IAsaasWebhookLogRepository : IRepository<AsaasWebhookLog, Guid>
+{
+}
+
+public interface IWhatsAppLogRepository : IRepository<WhatsAppLog, Guid>
+{
 }

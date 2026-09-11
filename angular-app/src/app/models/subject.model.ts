@@ -1,11 +1,14 @@
 export interface Subject {
   id: string;
-  number: string;
+  number?: string;
   name: string;
-  meta: string;
-  range: [number, number];
+  meta?: string;
+  range?: [number, number];
   description: string;
   topics: string[];
+  sessionId?: string;
+  sessionName?: string;
+  sessionGroup?: string;
   major?: boolean;
 }
 

@@ -27,38 +27,6 @@ public class EnrollmentsController : ControllerBase
     }
 
     /// <summary>
-    /// Convida e matricula diretamente um estudante em um curso através do endereço de e-mail.
-    /// </summary>
-    /// <remarks>
-    /// Serviço restrito a Professores para concessão direta de acesso aos seus respectivos cursos.
-    /// </remarks>
-    /// <param name="dto">Dados do convite contendo o ID do curso e o e-mail do estudante.</param>
-    /// <returns>Dados da matrícula gerada ou atualizada.</returns>
-    /// <response code="200">Estudante matriculado/convidado com sucesso.</response>
-    /// <response code="400">Estudante não encontrado com o e-mail fornecido ou dados inválidos.</response>
-    /// <response code="401">Usuário não autenticado.</response>
-    /// <response code="403">Usuário autenticado não possui perfil de Professor.</response>
-    [Authorize(Roles = UserRoles.Professor)]
-    [HttpPost("invite-by-email")]
-    [ProducesResponseType(typeof(EnrollmentResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> InviteStudentByEmail([FromBody] InviteStudentByEmailDto dto)
-    {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-
-        var professorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(professorId)) return Unauthorized();
-
-        var result = await _enrollmentService.InviteStudentByEmailAsync(professorId, dto);
-        if (!result.Success)
-            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
-
-        return Ok(result.Data);
-    }
-
-    /// <summary>
     /// Lista todos os alunos matriculados em um curso específico do professor autenticado.
     /// </summary>
     /// <remarks>

@@ -1,113 +1,157 @@
-<div class="finance-container">
-  <header class="finance-header">
-    <div>
-      <h1>💰 Painel Financeiro & Repasse do Professor</h1>
-      <p>Acompanhe seu saldo acumulado, vendas de cursos e configure sua chave PIX de recebimento.</p>
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <h1>📊 Painel do Professor & Métricas SaaS</h1>
+      <p>Acompanhe o engajamento dos seus alunos, desempenho nos estudos e status da sua assinatura no Asaas.</p>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/professor/planos" class="btn-plans">
+        ⭐ Gerenciar Planos Asaas
+      </a>
+      <a routerLink="/professor/alunos" class="btn-invites">
+        ✉️ Enviar Convites
+      </a>
     </div>
   </header>
 
-  @if (isLoading) {
+  @if (isLoading()) {
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Carregando dados financeiros...</p>
+      <p>Carregando métricas da sua operação...</p>
     </div>
-  } @else if (balance()) {
-    <!-- Financial Metric Cards -->
-    <div class="metrics-grid">
-      <div class="metric-card primary">
-        <span class="label">Receita Acumulada (90% Liquido)</span>
-        <strong class="value">R$ {{ balance()?.totalRevenue?.toFixed(2) }}</strong>
-        <small class="hint">✓ Taxa de plataforma (10%) já descontada</small>
-      </div>
-
-      <div class="metric-card success">
-        <span class="label">Saldo Disponível para Saque</span>
-        <strong class="value">R$ {{ balance()?.availableBalance?.toFixed(2) }}</strong>
-        <small class="hint">⚡ Transferência via PIX no mesmo dia</small>
-      </div>
-
-      <div class="metric-card info">
-        <span class="label">Total de Vendas de Cursos</span>
-        <strong class="value">{{ balance()?.salesCount }}</strong>
-        <small class="hint">🎓 Alunos matriculados via checkout público</small>
-      </div>
+  } @else if (error()) {
+    <div class="error-banner">
+      <span>⚠️ {{ error() }}</span>
+      <button type="button" (click)="loadDashboard()" class="btn-retry">Tentar Novamente</button>
     </div>
-
-    @if (statusMessage()) {
-      <div class="alert-success">
-        <span>✅ {{ statusMessage() }}</span>
+  } @else {
+    <!-- BANNER DE ASSINATURA ATUAL ASAAS -->
+    <section class="subscription-banner">
+      <div class="sub-left">
+        <div class="sub-badge" [class.active]="dashboard()?.subscription?.status === 1" [class.past-due]="dashboard()?.subscription?.status === 3">
+          {{ getStatusName(dashboard()?.subscription?.status) }}
+        </div>
+        <h2>{{ getPlanName(dashboard()?.subscription?.planType) }}</h2>
+        <p class="sub-meta">
+          @if (dashboard()?.subscription?.currentPeriodEnd) {
+            <span>Renovação/Vencimento: <strong>{{ dashboard()?.subscription?.currentPeriodEnd | date:'dd/MM/yyyy' }}</strong></span>
+          }
+          <span>Quota de Cursos: <strong>{{ dashboard()?.subscription?.maxCoursesAllowed || 5 }}</strong></span>
+        </p>
       </div>
-    }
 
-    <!-- PIX Payout Settings Box -->
-    <div class="card-section">
-      <div class="card-header">
-        <h3>🔑 Chave PIX para Transferências Automáticas</h3>
-        <p>Cadastre sua chave PIX onde o TeacherTech efetuará o repasse dos seus 90% das vendas.</p>
-      </div>
-
-      <form (ngSubmit)="onSavePixKey()" class="pix-form">
-        <div class="form-group">
-          <label for="pixKey">Sua Chave PIX (CPF, E-mail, Celular ou Chave Aleatória)</label>
-          <div class="input-row">
-            <input 
-              type="text" 
-              id="pixKey" 
-              name="pixKey" 
-              [(ngModel)]="pixKey" 
-              placeholder="ex: professor@email.com ou 000.000.000-00" 
-              required />
-            <button type="submit" class="btn-save" [disabled]="isUpdatingPix">
-              {{ isUpdatingPix ? 'Salvando...' : '💾 Salvar Chave PIX' }}
-            </button>
+      <div class="sub-right">
+        <div class="ai-credits-meter">
+          <div class="meter-labels">
+            <span>Créditos de IA (Geração de Aulas)</span>
+            <strong>{{ dashboard()?.subscription?.aiCreditsRemaining || 0 }} / {{ dashboard()?.subscription?.aiCreditsLimit || 500 }}</strong>
+          </div>
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="((dashboard()?.subscription?.aiCreditsUsed || 0) / (dashboard()?.subscription?.aiCreditsLimit || 500)) * 100">
+            </div>
           </div>
         </div>
-      </form>
-    </div>
+      </div>
+    </section>
 
-    <!-- Sales & Split Transactions History Table -->
-    <div class="card-section">
-      <div class="card-header">
-        <h3>📜 Histórico de Vendas & Split de Receita</h3>
-        <p>Detalhamento de cada transação com retenção automática da taxa de plataforma.</p>
+    <!-- 4 CARDS DE MÉTRICAS PRINCIPAIS -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="card-icon students">👥</div>
+        <div class="card-details">
+          <span class="label">Total Alunos Ativos</span>
+          <strong class="number">{{ dashboard()?.totalActiveStudents || 0 }}</strong>
+          <span class="caption">Matrículas ativas nas suas turmas</span>
+        </div>
       </div>
 
-      @if (balance()!.transactions.length > 0) {
-        <div class="table-container">
-          <table class="finance-table">
+      <div class="metric-card">
+        <div class="card-icon courses">📚</div>
+        <div class="card-details">
+          <span class="label">Cursos Publicados</span>
+          <strong class="number">{{ dashboard()?.publishedCoursesCount || 0 }}</strong>
+          <span class="caption">Planos de estudo disponíveis</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-icon completion">🎯</div>
+        <div class="card-details">
+          <span class="label">Taxa Média de Acerto</span>
+          <strong class="number">{{ dashboard()?.averageCompletionRate || 0 }}%</strong>
+          <span class="caption">Calculada via StudentProgress</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-icon invites">✉️</div>
+        <div class="card-details">
+          <span class="label">Convites Pendentes</span>
+          <strong class="number">{{ dashboard()?.pendingInvitesCount || 0 }}</strong>
+          <span class="caption">Tokens ativos com prazo e usos</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABELA DE INVITE TOKENS -->
+    <section class="invites-table-section">
+      <div class="table-header">
+        <div>
+          <h3>🎟️ Histórico de Tokens de Convite</h3>
+          <p>Links, envios WhatsApp e QR Codes gerados para os seus estudos.</p>
+        </div>
+        <a routerLink="/professor/alunos" class="btn-create-token">+ Criar Novo Convite</a>
+      </div>
+
+      @if (!dashboard()?.invites || dashboard()!.invites.length === 0) {
+        <div class="empty-invites">
+          <p>Nenhum convite gerado ainda. Acesse a gestão de alunos para disparar convites via WhatsApp ou Link.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="invites-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Curso / Trilha</th>
-                <th>Comprador</th>
-                <th>Valor Bruto</th>
-                <th>Seu Repasse (90%)</th>
+                <th>Token</th>
+                <th>Curso</th>
+                <th>Canal</th>
+                <th>Destinatário</th>
+                <th>Utilizações</th>
+                <th>Expiração</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              @for (tx of balance()!.transactions; track tx.id) {
+              @for (item of dashboard()?.invites; track item.id) {
                 <tr>
-                  <td>{{ tx.date | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td><strong>{{ tx.courseTitle }}</strong></td>
-                  <td>{{ tx.buyerName }}</td>
-                  <td>R$ {{ tx.amount.toFixed(2) }}</td>
-                  <td class="revenue-cell">R$ {{ tx.professorRevenue.toFixed(2) }}</td>
+                  <td class="token-cell">
+                    <code>{{ item.token }}</code>
+                  </td>
+                  <td class="course-cell">{{ item.courseTitle }}</td>
                   <td>
-                    <span class="status-pill active">Pago</span>
+                    <span class="badge-channel" [class.whatsapp]="item.channel === 'WhatsApp'" [class.qr]="item.channel === 'QrCode'">
+                      {{ item.channel }}
+                    </span>
+                  </td>
+                  <td>{{ item.targetPhone || '-' }}</td>
+                  <td>
+                    <strong>{{ item.usedCount }}</strong> / {{ item.maxUses }}
+                  </td>
+                  <td>{{ item.expiresAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="badge-status" [class.ativo]="item.status === 'Ativo'" [class.expirado]="item.status === 'Expirado'" [class.esgotado]="item.status === 'Esgotado'">
+                      {{ item.status }}
+                    </span>
                   </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
-      } @else {
-        <div class="empty-state">
-          <div class="icon">💸</div>
-          <h4>Nenhuma venda realizada ainda</h4>
-          <p>Compartilhe o link da sua vitrine pública (`/p/seu-slug`) nas redes sociais para gerar suas primeiras vendas.</p>
-        </div>
       }
-    </div>
+    </section>
   }
 </div>

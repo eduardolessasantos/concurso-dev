@@ -130,11 +130,12 @@ public class CoursesController : ControllerBase
     /// <response code="200">Conteúdo do curso sincronizado e publicado com sucesso.</response>
     /// <response code="400">Dados inválidos ou inconsistência no payload.</response>
     /// <response code="401">Usuário não autenticado.</response>
-    [Authorize]
+    [Authorize(Policy = "RequireActiveSubscription")]
     [HttpPost("studio-publish")]
     [ProducesResponseType(typeof(SaveStudioResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status402PaymentRequired)]
     public async Task<IActionResult> PublishStudioContent([FromBody] SaveStudioContentDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);

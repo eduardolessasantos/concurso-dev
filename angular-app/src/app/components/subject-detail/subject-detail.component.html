@@ -2,7 +2,9 @@
   <div class="subject-detail-container">
     <div class="detail-head">
       <button class="back-button" (click)="goBack()">← Voltar ao mapa</button>
-      <span class="eyebrow"> DISCIPLINA {{ subject.number }}</span>
+      @if (subject.number) {
+        <span class="eyebrow"> DISCIPLINA {{ subject.number }}</span>
+      }
       <h2>{{ subject.name }}</h2>
       <p>{{ subject.description }}</p>
     </div>

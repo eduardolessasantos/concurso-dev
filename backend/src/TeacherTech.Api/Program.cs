@@ -8,50 +8,40 @@ using TeacherTech.Infrastructure;
 using TeacherTech.Infrastructure.Data;
 using TeacherTech.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using TeacherTech.Api.Authorization;
+using TeacherTech.Application.DTOs;
+using TeacherTech.Application.Interfaces;
+using TeacherTech.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Resilient Database Configuration (MySQL with automatic SQLite Fallback)
+// 1. Centralized Database Configuration
 if (builder.Environment.IsEnvironment("Testing"))
 {
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
         options.UseSqlite("Data Source=teachertech_test.db");
+        options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
     });
 }
 else
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Trim() == "EMPTY VALUE")
-    {
-        connectionString = "Server=localhost;Database=teachertech_db;User=root;Password=270523;";
-    }
-
-    bool useMySql = false;
-    try
-    {
-        using (var serverConn = new MySqlConnector.MySqlConnection(connectionString))
-        {
-            serverConn.Open();
-        }
-        useMySql = true;
-        Console.WriteLine("[INFO] Conectado ao MySQL/TiDB Cloud com sucesso!");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[AVISO] Conexão MySQL indisponível ({ex.Message}). Usando SQLite para resiliência local/nuvem.");
-        useMySql = false;
-    }
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+        ?? "Data Source=teachertech_dev.db";
 
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        if (useMySql)
+        options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+
+        if (connectionString.Contains("Server=") || connectionString.Contains("Database="))
         {
             options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)), mySqlOptions =>
             {
@@ -63,7 +53,7 @@ else
         }
         else
         {
-            options.UseSqlite("Data Source=teachertech_dev.db");
+            options.UseSqlite(connectionString);
         }
     });
 }
@@ -104,11 +94,26 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.Configure<AsaasOptions>(builder.Configuration.GetSection(AsaasOptions.SectionName));
+builder.Services.Configure<WhatsAppOptions>(builder.Configuration.GetSection(WhatsAppOptions.SectionName));
+
+builder.Services.AddScoped<IAuthorizationHandler, RequireActiveSubscriptionHandler>();
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, SubscriptionAuthorizationResultHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireActiveSubscription", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.Requirements.Add(new RequireActiveSubscriptionRequirement());
+    });
+});
 
 // Register Application & Infrastructure Services (DDD Modules)
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddHttpClient<IBillingService, BillingService>();
+builder.Services.AddHttpClient<IWhatsAppService, WhatsAppService>();
 
 // 4. CORS Setup for Angular Frontend & GitHub Pages
 builder.Services.AddCors(options =>
@@ -221,17 +226,7 @@ using (var scope = app.Services.CreateScope())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         
-        try
-        {
-            await dbContext.Database.EnsureCreatedAsync();
-        }
-        catch
-        {
-            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlite("Data Source=teachertech_fallback.db");
-            using var fallbackContext = new ApplicationDbContext(optionsBuilder.Options);
-            await fallbackContext.Database.EnsureCreatedAsync();
-        }
+        await dbContext.Database.MigrateAsync();
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -314,14 +309,15 @@ using (var scope = app.Services.CreateScope())
         }
 
         // Search and load SeedData.json if available
-        string[] possiblePaths = [
-            Path.Combine(AppContext.BaseDirectory, "SeedData.json"),
-            Path.Combine(Directory.GetCurrentDirectory(), "SeedData.json"),
-            Path.Combine(Directory.GetCurrentDirectory(), "..", "TeacherTech.Infrastructure", "Data", "SeedData.json"),
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "src", "TeacherTech.Infrastructure", "Data", "SeedData.json")
-        ];
-
-        string? seedJsonPath = possiblePaths.FirstOrDefault(File.Exists);
+        string? seedJsonPath = Path.Combine(AppContext.BaseDirectory, "SeedData.json");
+        if (!File.Exists(seedJsonPath))
+        {
+            seedJsonPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "TeacherTech.Infrastructure", "Data", "SeedData.json");
+        }
+        if (!File.Exists(seedJsonPath))
+        {
+            seedJsonPath = null;
+        }
 
         if (seedJsonPath != null)
         {
@@ -366,6 +362,7 @@ using (var scope = app.Services.CreateScope())
                                 Id = subjId,
                                 CourseId = courseId,
                                 Name = subjElem.GetProperty("name").GetString() ?? "",
+                                Meta = subjElem.TryGetProperty("meta", out var m) ? m.GetString() ?? "" : "",
                                 Description = subjElem.GetProperty("description").GetString() ?? "",
                                 OrderIndex = subjElem.GetProperty("orderIndex").GetInt32()
                             };
@@ -505,24 +502,26 @@ using (var scope = app.Services.CreateScope())
                     Console.WriteLine($"[INFO] Matrícula de demonstração criada para {studentUser.Email} no curso {courseId}");
                 }
 
-                // Seed Initial Test Transaction for Professor Financial Balance
-                if (studentUser != null && profUser != null && !await dbContext.Transactions.AnyAsync(t => t.UserId == studentUser.Id && t.CourseId == courseId))
+                // Seed Initial Professor Subscription for SaaS B2B model
+                if (profUser != null && !await dbContext.ProfessorSubscriptions.AnyAsync(s => s.ProfessorId == profUser.Id))
                 {
-                    var initialTx = new Transaction
+                    var subscription = new ProfessorSubscription
                     {
-                        UserId = studentUser.Id,
-                        CourseId = courseId,
-                        Amount = 49.90m,
-                        PlatformFee = 4.99m,
-                        ProfessorRevenue = 44.91m,
-                        PaymentGateway = "ASAAS",
-                        GatewayTransactionId = $"demo-tx-{Guid.NewGuid():N}",
-                        Status = TransactionStatus.Paid,
-                        CreatedAt = DateTime.UtcNow.AddDays(-2)
+                        ProfessorId = profUser.Id,
+                        PlanType = PlanType.Pro,
+                        Status = SubscriptionStatus.Active,
+                        AsaasCustomerId = "cus_mock_eduardo",
+                        AsaasSubscriptionId = "sub_mock_eduardo_pro",
+                        Price = 149.90m,
+                        CurrentPeriodEnd = DateTime.UtcNow.AddMonths(1),
+                        MaxCoursesAllowed = 20,
+                        AiCreditsLimit = 2000,
+                        AiCreditsUsed = 0,
+                        CreatedAt = DateTime.UtcNow
                     };
-                    dbContext.Transactions.Add(initialTx);
+                    dbContext.ProfessorSubscriptions.Add(subscription);
                     await dbContext.SaveChangesAsync();
-                    Console.WriteLine($"[INFO] Transação de demonstração criada para o saldo do professor.");
+                    Console.WriteLine($"[INFO] Assinatura SaaS Pro padrão criada para o professor {profEmail}.");
                 }
             }
         }

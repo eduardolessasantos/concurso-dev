@@ -14,6 +14,7 @@ namespace TeacherTech.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = UserRoles.Professor)]
+[Authorize(Policy = "RequireActiveSubscription")]
 public class AiController : ControllerBase
 {
     private readonly IAiContentApplicationService _aiContentService;

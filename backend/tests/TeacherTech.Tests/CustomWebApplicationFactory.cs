@@ -8,24 +8,38 @@ using Microsoft.Extensions.Hosting;
 using TeacherTech.Application.DTOs;
 using TeacherTech.Domain.Entities;
 using TeacherTech.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace TeacherTech.Tests;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly string _dbName = $"teachertech_test_{Guid.NewGuid():N}.db";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        builder.ConfigureServices(services =>
+        {
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            if (descriptor != null) services.Remove(descriptor);
+
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseSqlite($"Data Source={_dbName}");
+                options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+            });
+        });
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
         var host = base.CreateHost(builder);
 
-        // Ensure DB and default roles are created
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.EnsureCreated();
+        db.Database.EnsureDeleted();
+        db.Database.Migrate();
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         string[] roles = [UserRoles.Admin, UserRoles.Professor, UserRoles.Student];
@@ -40,6 +54,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         return host;
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        try
+        {
+            if (File.Exists(_dbName)) File.Delete(_dbName);
+        }
+        catch { }
+    }
+
     public HttpClient CreateClientWithAuth(string token)
     {
         var client = CreateClient();
@@ -50,7 +74,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     public async Task<(HttpClient Client, AuthResponseDto Auth)> CreateAndAuthenticateProfessorAsync(
         string email = "professor.test@teachertech.com", 
         string password = "Password123!", 
-        string fullName = "Prof. Testador da Silva")
+        string fullName = "Prof. Testador da Silva",
+        bool activateSubscription = true)
     {
         var client = CreateClient();
         var registerDto = new RegisterDto
@@ -67,6 +92,28 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         var authResponse = await response.Content.ReadFromJsonAsync<AuthResponseDto>();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResponse!.Token);
+
+        if (activateSubscription)
+        {
+            using var scope = Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var sub = new ProfessorSubscription
+            {
+                ProfessorId = authResponse!.UserId,
+                PlanType = PlanType.Pro,
+                Status = SubscriptionStatus.Active,
+                AsaasCustomerId = $"cus_{Guid.NewGuid():N}",
+                AsaasSubscriptionId = $"sub_{Guid.NewGuid():N}",
+                Price = 59.90m,
+                CurrentPeriodEnd = DateTime.UtcNow.AddMonths(1),
+                MaxCoursesAllowed = 20,
+                AiCreditsLimit = 2000,
+                AiCreditsUsed = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            db.ProfessorSubscriptions.Add(sub);
+            await db.SaveChangesAsync();
+        }
 
         return (client, authResponse);
     }

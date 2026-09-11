@@ -17,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<IPublicShowcaseApplicationService, PublicShowcaseApplicationService>();
         services.AddScoped<ISubjectApplicationService, SubjectApplicationService>();
         services.AddScoped<ITopicApplicationService, TopicApplicationService>();
+        services.AddScoped<IInviteService, InviteService>();
+        services.AddScoped<IProgressService, ProgressService>();
 
         return services;
     }

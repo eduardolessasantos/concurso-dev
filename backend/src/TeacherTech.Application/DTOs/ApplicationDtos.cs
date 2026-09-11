@@ -70,10 +70,55 @@ public class CreateSubjectDto
 {
     [Required]
     public Guid CourseId { get; set; }
+    public Guid? SessionId { get; set; }
+    public string SessionName { get; set; } = string.Empty;
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
+    public string Meta { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }
+
+public class CourseModuleDto
+{
+    public Guid Id { get; set; }
+    public Guid CourseId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int OrderIndex { get; set; }
+}
+
+public class StudySessionDto : CourseModuleDto {}
+
+public class TopicExampleDto
+{
+    public string Question { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
+    public string Application { get; set; } = string.Empty;
+}
+
+public class UsefulLinkDto
+{
+    public string Label { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Type { get; set; } = "estudo";
+    public string? YoutubeId { get; set; }
+}
+
+public class TopicContentDto
+{
+    public Guid? Id { get; set; }
+    public Guid? TopicId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
+    public string Peso { get; set; } = string.Empty;
+    public string ContentMarkdown { get; set; } = string.Empty;
+    public List<TopicExampleDto> Examples { get; set; } = new List<TopicExampleDto>();
+    public List<string> KeyPoints { get; set; } = new List<string>();
+    public List<string> Tips { get; set; } = new List<string>();
+    public List<UsefulLinkDto> UsefulLinks { get; set; } = new List<UsefulLinkDto>();
+}
+
+public class TopicDetailDto : TopicContentDto {}
 
 public class CreateTopicDto
 {
@@ -82,6 +127,8 @@ public class CreateTopicDto
     [Required, MaxLength(150)]
     public string Title { get; set; } = string.Empty;
     public string ExamBoard { get; set; } = "Geral";
+    public TopicContentDto? TopicContent { get; set; }
+    public TopicDetailDto? TopicDetail { get => TopicContent as TopicDetailDto; set => TopicContent = value; }
 }
 
 public class GenerateAiContentDto
@@ -90,6 +137,7 @@ public class GenerateAiContentDto
     public string TopicTitle { get; set; } = string.Empty;
     public string SubjectName { get; set; } = string.Empty;
     public string ExamBoard { get; set; } = "FGV";
+    public string PromptCustom { get; set; } = string.Empty;
 }
 
 // --- ENROLLMENT DTOS ---
@@ -221,9 +269,14 @@ public class SaveStudioContentDto
     [Required]
     public string CourseTitle { get; set; } = string.Empty;
 
+    public Guid? SessionId { get; set; }
+    public string SessionName { get; set; } = string.Empty;
+
     public Guid? SubjectId { get; set; }
     [Required]
     public string SubjectName { get; set; } = string.Empty;
+    public string SubjectMeta { get; set; } = string.Empty;
+    public string SubjectDescription { get; set; } = string.Empty;
 
     public Guid? TopicId { get; set; }
     [Required]
@@ -233,6 +286,7 @@ public class SaveStudioContentDto
     public bool IsPublic { get; set; } = true;
     public string ContentMarkdown { get; set; } = string.Empty;
 
+    public TopicDetailDto? TopicDetail { get; set; }
     public List<StudioFlashcardDto> Flashcards { get; set; } = new List<StudioFlashcardDto>();
     public List<StudioQuestionDto> Questions { get; set; } = new List<StudioQuestionDto>();
     public StudioScheduleDto? Schedule { get; set; }
@@ -272,6 +326,7 @@ public class StudioSimulatedDto
 public class SaveStudioResponseDto
 {
     public Guid CourseId { get; set; }
+    public Guid? SessionId { get; set; }
     public Guid SubjectId { get; set; }
     public Guid TopicId { get; set; }
     public Guid? SimulatedTestId { get; set; }
