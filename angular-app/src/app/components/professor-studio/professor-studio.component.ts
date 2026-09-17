@@ -110,6 +110,10 @@ export class ProfessorStudioComponent implements OnInit {
   }
 
   // --- View Switching & Deep Course Loading ---
+  public openCourseModules(course: CourseResponseDto): void {
+    this.router.navigate(['/professor/estudio', course.id, 'modulos']);
+  }
+
   public openCourseEditor(course?: CourseResponseDto): void {
     if (course) {
       this.selectedCourseId = course.id;
@@ -424,15 +428,18 @@ export class ProfessorStudioComponent implements OnInit {
     const keyPoints = this.keyPointsText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     const tips = this.tipsText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
+    const isValidGuid = (id?: string | null): boolean =>
+      !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
     const payload: SaveStudioContentPayload = {
-      courseId: this.selectedCourseId || undefined,
+      courseId: isValidGuid(this.selectedCourseId) ? this.selectedCourseId : undefined,
       courseTitle: this.courseTitle,
       sessionName: this.sessionName,
-      subjectId: !this.isSubjectNew() && this.selectedSubjectId() !== 'NEW' ? this.selectedSubjectId() : undefined,
+      subjectId: !this.isSubjectNew() && this.selectedSubjectId() !== 'NEW' && isValidGuid(this.selectedSubjectId()) ? this.selectedSubjectId() : undefined,
       subjectName: this.subjectName,
       subjectMeta: this.subjectMeta,
       subjectDescription: this.subjectDescription,
-      topicId: !this.isTopicNew() && this.selectedTopicId() !== 'NEW' ? this.selectedTopicId() : undefined,
+      topicId: !this.isTopicNew() && this.selectedTopicId() !== 'NEW' && isValidGuid(this.selectedTopicId()) ? this.selectedTopicId() : undefined,
       topicTitle: this.topicTitle,
       examBoard: this.examBoard,
       isPublic: this.isPublic,

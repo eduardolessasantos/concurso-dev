@@ -43,10 +43,14 @@ export interface StudySessionHierarchyDto {
   subjects?: SubjectHierarchyDto[];
 }
 
+export type CourseModuleDto = StudySessionHierarchyDto;
+
 export interface SubjectHierarchyDto {
   id: string;
   courseId: string;
+  moduleId?: string;
   sessionId?: string;
+  module?: { id: string; name: string; orderIndex?: number };
   sessionName?: string;
   name: string;
   meta?: string;
@@ -62,6 +66,7 @@ export interface TopicHierarchyDto {
   examBoard: string;
   contentMarkdown?: string;
   orderIndex: number;
+  topicContent?: any;
   topicDetail?: {
     id?: string;
     topicId?: string;
@@ -102,6 +107,7 @@ export interface CourseStudyPlan {
   category: string;
   price: number;
   isPublic: boolean;
+  modules?: CourseModuleDto[];
   studySessions?: StudySessionHierarchyDto[];
   subjects: SubjectHierarchyDto[];
   studySchedules?: any[];

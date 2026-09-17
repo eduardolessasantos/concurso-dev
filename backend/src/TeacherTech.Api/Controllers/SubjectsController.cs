@@ -69,4 +69,22 @@ public class SubjectsController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateSubject(Guid id, [FromBody] CreateSubjectDto dto)
+    {
+        var result = await _subjectService.UpdateSubjectAsync(id, dto);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(result.Data);
+    }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteSubject(Guid id)
+    {
+        var result = await _subjectService.DeleteSubjectAsync(id);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(new { success = true });
+    }
 }

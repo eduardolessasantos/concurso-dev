@@ -1,0 +1,480 @@
+<div class="subject-studio-container">
+  <!-- Breadcrumb Superior -->
+  <app-breadcrumb [items]="breadcrumbs()"></app-breadcrumb>
+
+  <!-- Notificações -->
+  @if (statusMessage()) {
+    <div class="status-banner" [class]="'banner-' + statusType()">
+      <span>{{ statusMessage() }}</span>
+      <button class="btn-close-banner" (click)="statusMessage.set(null)">✕</button>
+    </div>
+  }
+
+  <!-- Header & Metadados da Disciplina -->
+  <header class="subject-header-card">
+    <div class="header-main-row">
+      <div class="header-titles">
+        <div class="level-badge">NÍVEL 3 · CONSOLE DA DISCIPLINA</div>
+        <h2>📚 {{ subjectName() || 'Disciplina' }}</h2>
+      </div>
+      <div class="header-actions">
+        <a [routerLink]="['/professor/estudio', courseId(), 'modulos']" class="btn-back">
+          ← Voltar ao Edital
+        </a>
+      </div>
+    </div>
+
+    <!-- Linha de Edição Rápida da Disciplina -->
+    <div class="subject-quick-edit-grid">
+      <div class="form-group flex-2">
+        <label>Nome da Disciplina</label>
+        <input
+          type="text"
+          class="form-control"
+          [ngModel]="subjectName()"
+          (ngModelChange)="subjectName.set($event)"
+          placeholder="Nome da matéria"
+        />
+      </div>
+
+      <div class="form-group flex-1">
+        <label>Peso / Meta</label>
+        <input
+          type="text"
+          class="form-control"
+          [ngModel]="subjectMeta()"
+          (ngModelChange)="subjectMeta.set($event)"
+          placeholder="Ex.: Peso 3 · 25% da prova"
+        />
+      </div>
+
+      <div class="form-group flex-1">
+        <label>Banca Examinadora Alvo</label>
+        <select
+          class="form-control"
+          [ngModel]="defaultExamBoard()"
+          (ngModelChange)="defaultExamBoard.set($event)"
+        >
+          <option value="Cebraspe">Cebraspe (Certo/Errado & Múltipla Escolha)</option>
+          <option value="FGV">FGV (Casos Práticos)</option>
+          <option value="FCC">FCC (Tradicional / Doutrina)</option>
+          <option value="Vunesp">Vunesp (Letra da Lei)</option>
+          <option value="Inédita">Inédita / Geral</option>
+        </select>
+      </div>
+
+      <div class="form-group btn-save-col">
+        <label>&nbsp;</label>
+        <button type="button" class="btn-save-meta" (click)="saveSubjectMeta()">
+          💾 Salvar Dados da Disciplina
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Master-Detail Split Screen -->
+  <div class="split-layout">
+    <!-- COLUNA MASTER: LISTA DE SUBTÓPICOS / EMENTA -->
+    <aside class="master-column">
+      <div class="column-header">
+        <h3>📑 Subtópicos da Ementa</h3>
+        <span class="count-badge">{{ filteredTopics().length }}</span>
+      </div>
+
+      <!-- Formulário Rápido de Novo Subtópico -->
+      <form (ngSubmit)="onAddSubtopic()" class="quick-add-subtopic-form">
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Nova descrição do subtópico..."
+            name="newSubtopicTitle"
+            [(ngModel)]="newSubtopicTitle"
+            required
+          />
+          <button type="submit" class="btn-add-subtopic" [disabled]="!newSubtopicTitle.trim()">
+            ➕ Adicionar
+          </button>
+        </div>
+      </form>
+
+      <!-- Campo de Busca em Tempo Real -->
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="form-control-search"
+          placeholder="Filtrar por descrição..."
+          [ngModel]="filterText()"
+          (ngModelChange)="filterText.set($event)"
+        />
+      </div>
+
+      <!-- Lista / Tabela de Subtópicos -->
+      <div class="subtopics-list">
+        @for (topic of filteredTopics(); track topic.id) {
+          <div
+            class="subtopic-item"
+            [class.active]="topic.id === selectedTopicId()"
+            (click)="selectTopic(topic)"
+          >
+            <div class="item-info">
+              <span class="item-title">{{ topic.title }}</span>
+              <div class="item-badges">
+                <span class="badge-exam">{{ topic.examBoard || defaultExamBoard() }}</span>
+                @if (topic.contentMarkdown || topic.topicDetail?.detail) {
+                  <span class="badge-status has-content">Teoria ✔</span>
+                }
+                @if (topic.flashcards && topic.flashcards.length > 0) {
+                  <span class="badge-status has-cards">{{ topic.flashcards.length }} Cards</span>
+                }
+                @if (topic.questions && topic.questions.length > 0) {
+                  <span class="badge-status has-questions">{{ topic.questions.length }} Qs</span>
+                }
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn-delete-subtopic"
+              (click)="onDeleteTopic(topic.id, topic.title, $event)"
+              title="Excluir Subtópico"
+            >
+              🗑️
+            </button>
+          </div>
+        }
+
+        @if (filteredTopics().length === 0) {
+          <div class="no-topics-found">
+            <p>Nenhum subtópico localizado.</p>
+          </div>
+        }
+      </div>
+    </aside>
+
+    <!-- COLUNA DETAIL: WORKSPACE DO SUBTÓPICO SELECIONADO -->
+    <main class="detail-column">
+      @if (activeTopic()) {
+        <div class="workspace-card">
+          <!-- Cabeçalho do Workspace -->
+          <div class="workspace-header">
+            <div class="workspace-title-box">
+              <span class="topic-indicator">ESTUDO DO SUBTÓPICO:</span>
+              <h3>{{ activeTopic()?.title }}</h3>
+            </div>
+          </div>
+
+          <!-- Navegação por Abas -->
+          <nav class="workspace-tabs-nav">
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'theory'"
+              (click)="activeTab.set('theory')"
+            >
+              📖 Teoria & Resumo
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'flashcards'"
+              (click)="activeTab.set('flashcards')"
+            >
+              ⚡ Flashcards ({{ activeTopic()?.flashcards?.length || 0 }})
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'questions'"
+              (click)="activeTab.set('questions')"
+            >
+              ❓ Questões & Gabarito ({{ activeTopic()?.questions?.length || 0 }})
+            </button>
+            <button
+              type="button"
+              class="tab-btn"
+              [class.active]="activeTab() === 'tips'"
+              (click)="activeTab.set('tips')"
+            >
+              💡 Dicas & Pontos-Chave
+            </button>
+          </nav>
+
+          <!-- CONTEÚDO DAS ABAS -->
+          <div class="tab-content-body">
+            <!-- ABA 1: TEORIA & RESUMO (IA + PDF + TEXTAREA) -->
+            @if (activeTab() === 'theory') {
+              <div class="theory-tab-view">
+                <!-- Painel de Automação de Conteúdo -->
+                <div class="automation-tools-grid">
+                  <!-- Ferramenta 1: IA Generativa -->
+                  <div class="tool-card ai-tool">
+                    <div class="tool-title">
+                      <span>🤖 Gerar Conteúdo Teórico com IA</span>
+                    </div>
+                    <p class="tool-desc">Gere explicações e resumos direcionados ao edital e à banca examinadora.</p>
+                    <div class="tool-input-row">
+                      <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Foco específico ou deixe em branco para ementa direta..."
+                        [(ngModel)]="aiPromptQuery"
+                      />
+                      <button
+                        type="button"
+                        class="btn-tool-action btn-ai"
+                        (click)="generateAiTheory()"
+                        [disabled]="isAiGeneratingTheory()"
+                      >
+                        @if (isAiGeneratingTheory()) {
+                          <span>⏳ Gerando...</span>
+                        } @else {
+                          <span>⚡ Gerar Teoria</span>
+                        }
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Ferramenta 2: Extrator de Arquivo/PDF -->
+                  <div class="tool-card doc-tool">
+                    <div class="tool-title">
+                      <span>📄 Extrair de Material de Apoio (PDF / TXT)</span>
+                    </div>
+                    <p class="tool-desc">Carregue um arquivo para extrair o texto automaticamente para o workspace.</p>
+                    <div class="tool-input-row">
+                      <input
+                        type="file"
+                        class="form-control file-input"
+                        accept=".pdf,.txt,.md"
+                        (change)="onFileSelected($event)"
+                      />
+                      @if (isExtractingDocument()) {
+                        <span class="loading-file-tag">Processando...</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Editor de Texto Unificado (Markdown/Notas) -->
+                <div class="editor-unified-wrapper">
+                  <div class="editor-header">
+                    <label>Área de Estudo e Teoria Estruturada</label>
+                    <span class="editor-hint">O conteúdo da IA, arquivos e suas edições manuais ficam consolidados aqui</span>
+                  </div>
+                  <textarea
+                    class="unified-textarea"
+                    rows="14"
+                    [(ngModel)]="theoryContent"
+                    placeholder="O conteúdo teórico detalhado aparecerá aqui. Você pode digitar, colar trechos ou usar os geradores automáticos acima..."
+                  ></textarea>
+
+                  <div class="editor-footer-actions">
+                    <button type="button" class="btn-save-content" (click)="saveCurrentTopic()">
+                      💾 Salvar Conteúdo do Tópico
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ABA 2: FLASHCARDS DE REVISÃO -->
+            @if (activeTab() === 'flashcards') {
+              <div class="flashcards-tab-view">
+                <div class="tab-toolbar">
+                  <button
+                    type="button"
+                    class="btn-ai-generate"
+                    (click)="generateAiFlashcards()"
+                    [disabled]="isAiGeneratingFlashcards()"
+                  >
+                    @if (isAiGeneratingFlashcards()) {
+                      <span>⏳ Criando cards com IA...</span>
+                    } @else {
+                      <span>⚡ Gerar Flashcards com IA (baseados na Teoria)</span>
+                    }
+                  </button>
+                </div>
+
+                <!-- Formulário de Adição Manual -->
+                <div class="manual-add-card-box">
+                  <h4>+ Adicionar Flashcard Manual</h4>
+                  <div class="form-row-card">
+                    <div class="form-group flex-2">
+                      <label>Frente (Pergunta / Conceito)</label>
+                      <input type="text" class="form-control" [(ngModel)]="newCardFront" placeholder="Ex.: O que é o Teorema CAP?" />
+                    </div>
+                    <div class="form-group flex-3">
+                      <label>Verso (Resposta / Definição)</label>
+                      <input type="text" class="form-control" [(ngModel)]="newCardBack" placeholder="Ex.: Consistência, Disponibilidade e Tolerância a Partição..." />
+                    </div>
+                    <div class="form-group">
+                      <label>Dificuldade</label>
+                      <select class="form-control" [(ngModel)]="newCardDifficulty">
+                        <option value="EASY">Fácil</option>
+                        <option value="MEDIUM">Média</option>
+                        <option value="HARD">Difícil</option>
+                      </select>
+                    </div>
+                    <div class="form-group btn-col">
+                      <label>&nbsp;</label>
+                      <button type="button" class="btn-add-item" (click)="onAddManualFlashcard()" [disabled]="!newCardFront.trim() || !newCardBack.trim()">
+                        + Inserir Card
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Grid de Flashcards Existentes -->
+                <div class="flashcards-grid">
+                  @for (card of activeTopic()?.flashcards || []; track $index) {
+                    <div class="flashcard-box">
+                      <div class="card-box-header">
+                        <span class="badge-difficulty" [class]="'diff-' + (card.difficulty || 'medium').toLowerCase()">
+                          {{ card.difficulty || 'MÉDIO' }}
+                        </span>
+                        <button type="button" class="btn-del-item" (click)="onDeleteFlashcard($index)">🗑️</button>
+                      </div>
+                      <div class="card-box-front">
+                        <strong>Frente:</strong> {{ card.frontText }}
+                      </div>
+                      <div class="card-box-back">
+                        <strong>Verso:</strong> {{ card.backText }}
+                      </div>
+                    </div>
+                  }
+
+                  @if ((activeTopic()?.flashcards?.length || 0) === 0) {
+                    <div class="empty-tab-state">
+                      <p>Nenhum flashcard gerado ainda. Clique no botão de IA acima para criar automaticamente a partir do conteúdo teórico.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ABA 3: BANCO DE QUESTÕES -->
+            @if (activeTab() === 'questions') {
+              <div class="questions-tab-view">
+                <div class="tab-toolbar">
+                  <button
+                    type="button"
+                    class="btn-ai-generate"
+                    (click)="generateAiQuestions()"
+                    [disabled]="isAiGeneratingQuestions()"
+                  >
+                    @if (isAiGeneratingQuestions()) {
+                      <span>⏳ Criando questões no padrão {{ defaultExamBoard() }}...</span>
+                    } @else {
+                      <span>⚡ Gerar Questões Inéditas com IA (Banca: {{ defaultExamBoard() }})</span>
+                    }
+                  </button>
+                </div>
+
+                <!-- Formulário de Adição Manual de Questão -->
+                <div class="manual-add-question-box">
+                  <h4>+ Cadastrar Nova Questão</h4>
+                  <div class="form-group mb-2">
+                    <label>Enunciado da Questão</label>
+                    <textarea class="form-control" rows="2" [(ngModel)]="newQuestionStatement" placeholder="Texto da questão..."></textarea>
+                  </div>
+
+                  <div class="options-grid mb-2">
+                    @for (opt of newQuestionOptions; track $index) {
+                      <div class="option-row">
+                        <span class="option-letter">{{ ['A', 'B', 'C', 'D', 'E'][$index] }})</span>
+                        <input type="text" class="form-control" [(ngModel)]="newQuestionOptions[$index]" placeholder="Texto da alternativa..." />
+                        <label class="radio-correct">
+                          <input type="radio" name="correctOption" [value]="$index" [(ngModel)]="newQuestionCorrectIndex" /> Correta
+                        </label>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="form-group mb-2">
+                    <label>Justificativa / Comentário do Professor</label>
+                    <input type="text" class="form-control" [(ngModel)]="newQuestionExplanation" placeholder="Explicação detalhada do gabarito..." />
+                  </div>
+
+                  <button type="button" class="btn-add-item" (click)="onAddManualQuestion()">
+                    + Inserir Questão
+                  </button>
+                </div>
+
+                <!-- Lista de Questões Existentes -->
+                <div class="questions-list">
+                  @for (q of activeTopic()?.questions || []; track $index) {
+                    <div class="question-box">
+                      <div class="question-header">
+                        <span class="q-number">Questão #{{ $index + 1 }} · {{ q.examBoard || defaultExamBoard() }}</span>
+                        <button type="button" class="btn-del-item" (click)="onDeleteQuestion($index)">🗑️</button>
+                      </div>
+                      <p class="q-statement">{{ q.statement }}</p>
+                      <div class="q-options">
+                        @for (opt of q.options || []; track $index; let optIdx = $index) {
+                          <div class="q-option-item" [class.is-correct]="optIdx === q.correctOptionIndex">
+                            <span class="opt-label">{{ ['A', 'B', 'C', 'D', 'E'][optIdx] }})</span>
+                            <span>{{ opt }}</span>
+                            @if (optIdx === q.correctOptionIndex) {
+                              <span class="correct-badge">✔ Gabarito</span>
+                            }
+                          </div>
+                        }
+                      </div>
+                      @if (q.explanation) {
+                        <div class="q-explanation">
+                          <strong>Comentário do Gabarito:</strong> {{ q.explanation }}
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if ((activeTopic()?.questions?.length || 0) === 0) {
+                    <div class="empty-tab-state">
+                      <p>Nenhuma questão cadastrada. Clique no botão acima para criar questões com a IA no formato da sua banca.</p>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ABA 4: DICAS & PONTOS-CHAVE -->
+            @if (activeTab() === 'tips') {
+              <div class="tips-tab-view">
+                <div class="form-group mb-3">
+                  <label>Pontos-Chave para Fixação (1 por linha)</label>
+                  <textarea
+                    class="form-control"
+                    rows="5"
+                    [(ngModel)]="keyPointsText"
+                    placeholder="Conceito 1&#10;Conceito 2&#10;Regra essencial..."
+                  ></textarea>
+                </div>
+
+                <div class="form-group mb-3">
+                  <label>Dicas de Prova / Pegadinhas da Banca (1 por linha)</label>
+                  <textarea
+                    class="form-control"
+                    rows="5"
+                    [(ngModel)]="tipsText"
+                    placeholder="Atenção para pegadinha do Cebraspe em...&#10;Lembrar da exceção da regra..."
+                  ></textarea>
+                </div>
+
+                <button type="button" class="btn-save-content" (click)="saveCurrentTopic()">
+                  💾 Salvar Dicas & Pontos-Chave
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <!-- Estado Vazio: Nenhum Subtópico Selecionado -->
+        <div class="no-selection-card">
+          <div class="empty-icon">👈</div>
+          <h3>Selecione um subtópico na lista ao lado</h3>
+          <p>Ou adicione um novo subtópico na barra rápida para abrir o console de edição com teoria, IA, flashcards e questões.</p>
+        </div>
+      }
+    </main>
+  </div>
+</div>

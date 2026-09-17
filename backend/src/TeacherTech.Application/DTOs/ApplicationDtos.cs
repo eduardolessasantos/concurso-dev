@@ -71,11 +71,27 @@ public class CreateSubjectDto
     [Required]
     public Guid CourseId { get; set; }
     public Guid? SessionId { get; set; }
+    public Guid? ModuleId { get => SessionId; set => SessionId = value; }
     public string SessionName { get; set; } = string.Empty;
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
     public string Meta { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+}
+
+public class CreateModuleDto
+{
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class UpdateCourseDto
+{
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Category { get; set; } = "Geral";
+    public decimal Price { get; set; }
+    public bool IsPublic { get; set; } = true;
 }
 
 public class CourseModuleDto
@@ -129,6 +145,18 @@ public class CreateTopicDto
     public string ExamBoard { get; set; } = "Geral";
     public TopicContentDto? TopicContent { get; set; }
     public TopicDetailDto? TopicDetail { get => TopicContent as TopicDetailDto; set => TopicContent = value; }
+}
+
+public class UpdateTopicDto
+{
+    [Required, MaxLength(150)]
+    public string Title { get; set; } = string.Empty;
+    public string ExamBoard { get; set; } = "Geral";
+    public string ContentMarkdown { get; set; } = string.Empty;
+    public TopicContentDto? TopicContent { get; set; }
+    public TopicDetailDto? TopicDetail { get => TopicContent as TopicDetailDto; set => TopicContent = value; }
+    public List<StudioFlashcardDto>? Flashcards { get; set; }
+    public List<StudioQuestionDto>? Questions { get; set; }
 }
 
 public class GenerateAiContentDto

@@ -322,16 +322,27 @@
       cursor: pointer;
       transition: all 0.2s;
 
-      &.btn-edit {
+      &.btn-primary-action {
         flex: 1;
+        background: #0284c7;
+        color: white;
+        border: 1px solid #0369a1;
+
+        &:hover {
+          background: #0369a1;
+          border-color: #38bdf8;
+        }
+      }
+
+      &.btn-edit {
         background: #1e293b;
         color: #38bdf8;
         border: 1px solid #334155;
 
         &:hover {
-          background: #0284c7;
+          background: rgba(56, 189, 248, 0.15);
           color: white;
-          border-color: #0284c7;
+          border-color: #38bdf8;
         }
       }
 

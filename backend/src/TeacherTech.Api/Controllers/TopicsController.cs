@@ -90,4 +90,22 @@ public class TopicsController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> UpdateTopic(Guid id, [FromBody] UpdateTopicDto dto)
+    {
+        var result = await _topicService.UpdateTopicAsync(id, dto);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(result.Data);
+    }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteTopic(Guid id)
+    {
+        var result = await _topicService.DeleteTopicAsync(id);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(new { success = true });
+    }
 }

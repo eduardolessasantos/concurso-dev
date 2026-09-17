@@ -23,6 +23,10 @@ public interface ICourseApplicationService
     Task<List<CourseResponseDto>> GetMyCoursesAsync(string professorId);
     Task<CourseStudyPlan?> GetCourseByIdAsync(Guid id);
     Task<ServiceResult<CourseStudyPlan>> CreateCourseAsync(string professorId, CreateCourseDto dto);
+    Task<ServiceResult<CourseStudyPlan>> UpdateCourseBasicInfoAsync(Guid courseId, UpdateCourseDto dto);
+    Task<ServiceResult<CourseModule>> AddModuleAsync(Guid courseId, string name);
+    Task<ServiceResult<CourseModule>> UpdateModuleAsync(Guid courseId, Guid moduleId, string name);
+    Task<ServiceResult<bool>> DeleteModuleAsync(Guid courseId, Guid moduleId);
     Task<ServiceResult<SaveStudioResponseDto>> PublishStudioContentAsync(string? professorId, SaveStudioContentDto dto);
 }
 
@@ -69,6 +73,8 @@ public interface ISubjectApplicationService
 {
     Task<List<Subject>> GetSubjectsByCourseAsync(Guid courseId);
     Task<ServiceResult<Subject>> CreateSubjectAsync(CreateSubjectDto dto);
+    Task<ServiceResult<Subject>> UpdateSubjectAsync(Guid id, CreateSubjectDto dto);
+    Task<ServiceResult<bool>> DeleteSubjectAsync(Guid id);
 }
 
 public interface ITopicApplicationService
@@ -76,6 +82,8 @@ public interface ITopicApplicationService
     Task<List<Topic>> GetTopicsBySubjectAsync(Guid subjectId);
     Task<Topic?> GetTopicByIdAsync(Guid id);
     Task<ServiceResult<Topic>> CreateTopicAsync(CreateTopicDto dto);
+    Task<ServiceResult<Topic>> UpdateTopicAsync(Guid id, UpdateTopicDto dto);
+    Task<ServiceResult<bool>> DeleteTopicAsync(Guid id);
 }
 
 public interface IBillingService

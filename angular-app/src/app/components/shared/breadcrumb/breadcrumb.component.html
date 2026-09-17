@@ -1,0 +1,24 @@
+<nav class="tt-breadcrumb-nav" aria-label="Navegação estruturada">
+  <ol class="tt-breadcrumb">
+    @for (item of items; track $index; let last = $last) {
+      <li class="tt-breadcrumb-item" [class.active]="last">
+        @if (!last && item.url) {
+          <a [routerLink]="item.url" class="tt-breadcrumb-link">
+            @if ($index === 0) {
+              <span class="icon">🏛️</span>
+            }
+            {{ item.label }}
+          </a>
+          <span class="tt-breadcrumb-separator">›</span>
+        } @else {
+          <span class="tt-breadcrumb-current">
+            @if ($index === 0) {
+              <span class="icon">🏛️</span>
+            }
+            {{ item.label }}
+          </span>
+        }
+      </li>
+    }
+  </ol>
+</nav>

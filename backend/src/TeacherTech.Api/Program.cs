@@ -136,6 +136,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.Converters.Add(new TeacherTech.Api.Converters.NullableGuidJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new TeacherTech.Api.Converters.GuidJsonConverter());
     });
 
 // 5. Health Checks Service Configuration

@@ -147,4 +147,40 @@ public class CoursesController : ControllerBase
 
         return Ok(result.Data);
     }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpPut("{courseId:guid}")]
+    public async Task<IActionResult> UpdateCourseBasicInfo(Guid courseId, [FromBody] UpdateCourseDto dto)
+    {
+        var result = await _courseService.UpdateCourseBasicInfoAsync(courseId, dto);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(result.Data);
+    }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpPost("{courseId:guid}/modules")]
+    public async Task<IActionResult> AddModule(Guid courseId, [FromBody] CreateModuleDto dto)
+    {
+        var result = await _courseService.AddModuleAsync(courseId, dto.Name);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(result.Data);
+    }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpPut("{courseId:guid}/modules/{moduleId:guid}")]
+    public async Task<IActionResult> UpdateModule(Guid courseId, Guid moduleId, [FromBody] CreateModuleDto dto)
+    {
+        var result = await _courseService.UpdateModuleAsync(courseId, moduleId, dto.Name);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(result.Data);
+    }
+
+    [Authorize(Roles = UserRoles.Professor)]
+    [HttpDelete("{courseId:guid}/modules/{moduleId:guid}")]
+    public async Task<IActionResult> DeleteModule(Guid courseId, Guid moduleId)
+    {
+        var result = await _courseService.DeleteModuleAsync(courseId, moduleId);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        return Ok(new { success = true });
+    }
 }

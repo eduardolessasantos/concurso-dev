@@ -1,0 +1,118 @@
+<div class="modules-page-container">
+  <!-- Breadcrumb Superior -->
+  <app-breadcrumb [items]="breadcrumbs()"></app-breadcrumb>
+
+  <!-- Notificações -->
+  @if (statusMessage()) {
+    <div class="status-banner" [class]="'banner-' + statusType()">
+      <span>{{ statusMessage() }}</span>
+      <button class="btn-close-banner" (click)="statusMessage.set(null)">✕</button>
+    </div>
+  }
+
+  <!-- Header da Página -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="subtitle-badge">NÍVEL 1 · ESTRUTURA DO EDITAL</div>
+      <h1>Categorias & Módulos de Conhecimento</h1>
+      <p>Organize as grandes áreas do edital (ex.: <em>Conhecimentos Específicos</em>, <em>Conhecimentos Gerais</em>, <em>Ciências Humanas</em>). Cada categoria agrupará seus cards de disciplinas.</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['/professor/estudio']" class="btn-back">
+        ← Voltar aos Meus Estudos
+      </a>
+    </div>
+  </header>
+
+  <!-- Barra de Ação Rápida (Inline Add) -->
+  <section class="quick-add-section">
+    <form (ngSubmit)="onAddModule()" class="inline-add-form">
+      <div class="input-group">
+        <span class="input-icon">📁</span>
+        <input
+          type="text"
+          class="form-control-lg"
+          placeholder="Digite o nome de uma nova categoria (ex.: Ciências Humanas)..."
+          name="newModule"
+          [(ngModel)]="newModuleName"
+          required
+        />
+        <button type="submit" class="btn-add-primary" [disabled]="!newModuleName.trim()">
+          ➕ Adicionar Categoria
+        </button>
+      </div>
+    </form>
+
+    <!-- Chips Rápidos de Sugestões -->
+    <div class="quick-chips-wrapper">
+      <span class="chips-label">Sugestões rápidas de edital:</span>
+      <div class="chips-list">
+        @for (chip of suggestedCategories; track chip) {
+          <button type="button" class="category-chip" (click)="onAddModule(chip)">
+            + {{ chip }}
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Grid de Cards de Categorias -->
+  <section class="categories-grid-section">
+    <div class="section-meta">
+      <h3>Categorias Cadastradas ({{ modulesWithStats().length }})</h3>
+      <span class="section-hint">Clique no card para visualizar e cadastrar as disciplinas desta categoria</span>
+    </div>
+
+    @if (modulesWithStats().length > 0) {
+      <div class="cards-grid">
+        @for (module of modulesWithStats(); track module.id) {
+          <div class="category-card" (click)="openModuleDisciplines(module.id)">
+            <div class="card-header">
+              <div class="card-icon-wrapper">
+                <span class="card-folder-icon">📂</span>
+              </div>
+              <button
+                type="button"
+                class="btn-delete-card"
+                (click)="onDeleteModule(module.id, module.name, $event)"
+                title="Excluir Categoria"
+              >
+                🗑️
+              </button>
+            </div>
+
+            <div class="card-body">
+              <h4 class="category-title">{{ module.name }}</h4>
+              <p class="category-desc">
+                Agrupador curricular para direcionar a trilha de estudos do aluno.
+              </p>
+            </div>
+
+            <div class="card-stats">
+              <div class="stat-pill">
+                <span class="stat-val">{{ module.subjectsCount }}</span>
+                <span class="stat-lbl">Disciplinas</span>
+              </div>
+              <div class="stat-pill">
+                <span class="stat-val">{{ module.topicsCount }}</span>
+                <span class="stat-lbl">Tópicos / Subtópicos</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="link-open">
+                Acessar Disciplinas em Cards →
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon">🗂️</div>
+        <h4>Nenhuma categoria cadastrada ainda</h4>
+        <p>Utilize a barra acima ou clique em uma das sugestões rápidas para criar o primeiro módulo do seu estudo.</p>
+      </div>
+    }
+  </section>
+</div>

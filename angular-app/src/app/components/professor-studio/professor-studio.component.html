@@ -58,7 +58,7 @@
       <!-- Grid of Course Cards -->
       <div class="courses-cards-grid">
         @for (course of coursesService.myCourses(); track course.id) {
-          <div class="course-card" (click)="openCourseEditor(course)">
+          <div class="course-card" (click)="openCourseModules(course)">
             <!-- Card Header -->
             <div class="card-top">
               <span class="category-badge">{{ course.category || 'Geral' }}</span>
@@ -94,9 +94,9 @@
             <div class="card-actions" (click)="$event.stopPropagation()">
               <button 
                 type="button" 
-                class="btn-card-action btn-edit" 
-                (click)="openCourseEditor(course)">
-                ✏️ Editar / Conteúdos
+                class="btn-card-action btn-primary-action" 
+                (click)="openCourseModules(course)">
+                📂 Categorias & Disciplinas
               </button>
               <button 
                 type="button" 

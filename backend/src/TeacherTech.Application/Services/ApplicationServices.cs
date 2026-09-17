@@ -267,6 +267,80 @@ public class CourseApplicationService : ICourseApplicationService
         return ServiceResult<CourseStudyPlan>.Created(course);
     }
 
+    public async Task<ServiceResult<CourseStudyPlan>> UpdateCourseBasicInfoAsync(Guid courseId, UpdateCourseDto dto)
+    {
+        var course = await _courseRepo.GetByIdAsync(courseId);
+        if (course == null) return ServiceResult<CourseStudyPlan>.Fail("Curso não encontrado.", 404);
+
+        if (!string.IsNullOrWhiteSpace(dto.Title)) course.Title = dto.Title;
+        if (!string.IsNullOrWhiteSpace(dto.Category)) course.Category = dto.Category;
+        if (!string.IsNullOrWhiteSpace(dto.Description)) course.Description = dto.Description;
+        course.Price = dto.Price;
+        course.IsPublic = dto.IsPublic;
+        course.UpdatedAt = DateTime.UtcNow;
+
+        _courseRepo.Update(course);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<CourseStudyPlan>.Ok(course);
+    }
+
+    public async Task<ServiceResult<CourseModule>> AddModuleAsync(Guid courseId, string name)
+    {
+        var course = await _courseRepo.GetByIdAsync(courseId);
+        if (course == null) return ServiceResult<CourseModule>.Fail("Curso não encontrado.", 404);
+
+        var existing = await _moduleRepo.FindByCourseAndNameAsync(courseId, name);
+        if (existing != null) return ServiceResult<CourseModule>.Ok(existing);
+
+        var count = await _moduleRepo.CountByCourseIdAsync(courseId);
+        var module = new CourseModule
+        {
+            CourseId = courseId,
+            Name = name,
+            OrderIndex = count + 1,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _moduleRepo.AddAsync(module);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<CourseModule>.Created(module);
+    }
+
+    public async Task<ServiceResult<CourseModule>> UpdateModuleAsync(Guid courseId, Guid moduleId, string name)
+    {
+        var module = await _moduleRepo.GetByIdAsync(moduleId);
+        if (module == null || module.CourseId != courseId)
+            return ServiceResult<CourseModule>.Fail("Módulo não encontrado.", 404);
+
+        module.Name = name;
+        module.UpdatedAt = DateTime.UtcNow;
+        _moduleRepo.Update(module);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<CourseModule>.Ok(module);
+    }
+
+    public async Task<ServiceResult<bool>> DeleteModuleAsync(Guid courseId, Guid moduleId)
+    {
+        var module = await _moduleRepo.GetByIdAsync(moduleId);
+        if (module == null || module.CourseId != courseId)
+            return ServiceResult<bool>.Fail("Módulo não encontrado.", 404);
+
+        var subjects = await _subjectRepo.GetByCourseIdWithTopicsAsync(courseId);
+        foreach (var s in subjects.Where(s => s.ModuleId == moduleId))
+        {
+            s.ModuleId = null;
+            _subjectRepo.Update(s);
+        }
+
+        _moduleRepo.Remove(module);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
     public async Task<ServiceResult<SaveStudioResponseDto>> PublishStudioContentAsync(string? professorId, SaveStudioContentDto dto)
     {
         if (string.IsNullOrEmpty(professorId))
@@ -1091,15 +1165,26 @@ public class SubjectApplicationService : ISubjectApplicationService
 {
     private readonly ISubjectRepository _subjectRepo;
     private readonly ICourseRepository _courseRepo;
+    private readonly ICourseModuleRepository? _moduleRepo;
     private readonly IUnitOfWork _unitOfWork;
 
     public SubjectApplicationService(
         ISubjectRepository subjectRepo,
         ICourseRepository courseRepo,
         IUnitOfWork unitOfWork)
+        : this(subjectRepo, courseRepo, null, unitOfWork)
+    {
+    }
+
+    public SubjectApplicationService(
+        ISubjectRepository subjectRepo,
+        ICourseRepository courseRepo,
+        ICourseModuleRepository? moduleRepo,
+        IUnitOfWork unitOfWork)
     {
         _subjectRepo = subjectRepo;
         _courseRepo = courseRepo;
+        _moduleRepo = moduleRepo;
         _unitOfWork = unitOfWork;
     }
 
@@ -1113,19 +1198,66 @@ public class SubjectApplicationService : ISubjectApplicationService
         var course = await _courseRepo.GetByIdAsync(dto.CourseId);
         if (course == null) return ServiceResult<Subject>.Fail("Curso não encontrado.", 404);
 
+        Guid? moduleId = (dto.SessionId.HasValue && dto.SessionId.Value != Guid.Empty) 
+            ? dto.SessionId 
+            : ((dto.ModuleId.HasValue && dto.ModuleId.Value != Guid.Empty) ? dto.ModuleId : null);
+
+        if (!moduleId.HasValue && !string.IsNullOrWhiteSpace(dto.SessionName) && _moduleRepo != null)
+        {
+            var foundModule = await _moduleRepo.FindByCourseAndNameAsync(dto.CourseId, dto.SessionName);
+            if (foundModule != null)
+            {
+                moduleId = foundModule.Id;
+            }
+        }
+
         var subjectCount = await _subjectRepo.CountByCourseIdAsync(dto.CourseId);
         var subject = new Subject
         {
             CourseId = dto.CourseId,
+            ModuleId = moduleId,
             Name = dto.Name,
+            Meta = dto.Meta,
             Description = dto.Description,
-            OrderIndex = subjectCount + 1
+            OrderIndex = subjectCount + 1,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _subjectRepo.AddAsync(subject);
         await _unitOfWork.CommitAsync();
 
         return ServiceResult<Subject>.Ok(subject);
+    }
+
+    public async Task<ServiceResult<Subject>> UpdateSubjectAsync(Guid id, CreateSubjectDto dto)
+    {
+        var subject = await _subjectRepo.GetByIdAsync(id);
+        if (subject == null) return ServiceResult<Subject>.Fail("Disciplina não encontrada.", 404);
+
+        if (!string.IsNullOrWhiteSpace(dto.Name)) subject.Name = dto.Name;
+        subject.Meta = dto.Meta ?? subject.Meta;
+        subject.Description = dto.Description ?? subject.Description;
+        if (dto.SessionId.HasValue && dto.SessionId.Value != Guid.Empty)
+        {
+            subject.ModuleId = dto.SessionId.Value;
+        }
+        subject.UpdatedAt = DateTime.UtcNow;
+
+        _subjectRepo.Update(subject);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<Subject>.Ok(subject);
+    }
+
+    public async Task<ServiceResult<bool>> DeleteSubjectAsync(Guid id)
+    {
+        var subject = await _subjectRepo.GetByIdAsync(id);
+        if (subject == null) return ServiceResult<bool>.Fail("Disciplina não encontrada.", 404);
+
+        _subjectRepo.Remove(subject);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(true);
     }
 }
 
@@ -1168,12 +1300,99 @@ public class TopicApplicationService : ITopicApplicationService
             Title = dto.Title,
             ExamBoard = dto.ExamBoard,
             ContentMarkdown = "### Conteúdo em edição pelo professor...",
-            OrderIndex = topicCount + 1
+            OrderIndex = topicCount + 1,
+            UpdatedAt = DateTime.UtcNow
         };
 
         await _topicRepo.AddAsync(topic);
         await _unitOfWork.CommitAsync();
 
         return ServiceResult<Topic>.Ok(topic);
+    }
+
+    public async Task<ServiceResult<Topic>> UpdateTopicAsync(Guid id, UpdateTopicDto dto)
+    {
+        var topic = await _topicRepo.GetWithContentAsync(id);
+        if (topic == null)
+            return ServiceResult<Topic>.Fail("Tópico não encontrado.", 404);
+
+        if (!string.IsNullOrWhiteSpace(dto.Title)) topic.Title = dto.Title;
+        if (!string.IsNullOrWhiteSpace(dto.ExamBoard)) topic.ExamBoard = dto.ExamBoard;
+        if (dto.ContentMarkdown != null) topic.ContentMarkdown = dto.ContentMarkdown;
+        topic.UpdatedAt = DateTime.UtcNow;
+        _topicRepo.Update(topic);
+
+        if (dto.TopicContent != null || dto.TopicDetail != null)
+        {
+            var contentDto = dto.TopicContent ?? dto.TopicDetail!;
+            var examplesJson = contentDto.Examples != null ? JsonSerializer.Serialize(contentDto.Examples) : "[]";
+            var keyPointsJson = contentDto.KeyPoints != null ? JsonSerializer.Serialize(contentDto.KeyPoints) : "[]";
+            var tipsJson = contentDto.Tips != null ? JsonSerializer.Serialize(contentDto.Tips) : "[]";
+            var linksJson = contentDto.UsefulLinks != null ? JsonSerializer.Serialize(contentDto.UsefulLinks) : "[]";
+
+            var content = new TopicContent
+            {
+                TopicId = topic.Id,
+                Title = string.IsNullOrWhiteSpace(contentDto.Title) ? topic.Title : contentDto.Title,
+                Summary = contentDto.Summary ?? string.Empty,
+                Detail = contentDto.Detail ?? string.Empty,
+                Peso = contentDto.Peso ?? string.Empty,
+                ContentMarkdown = topic.ContentMarkdown,
+                ExamplesJson = examplesJson,
+                KeyPointsJson = keyPointsJson,
+                TipsJson = tipsJson,
+                UsefulLinksJson = linksJson,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _topicRepo.AddOrUpdateTopicContentAsync(content);
+        }
+
+        if (dto.Flashcards != null && dto.Flashcards.Any())
+        {
+            foreach (var fcDto in dto.Flashcards)
+            {
+                await _topicRepo.AddFlashcardAsync(new Flashcard
+                {
+                    TopicId = topic.Id,
+                    FrontText = fcDto.FrontText,
+                    BackText = fcDto.BackText,
+                    Difficulty = string.IsNullOrWhiteSpace(fcDto.DifficultyLevel) ? "MEDIUM" : fcDto.DifficultyLevel
+                });
+            }
+        }
+
+        if (dto.Questions != null && dto.Questions.Any())
+        {
+            foreach (var qDto in dto.Questions)
+            {
+                var optionsJson = qDto.Options != null && qDto.Options.Any()
+                    ? JsonSerializer.Serialize(qDto.Options)
+                    : qDto.OptionsJson;
+
+                await _topicRepo.AddQuestionAsync(new Question
+                {
+                    TopicId = topic.Id,
+                    Statement = qDto.Statement,
+                    OptionsJson = optionsJson,
+                    CorrectOptionIndex = qDto.CorrectOptionIndex,
+                    Explanation = qDto.Explanation,
+                    ExamBoard = string.IsNullOrWhiteSpace(qDto.ExamBoard) ? topic.ExamBoard : qDto.ExamBoard
+                });
+            }
+        }
+
+        await _unitOfWork.CommitAsync();
+        return ServiceResult<Topic>.Ok(topic);
+    }
+
+    public async Task<ServiceResult<bool>> DeleteTopicAsync(Guid id)
+    {
+        var topic = await _topicRepo.GetByIdAsync(id);
+        if (topic == null) return ServiceResult<bool>.Fail("Tópico não encontrado.", 404);
+
+        _topicRepo.Remove(topic);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(true);
     }
 }

@@ -1,0 +1,140 @@
+<div class="disciplines-page-container">
+  <!-- Breadcrumb Superior -->
+  <app-breadcrumb [items]="breadcrumbs()"></app-breadcrumb>
+
+  <!-- Notificações -->
+  @if (statusMessage()) {
+    <div class="status-banner" [class]="'banner-' + statusType()">
+      <span>{{ statusMessage() }}</span>
+      <button class="btn-close-banner" (click)="statusMessage.set(null)">✕</button>
+    </div>
+  }
+
+  <!-- Header da Categoria -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="subtitle-badge">NÍVEL 2 · DISCIPLINAS DA CATEGORIA</div>
+      <h1>{{ activeModule()?.name || 'Categoria' }}</h1>
+      <p>Gerencie as disciplinas e matérias que compõem este bloco do edital. Cada disciplina possui sua tela dedicada com subtópicos, teoria via IA e materiais.</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['/professor/estudio', courseId(), 'modulos']" class="btn-back">
+        ← Voltar às Categorias
+      </a>
+    </div>
+  </header>
+
+  <!-- Barra de Adição Rápida de Disciplina -->
+  <section class="quick-add-section">
+    <form (ngSubmit)="onAddDiscipline()" class="inline-add-discipline-form">
+      <div class="form-row">
+        <div class="input-main">
+          <label>Nome da Disciplina</label>
+          <div class="input-group">
+            <span class="input-icon">📖</span>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Ex.: Engenharia de Software, Direito Administrativo..."
+              name="disciplineName"
+              [(ngModel)]="newDisciplineName"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="input-meta">
+          <label>Peso / Relevância (opcional)</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ex.: 25% da prova · Peso 3"
+            name="disciplineMeta"
+            [(ngModel)]="newDisciplineMeta"
+          />
+        </div>
+
+        <div class="input-submit">
+          <button type="submit" class="btn-add-primary" [disabled]="!newDisciplineName.trim()">
+            ➕ Adicionar Disciplina
+          </button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- Grid de Cards de Disciplinas -->
+  <section class="disciplines-grid-section">
+    <div class="section-meta">
+      <h3>Disciplinas nesta Categoria ({{ disciplinesOfModule().length }})</h3>
+      <span class="section-hint">Clique em "Gerenciar Conteúdos" no card para abrir a tela completa da disciplina</span>
+    </div>
+
+    @if (disciplinesOfModule().length > 0) {
+      <div class="cards-grid">
+        @for (disc of disciplinesOfModule(); track disc.id) {
+          <div class="discipline-card" (click)="openSubjectStudio(disc.id)">
+            <!-- Topo do Card -->
+            <div class="card-header">
+              <span class="category-tag">{{ activeModule()?.name }}</span>
+              <button
+                type="button"
+                class="btn-delete-card"
+                (click)="onDeleteDiscipline(disc.id, disc.name, $event)"
+                title="Excluir Disciplina"
+              >
+                🗑️
+              </button>
+            </div>
+
+            <!-- Corpo do Card -->
+            <div class="card-body">
+              <h4 class="discipline-title">{{ disc.name }}</h4>
+              @if (disc.meta) {
+                <div class="discipline-meta-badge">⚖️ {{ disc.meta }}</div>
+              }
+              <p class="discipline-desc">
+                {{ disc.description || 'Conteúdo estruturado com ementa, teoria, flashcards e questões.' }}
+              </p>
+            </div>
+
+            <!-- Estatísticas da Disciplina -->
+            <div class="card-stats">
+              <div class="stat-item">
+                <span class="stat-num">{{ disc.topics?.length || 0 }}</span>
+                <span class="stat-label">Subtópicos</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-num">
+                  {{ disc.topics ? (disc.topics[0]?.flashcards?.length || 0) : 0 }}
+                </span>
+                <span class="stat-label">Flashcards</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-num">
+                  {{ disc.topics ? (disc.topics[0]?.questions?.length || 0) : 0 }}
+                </span>
+                <span class="stat-label">Questões</span>
+              </div>
+            </div>
+
+            <!-- Rodapé / Ação de Navegação -->
+            <div class="card-footer">
+              <button type="button" class="btn-manage-action">
+                ⚙️ Gerenciar Disciplina / Conteúdos →
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon">📚</div>
+        <h4>Nenhuma disciplina cadastrada nesta categoria</h4>
+        <p>Utilize o formulário rápido acima para cadastrar as matérias do edital que pertencem a "{{ activeModule()?.name }}".</p>
+      </div>
+    }
+  </section>
+</div>
