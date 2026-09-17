@@ -28,6 +28,7 @@ export class AuthComponent implements OnInit {
 
   public invitedCourseTitle = signal<string | null>(null);
   public returnUrl: string | null = null;
+  public acceptTerms = false;
 
   public isLoading = false;
   public errorMessage = signal<string | null>(null);
@@ -57,6 +58,8 @@ export class AuthComponent implements OnInit {
         this.selectedRole.set('STUDENT');
       }
     });
+
+    this.initGoogleSignIn();
   }
 
   resetForm(): void {
@@ -65,6 +68,7 @@ export class AuthComponent implements OnInit {
     this.fullName = '';
     this.headline = '';
     this.goalExam = '';
+    this.acceptTerms = false;
     this.showPassword.set(false);
     this.errorMessage.set(null);
     this.successMessage.set(null);
@@ -74,6 +78,7 @@ export class AuthComponent implements OnInit {
     this.activeTab.set(tab);
     this.errorMessage.set(null);
     this.successMessage.set(null);
+    setTimeout(() => this.renderGoogleButton(), 100);
   }
 
   setRole(role: 'PROFESSOR' | 'STUDENT'): void {
@@ -96,9 +101,86 @@ export class AuthComponent implements OnInit {
     }
   }
 
+  // --- GOOGLE SIGN-IN INTEGRATION ---
+  private initGoogleSignIn(): void {
+    if (typeof (window as any).google === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => this.renderGoogleButton();
+      document.head.appendChild(script);
+    } else {
+      setTimeout(() => this.renderGoogleButton(), 100);
+    }
+  }
+
+  private renderGoogleButton(): void {
+    const btnContainer = document.getElementById('googleSignInBtn');
+    const googleObj = (window as any).google;
+    if (!btnContainer || !googleObj || !googleObj.accounts?.id) return;
+
+    try {
+      googleObj.accounts.id.initialize({
+        client_id: '1234567890-mock.apps.googleusercontent.com', // Substituível por Client ID real
+        callback: (response: any) => this.handleGoogleCallback(response)
+      });
+      googleObj.accounts.id.renderButton(btnContainer, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rectangular',
+        width: 320,
+        logo_alignment: 'left'
+      });
+    } catch (err) {
+      console.warn('Google Identity initialization note:', err);
+    }
+  }
+
+  public handleGoogleCustomClick(): void {
+    const googleObj = (window as any).google;
+    if (googleObj && googleObj.accounts?.id) {
+      try {
+        googleObj.accounts.id.prompt();
+      } catch {
+        this.errorMessage.set('Para login direto, configure o Google Client ID de produção.');
+      }
+    } else {
+      this.errorMessage.set('Serviço de autenticação Google indisponível no momento.');
+    }
+  }
+
+  private handleGoogleCallback(response: any): void {
+    if (!response || !response.credential) {
+      this.errorMessage.set('Credencial do Google não recebida.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage.set(null);
+    this.authService.loginWithGoogle(response.credential, this.selectedRole()).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        const role = res.userRole || res.role;
+        this.navigateAfterAuth(role);
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage.set(err.error?.message || 'Falha ao autenticar com o Google no servidor.');
+      }
+    });
+  }
+
   onSubmit(): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
+
+    if (this.activeTab() === 'register' && !this.acceptTerms) {
+      this.errorMessage.set('Você deve concordar com os Termos de Uso e a Política de Privacidade (LGPD) para se cadastrar.');
+      return;
+    }
+
     this.isLoading = true;
 
     if (this.activeTab() === 'login') {

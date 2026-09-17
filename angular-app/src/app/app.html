@@ -43,6 +43,20 @@
           <span class="nav-icon">🔑</span> Entrar / Cadastro
         </a>
       }
+
+      <div class="nav-divider"><span>INSTITUCIONAL & AJUDA</span></div>
+      <a class="nav-link" routerLink="/sobre" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">ℹ️</span> Sobre Nós
+      </a>
+      <a class="nav-link" routerLink="/contato" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">📞</span> Fale Conosco
+      </a>
+      <a class="nav-link" routerLink="/privacidade" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">🔒</span> Privacidade & LGPD
+      </a>
+      <a class="nav-link" routerLink="/termos" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">📜</span> Termos de Uso
+      </a>
     </nav>
   </aside>
 
@@ -85,9 +99,72 @@
 
     <router-outlet />
 
+    <!-- Rodapé Institucional Completo (E-E-A-T & Google AdSense / LGPD) -->
     <footer class="app-footer">
-      <span>TeacherTech © 2026</span>
-      <span>Desenvolvido por Eduardo Lessa</span>
+      <div class="footer-container">
+        <div class="footer-grid">
+          <!-- Coluna 1: Sobre & Marca -->
+          <div class="footer-col brand-col">
+            <div class="footer-brand">
+              <span class="brand-badge">TT</span>
+              <span class="brand-name">TeacherTech</span>
+            </div>
+            <p class="footer-mission">
+              Plataforma inteligente de preparação para concursos públicos e certames com mentoria pedagógica, flashcards de repetição espaçada e inteligência artificial para professores e estudantes.
+            </p>
+            <div class="footer-badges">
+              <span class="trust-pill">🔒 LGPD Compliant</span>
+              <span class="trust-pill">🛡️ SSL Seguro</span>
+            </div>
+          </div>
+
+          <!-- Coluna 2: Navegação & Cursos -->
+          <div class="footer-col">
+            <h4>Plataforma</h4>
+            <ul class="footer-links">
+              <li><a routerLink="/explorar">Explorar Cursos</a></li>
+              <li><a routerLink="/meus-estudos">Meus Estudos Liberados</a></li>
+              <li><a routerLink="/simulado">Simulados Inéditos</a></li>
+              <li><a routerLink="/login">Área do Professor / Aluno</a></li>
+            </ul>
+          </div>
+
+          <!-- Coluna 3: Institucional (E-E-A-T) -->
+          <div class="footer-col">
+            <h4>Institucional</h4>
+            <ul class="footer-links">
+              <li><a routerLink="/sobre">Sobre o TeacherTech</a></li>
+              <li><a routerLink="/sobre">Sobre o Fundador (Eduardo Lessa)</a></li>
+              <li><a routerLink="/contato">Fale Conosco & Suporte</a></li>
+              <li><a routerLink="/p/eduardo-lessa">Perfil Público do Professor</a></li>
+            </ul>
+          </div>
+
+          <!-- Coluna 4: Legal & Privacidade (LGPD / AdSense) -->
+          <div class="footer-col">
+            <h4>Legal & Privacidade</h4>
+            <ul class="footer-links">
+              <li><a routerLink="/privacidade">Política de Privacidade (LGPD)</a></li>
+              <li><a routerLink="/termos">Termos e Condições de Uso</a></li>
+              <li><a routerLink="/privacidade">Declaração de Cookies e AdSense</a></li>
+              <li><a routerLink="/contato">Canal do Encarregado (DPO)</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom-bar">
+          <div class="copyright-info">
+            <span>TeacherTech © 2026 · Todos os direitos reservados.</span>
+            <span>Desenvolvido e mantido por <strong>Eduardo Lessa</strong>.</span>
+          </div>
+          <div class="legal-disclaimer">
+            <span>Esta plataforma utiliza cookies essenciais e parceiros autorizados para segurança e veiculação de anúncios.</span>
+          </div>
+        </div>
+      </div>
     </footer>
+
+    <!-- Banner Flutuante de Cookies LGPD -->
+    <app-cookie-consent />
   </main>
 </div>

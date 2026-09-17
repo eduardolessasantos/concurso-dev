@@ -299,3 +299,113 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Social Login Section & Google Button */
+.social-auth-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+
+  .google-btn-slot {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .btn-google-custom {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border-color, #cbd5e1);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary, #334155);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: var(--bg-hover, #f8fafc);
+      border-color: #94a3b8;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .google-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  .auth-divider {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 0.75rem 0 0.25rem;
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+
+    span {
+      padding: 0 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted, #94a3b8);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+}
+
+/* LGPD Terms Checkbox */
+.terms-checkbox-group {
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+
+  .terms-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #475569);
+    line-height: 1.45;
+
+    input[type="checkbox"] {
+      margin-top: 0.2rem;
+      width: 16px;
+      height: 16px;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+
+    a {
+      color: #6366f1;
+      text-decoration: underline;
+      font-weight: 500;
+
+      &:hover {
+        color: #4f46e5;
+      }
+    }
+  }
+}
+

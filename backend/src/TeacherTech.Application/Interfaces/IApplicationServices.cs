@@ -14,6 +14,7 @@ public interface IAuthApplicationService
 {
     Task<ServiceResult<AuthResponseDto>> RegisterAsync(RegisterDto dto);
     Task<ServiceResult<AuthResponseDto>> LoginAsync(LoginDto dto);
+    Task<ServiceResult<AuthResponseDto>> GoogleLoginAsync(GoogleLoginDto dto);
     Task<ServiceResult<object>> GetCurrentUserAsync(string? userId);
 }
 

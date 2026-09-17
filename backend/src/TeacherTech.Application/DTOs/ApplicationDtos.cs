@@ -28,6 +28,13 @@ public class LoginDto
     public string Password { get; set; } = string.Empty;
 }
 
+public class GoogleLoginDto
+{
+    [Required]
+    public string IdToken { get; set; } = string.Empty;
+    public string? PreferredRole { get; set; }
+}
+
 public class AuthResponseDto
 {
     public string Token { get; set; } = string.Empty;
@@ -35,6 +42,7 @@ public class AuthResponseDto
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string UserRole { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
 }
 
 // --- COURSE DTOS ---

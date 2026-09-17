@@ -1,0 +1,46 @@
+.adsense-slot-container {
+  margin: 1.5rem 0;
+  text-align: center;
+  overflow: hidden;
+
+  .ad-label {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #94a3b8);
+    margin-bottom: 0.35rem;
+  }
+
+  .ad-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    background: var(--bg-muted, #f8fafc);
+    border: 1px dashed var(--border-color, #cbd5e1);
+    border-radius: 0.75rem;
+    min-height: 90px;
+    color: var(--text-secondary, #64748b);
+
+    .placeholder-icon {
+      font-size: 1.5rem;
+    }
+
+    .placeholder-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+
+      strong {
+        font-size: 0.875rem;
+        color: var(--text-primary, #334155);
+      }
+
+      small {
+        font-size: 0.75rem;
+        font-family: monospace;
+      }
+    }
+  }
+}

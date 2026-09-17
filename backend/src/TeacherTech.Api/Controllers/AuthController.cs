@@ -75,6 +75,27 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Realiza a autenticação ou registro automático via credencial Google Identity Services (id_token).
+    /// </summary>
+    /// <param name="dto">Credencial do Google contendo o id_token JWT e perfil preferencial (opcional).</param>
+    /// <returns>Token JWT da aplicação TeacherTech e dados cadastrais do usuário.</returns>
+    /// <response code="200">Autenticação com Google realizada com sucesso.</response>
+    /// <response code="400">Token ausente ou com assinatura inválida.</response>
+    [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _authService.GoogleLoginAsync(dto);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Obtém as informações e perfil do usuário atualmente autenticado a partir do token JWT.
     /// </summary>
     /// <remarks>

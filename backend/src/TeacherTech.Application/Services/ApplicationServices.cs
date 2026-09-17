@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -101,7 +102,8 @@ public class AuthApplicationService : IAuthApplicationService
             UserId = user.Id,
             Email = user.Email!,
             FullName = user.FullName,
-            UserRole = role
+            UserRole = role,
+            AvatarUrl = user.AvatarUrl
         });
     }
 
@@ -121,7 +123,124 @@ public class AuthApplicationService : IAuthApplicationService
             UserId = user.Id,
             Email = user.Email!,
             FullName = user.FullName,
-            UserRole = role
+            UserRole = role,
+            AvatarUrl = user.AvatarUrl
+        });
+    }
+
+    public async Task<ServiceResult<AuthResponseDto>> GoogleLoginAsync(GoogleLoginDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.IdToken))
+            return ServiceResult<AuthResponseDto>.Fail("Token do Google é obrigatório.", 400);
+
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            var validationSettings = new GoogleJsonWebSignature.ValidationSettings();
+            var googleClientId = _configuration["Authentication:Google:ClientId"];
+            if (!string.IsNullOrWhiteSpace(googleClientId))
+            {
+                validationSettings.Audience = new[] { googleClientId };
+            }
+
+            payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, validationSettings);
+        }
+        catch (InvalidJwtException ex)
+        {
+            return ServiceResult<AuthResponseDto>.Fail($"Token do Google inválido: {ex.Message}", 401);
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<AuthResponseDto>.Fail($"Falha na validação com o Google: {ex.Message}", 400);
+        }
+
+        if (payload == null || string.IsNullOrWhiteSpace(payload.Email))
+        {
+            return ServiceResult<AuthResponseDto>.Fail("Não foi possível obter o e-mail verificado do Google.", 400);
+        }
+
+        var email = payload.Email.Trim().ToLowerInvariant();
+        var user = await _userManager.FindByEmailAsync(email);
+        string role;
+
+        if (user == null)
+        {
+            role = dto.PreferredRole?.ToUpper() == UserRoles.Professor ? UserRoles.Professor : UserRoles.Student;
+            var fullName = string.IsNullOrWhiteSpace(payload.Name) ? email.Split('@')[0] : payload.Name;
+
+            user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                FullName = fullName,
+                UserRole = role,
+                AvatarUrl = payload.Picture,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+            {
+                var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                return ServiceResult<AuthResponseDto>.Fail(errors);
+            }
+
+            if (!await _roleManager.RoleExistsAsync(role))
+                await _roleManager.CreateAsync(new IdentityRole(role));
+
+            await _userManager.AddToRoleAsync(user, role);
+
+            if (role == UserRoles.Professor)
+            {
+                var slug = fullName.ToLowerInvariant().Replace(" ", "-");
+                var profProfile = new ProfessorProfile
+                {
+                    UserId = user.Id,
+                    Headline = "Professor / Criador de Conteúdo",
+                    Bio = "Professor cadastrado via Google na TeacherTech.",
+                    CustomSlug = slug,
+                    AiCreditsLimit = 200,
+                    AiCreditsUsed = 0,
+                    PublicVisibility = true
+                };
+                await _professorProfileRepo.AddAsync(profProfile);
+            }
+            else
+            {
+                var studentProfile = new StudentProfile
+                {
+                    UserId = user.Id,
+                    GoalExam = "Concursos Públicos em Geral",
+                    Bio = "Estudante cadastrado via Google na TeacherTech."
+                };
+                await _studentProfileRepo.AddAsync(studentProfile);
+            }
+
+            await _unitOfWork.CommitAsync();
+        }
+        else
+        {
+            var roles = await _userManager.GetRolesAsync(user);
+            role = roles.FirstOrDefault() ?? user.UserRole;
+
+            // Se o usuário ainda não tem foto ou veio atualizada do Google, salva
+            if (!string.IsNullOrWhiteSpace(payload.Picture) && string.IsNullOrWhiteSpace(user.AvatarUrl))
+            {
+                user.AvatarUrl = payload.Picture;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+
+        var token = GenerateJwtToken(user, role);
+        return ServiceResult<AuthResponseDto>.Ok(new AuthResponseDto
+        {
+            Token = token,
+            UserId = user.Id,
+            Email = user.Email!,
+            FullName = user.FullName,
+            UserRole = role,
+            AvatarUrl = user.AvatarUrl
         });
     }
 
@@ -141,7 +260,8 @@ public class AuthApplicationService : IAuthApplicationService
             UserId = user.Id,
             Email = user.Email,
             FullName = user.FullName,
-            UserRole = roles.FirstOrDefault() ?? user.UserRole
+            UserRole = roles.FirstOrDefault() ?? user.UserRole,
+            AvatarUrl = user.AvatarUrl
         });
     }
 

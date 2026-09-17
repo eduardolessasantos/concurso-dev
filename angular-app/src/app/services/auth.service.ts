@@ -20,8 +20,9 @@ export interface AuthResponse {
   fullName: string;
   userRole?: 'PROFESSOR' | 'STUDENT' | 'ADMIN';
   role?: 'PROFESSOR' | 'STUDENT' | 'ADMIN';
+  avatarUrl?: string;
   customSlug?: string;
-  expiresAt: string;
+  expiresAt?: string;
 }
 
 @Injectable({
@@ -46,6 +47,12 @@ export class AuthService {
 
   login(credentials: any): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials).pipe(
+      tap(res => this.handleAuthSuccess(res))
+    );
+  }
+
+  loginWithGoogle(idToken: string, preferredRole?: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/google`, { idToken, preferredRole }).pipe(
       tap(res => this.handleAuthSuccess(res))
     );
   }
@@ -78,6 +85,7 @@ export class AuthService {
       email: res.email,
       fullName: res.fullName,
       role: role,
+      avatarUrl: res.avatarUrl,
       customSlug: res.customSlug
     };
 

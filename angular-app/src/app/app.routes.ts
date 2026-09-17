@@ -24,6 +24,10 @@ export const routes: Routes = [
   { path: 'cronograma', loadComponent: () => import('./components/schedule/schedule.component').then(m => m.ScheduleComponent), canActivate: [authGuard] },
   { path: 'simulado', loadComponent: () => import('./components/simulated/simulated.component').then(m => m.SimulatedComponent), canActivate: [authGuard] },
   { path: 'simulado/resultado/:historyIndex', loadComponent: () => import('./components/simulated-report/simulated-report.component').then(m => m.SimulatedReportComponent), canActivate: [authGuard] },
+  { path: 'sobre', loadComponent: () => import('./components/institutional/about/about.component').then(m => m.AboutComponent) },
+  { path: 'privacidade', loadComponent: () => import('./components/institutional/privacy/privacy.component').then(m => m.PrivacyComponent) },
+  { path: 'termos', loadComponent: () => import('./components/institutional/terms/terms.component').then(m => m.TermsComponent) },
+  { path: 'contato', loadComponent: () => import('./components/institutional/contact/contact.component').then(m => m.ContactComponent) },
   { path: '**', redirectTo: '' }
 ];
 

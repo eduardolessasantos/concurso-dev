@@ -1,0 +1,24 @@
+<div class="adsense-slot-container">
+  <div class="ad-label">Publicidade · Google AdSense</div>
+
+  @if (isDevelopment()) {
+    <!-- Mock Placeholder para Desenvolvimento / Validação Visual -->
+    <div class="ad-placeholder">
+      <div class="placeholder-icon">📢</div>
+      <div class="placeholder-text">
+        <strong>Espaço Reservado para Anúncio (AdSense)</strong>
+        <small>Slot: {{ adSlot || 'Geral' }} · Client: {{ adClient }}</small>
+      </div>
+    </div>
+  } @else {
+    <!-- Unidade Oficial do Google AdSense -->
+    <ins
+      class="adsbygoogle"
+      style="display:block"
+      [attr.data-ad-client]="adClient"
+      [attr.data-ad-slot]="adSlot"
+      [attr.data-ad-format]="adFormat"
+      [attr.data-full-width-responsive]="fullWidthResponsive ? 'true' : 'false'">
+    </ins>
+  }
+</div>

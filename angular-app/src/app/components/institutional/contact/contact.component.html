@@ -1,0 +1,122 @@
+<div class="institutional-page">
+  <div class="page-container">
+    <header class="page-header">
+      <div class="header-badge">ATENDIMENTO & SUPORTE</div>
+      <h1>Fale com o TeacherTech</h1>
+      <p class="lead">
+        Estamos à disposição para esclarecer dúvidas de alunos, apoiar professores na criação de trilhas e atender solicitações de privacidade (LGPD).
+      </p>
+    </header>
+
+    <div class="content-grid">
+      <div class="main-form-card">
+        @if (isSent()) {
+          <div class="success-box">
+            <span class="success-icon">✅</span>
+            <h3>Mensagem Recebida com Sucesso!</h3>
+            <p>
+              Agradecemos seu contato. Nossa equipe analisará sua solicitação e retornará pelo seu e-mail em até 24 a 48 horas úteis.
+            </p>
+            <button type="button" class="btn-new-msg" (click)="isSent.set(false)">Enviar Nova Mensagem</button>
+          </div>
+        } @else {
+          <h2>Envie uma Mensagem</h2>
+          <p class="form-desc">Preencha o formulário abaixo e responderemos o mais breve possível.</p>
+
+          <form (ngSubmit)="onSubmit()" class="contact-form">
+            <div class="form-group">
+              <label for="contactName">Seu Nome Completo</label>
+              <input
+                type="text"
+                id="contactName"
+                name="name"
+                [(ngModel)]="name"
+                placeholder="Ex.: Maria Souza"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="contactEmail">Seu E-mail</label>
+              <input
+                type="email"
+                id="contactEmail"
+                name="email"
+                [(ngModel)]="email"
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="contactSubject">Assunto / Motivo do Contato</label>
+              <select id="contactSubject" name="subject" [(ngModel)]="subject">
+                <option value="Dúvida Pedagógica / Curso">Dúvida sobre Curso ou Disciplina</option>
+                <option value="Suporte Técnico / Acesso">Suporte Técnico ou Acesso à Conta</option>
+                <option value="Criador / Sou Professor">Quero ser um Professor Criador</option>
+                <option value="LGPD e Privacidade">Privacidade e Proteção de Dados (LGPD)</option>
+                <option value="Parcerias e Outros">Parcerias Comerciais / Outros</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="contactMessage">Mensagem</label>
+              <textarea
+                id="contactMessage"
+                name="message"
+                [(ngModel)]="message"
+                rows="5"
+                placeholder="Descreva detalhadamente sua dúvida ou solicitação..."
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit" [disabled]="isSending() || !name.trim() || !email.trim() || !message.trim()">
+              @if (isSending()) {
+                <span>⏳ Enviando...</span>
+              } @else {
+                <span>📨 Enviar Mensagem</span>
+              }
+            </button>
+          </form>
+        }
+      </div>
+
+      <aside class="sidebar-links">
+        <div class="contact-info-card">
+          <h3>Canais Diretos de Atendimento</h3>
+          <div class="channel-item">
+            <span class="channel-icon">✉️</span>
+            <div>
+              <strong>Suporte Geral:</strong>
+              <a href="mailto:suporte@teachertech.com.br">suporte@teachertech.com.br</a>
+            </div>
+          </div>
+          <div class="channel-item">
+            <span class="channel-icon">🔒</span>
+            <div>
+              <strong>Encarregado de Dados (DPO):</strong>
+              <a href="mailto:privacidade@teachertech.com.br">privacidade@teachertech.com.br</a>
+            </div>
+          </div>
+          <div class="channel-item">
+            <span class="channel-icon">🕒</span>
+            <div>
+              <strong>Horário de Atendimento:</strong>
+              <span>Segunda a Sexta, das 09h às 18h (Brasília)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-card">
+          <h3>Páginas Relacionadas</h3>
+          <ul class="nav-sublinks">
+            <li><a routerLink="/sobre">ℹ️ Sobre o TeacherTech & Fundador</a></li>
+            <li><a routerLink="/privacidade">🔒 Política de Privacidade (LGPD)</a></li>
+            <li><a routerLink="/termos">📜 Termos de Serviço</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>

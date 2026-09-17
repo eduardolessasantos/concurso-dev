@@ -5,11 +5,12 @@ import { Router, RouterModule } from '@angular/router';
 import { PublicShowcaseService, PublicCourse } from '../../services/public-showcase.service';
 import { StudentManagementService } from '../../services/student-management.service';
 import { AuthService } from '../../services/auth.service';
+import { AdSenseSlotComponent } from '../shared/adsense-slot/adsense-slot.component';
 
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AdSenseSlotComponent],
   templateUrl: './explore.component.html',
   styleUrls: ['./explore.component.scss']
 })

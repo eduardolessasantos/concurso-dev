@@ -2,11 +2,12 @@ import { Component, inject, signal, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { StoreService } from './services/store.service';
 import { AuthService } from './services/auth.service';
+import { CookieConsentComponent } from './components/shared/cookie-consent/cookie-consent.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, CookieConsentComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
