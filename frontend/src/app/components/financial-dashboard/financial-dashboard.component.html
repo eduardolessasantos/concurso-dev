@@ -1,0 +1,157 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <h1>📊 Painel do Professor & Métricas SaaS</h1>
+      <p>Acompanhe o engajamento dos seus alunos, desempenho nos estudos e status da sua assinatura no Asaas.</p>
+    </div>
+
+    <div class="header-actions">
+      <a routerLink="/professor/planos" class="btn-plans">
+        ⭐ Gerenciar Planos Asaas
+      </a>
+      <a routerLink="/professor/alunos" class="btn-invites">
+        ✉️ Enviar Convites
+      </a>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Carregando métricas da sua operação...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-banner">
+      <span>⚠️ {{ error() }}</span>
+      <button type="button" (click)="loadDashboard()" class="btn-retry">Tentar Novamente</button>
+    </div>
+  } @else {
+    <!-- BANNER DE ASSINATURA ATUAL ASAAS -->
+    <section class="subscription-banner">
+      <div class="sub-left">
+        <div class="sub-badge" [class.active]="dashboard()?.subscription?.status === 1" [class.past-due]="dashboard()?.subscription?.status === 3">
+          {{ getStatusName(dashboard()?.subscription?.status) }}
+        </div>
+        <h2>{{ getPlanName(dashboard()?.subscription?.planType) }}</h2>
+        <p class="sub-meta">
+          @if (dashboard()?.subscription?.currentPeriodEnd) {
+            <span>Renovação/Vencimento: <strong>{{ dashboard()?.subscription?.currentPeriodEnd | date:'dd/MM/yyyy' }}</strong></span>
+          }
+          <span>Quota de Cursos: <strong>{{ dashboard()?.subscription?.maxCoursesAllowed || 5 }}</strong></span>
+        </p>
+      </div>
+
+      <div class="sub-right">
+        <div class="ai-credits-meter">
+          <div class="meter-labels">
+            <span>Créditos de IA (Geração de Aulas)</span>
+            <strong>{{ dashboard()?.subscription?.aiCreditsRemaining || 0 }} / {{ dashboard()?.subscription?.aiCreditsLimit || 500 }}</strong>
+          </div>
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="((dashboard()?.subscription?.aiCreditsUsed || 0) / (dashboard()?.subscription?.aiCreditsLimit || 500)) * 100">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 CARDS DE MÉTRICAS PRINCIPAIS -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="card-icon students">👥</div>
+        <div class="card-details">
+          <span class="label">Total Alunos Ativos</span>
+          <strong class="number">{{ dashboard()?.totalActiveStudents || 0 }}</strong>
+          <span class="caption">Matrículas ativas nas suas turmas</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-icon courses">📚</div>
+        <div class="card-details">
+          <span class="label">Cursos Publicados</span>
+          <strong class="number">{{ dashboard()?.publishedCoursesCount || 0 }}</strong>
+          <span class="caption">Planos de estudo disponíveis</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-icon completion">🎯</div>
+        <div class="card-details">
+          <span class="label">Taxa Média de Acerto</span>
+          <strong class="number">{{ dashboard()?.averageCompletionRate || 0 }}%</strong>
+          <span class="caption">Calculada via StudentProgress</span>
+        </div>
+      </div>
+
+      <div class="metric-card">
+        <div class="card-icon invites">✉️</div>
+        <div class="card-details">
+          <span class="label">Convites Pendentes</span>
+          <strong class="number">{{ dashboard()?.pendingInvitesCount || 0 }}</strong>
+          <span class="caption">Tokens ativos com prazo e usos</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABELA DE INVITE TOKENS -->
+    <section class="invites-table-section">
+      <div class="table-header">
+        <div>
+          <h3>🎟️ Histórico de Tokens de Convite</h3>
+          <p>Links, envios WhatsApp e QR Codes gerados para os seus estudos.</p>
+        </div>
+        <a routerLink="/professor/alunos" class="btn-create-token">+ Criar Novo Convite</a>
+      </div>
+
+      @if (!dashboard()?.invites || dashboard()!.invites.length === 0) {
+        <div class="empty-invites">
+          <p>Nenhum convite gerado ainda. Acesse a gestão de alunos para disparar convites via WhatsApp ou Link.</p>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="invites-table">
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>Curso</th>
+                <th>Canal</th>
+                <th>Destinatário</th>
+                <th>Utilizações</th>
+                <th>Expiração</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of dashboard()?.invites; track item.id) {
+                <tr>
+                  <td class="token-cell">
+                    <code>{{ item.token }}</code>
+                  </td>
+                  <td class="course-cell">{{ item.courseTitle }}</td>
+                  <td>
+                    <span class="badge-channel" [class.whatsapp]="item.channel === 'WhatsApp'" [class.qr]="item.channel === 'QrCode'">
+                      {{ item.channel }}
+                    </span>
+                  </td>
+                  <td>{{ item.targetPhone || '-' }}</td>
+                  <td>
+                    <strong>{{ item.usedCount }}</strong> / {{ item.maxUses }}
+                  </td>
+                  <td>{{ item.expiresAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="badge-status" [class.ativo]="item.status === 'Ativo'" [class.expirado]="item.status === 'Expirado'" [class.esgotado]="item.status === 'Esgotado'">
+                      {{ item.status }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>

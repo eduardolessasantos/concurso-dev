@@ -1,0 +1,118 @@
+<section class="hero">
+  <div>
+    <p class="eyebrow">CONCURSO DATAPREV 2026</p>
+    <h1>Estude com direção.<br><em>Chegue preparado.</em></h1>
+    <p class="intro">Um painel prático para visualizar o que mais pesa na prova, acompanhar o plano de 13 semanas e revisar o simulado.</p>
+    <div class="hero-actions">
+      <button class="cta-button" (click)="goTo('/disciplinas')">Mapa de Disciplinas</button>
+      <button class="cta-button secondary" (click)="goTo('/simulado')">Fazer Simulado</button>
+    </div>
+  </div>
+
+  <div class="countdown-card">
+    <span>CONTAGEM REGRESSIVA</span>
+    <strong>{{ daysLeft() }}</strong>
+    <small>dias até a prova</small>
+    <div class="progress-line">
+      <i [style.width]="progressLineWidth"></i>
+    </div>
+    <p>11 de outubro · domingo</p>
+  </div>
+</section>
+
+<!-- Metrics -->
+<section class="metrics" aria-label="Resumo da prova">
+  <article class="metric-card">
+    <span>VAGAS IMEDIATAS</span>
+    <strong>80</strong>
+    <small>+ cadastro reserva</small>
+  </article>
+  <article class="metric-card">
+    <span>REMUNERAÇÃO INICIAL</span>
+    <strong>R$ 10,7k</strong>
+    <small>CLT · 40h semanais</small>
+  </article>
+  <article class="metric-card">
+    <span>QUESTÕES</span>
+    <strong>70</strong>
+    <small>em 4 horas de prova</small>
+  </article>
+  <article class="metric-card highlight">
+    <span>PESO DOS ESPECÍFICOS</span>
+    <strong>65%</strong>
+    <small>75 de 115 pontos</small>
+  </article>
+</section>
+
+<!-- Progress Dashboard -->
+<section class="section progress-section">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">DASHBOARD</p>
+      <h2>Seu Progresso de Estudos</h2>
+    </div>
+    <p>Dados consolidados baseados nas questões resolvidas e no desempenho acumulado por matéria.</p>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- Summary card -->
+    <div class="dashboard-summary-card">
+      <svg width="130" height="130" viewBox="0 0 120 120" class="donut-chart">
+        <circle cx="60" cy="60" r="50" fill="transparent" stroke="var(--line)" stroke-width="10"/>
+        <circle cx="60" cy="60" r="50" fill="transparent"
+          stroke="var(--blue)" stroke-width="10"
+          [attr.stroke-dasharray]="circumference"
+          [attr.stroke-dashoffset]="strokeOffset"
+          transform="rotate(-90 60 60)"/>
+        <text x="60" y="62" text-anchor="middle" font-size="20" font-weight="800" fill="var(--ink)" font-family="Manrope">
+          {{ progressPct() }}%
+        </text>
+        <text x="60" y="76" text-anchor="middle" font-size="8" fill="var(--muted)" font-family="Manrope" font-weight="600" letter-spacing="0.05em">
+          CONCLUÍDO
+        </text>
+      </svg>
+
+      <div class="summary-stats">
+        <div class="summary-stat-item">
+          <span>Resolvidas:</span>
+          <strong>{{ answeredCount() }} / {{ allQuestions.length }}</strong>
+        </div>
+        <div class="summary-stat-item">
+          <span>Taxa de Acerto:</span>
+          <strong [ngClass]="globalAccuracy() >= 60 ? 'text-good' : 'text-bad'">{{ globalAccuracy() }}%</strong>
+        </div>
+        <div class="summary-stat-item">
+          <span>Gabaritos corretos:</span>
+          <strong>{{ correctCount() }} questões</strong>
+        </div>
+      </div>
+
+      @if (answeredCount() > 0) {
+        <button class="clear-progress-btn" (click)="clearProgress()">Resetar Progresso</button>
+      }
+    </div>
+
+    <!-- Per-subject progress bars -->
+    <div class="dashboard-subjects-progress">
+      <h4>Desempenho por Disciplina</h4>
+      <div class="subjects-progress-list">
+        @for (subject of subjectProgress(); track subject.id) {
+          <div class="subject-progress-row">
+            <div class="subject-row-info">
+              <strong>{{ subject.name }}</strong>
+              <small>{{ subject.answered }} de {{ subject.total }} resolvidas ({{ subject.pctSolved }}%)</small>
+            </div>
+            <div class="progress-bar-group">
+              <div class="bar-outer">
+                <div class="bar-inner" [style.width.%]="subject.pctSolved"></div>
+              </div>
+              <span class="bar-accuracy-label" [ngClass]="subject.answered > 0 ? (subject.pctCorrect >= 60 ? 'good' : 'bad') : 'empty'">
+                {{ subject.answered > 0 ? subject.pctCorrect + '% acerto' : 'sem dados' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

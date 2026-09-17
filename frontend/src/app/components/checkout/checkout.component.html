@@ -1,0 +1,66 @@
+<div class="checkout-container">
+  <div class="checkout-card">
+    <header class="checkout-header">
+      <h2>💳 Finalizar Inscrição no Curso</h2>
+      <p>Pagamento seguro com liberação instantânea via PIX.</p>
+    </header>
+
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Gerando código PIX para pagamento...</p>
+      </div>
+    } @else if (paymentSuccess()) {
+      <div class="success-box">
+        <div class="icon">🎉</div>
+        <h3>{{ paymentSuccess() }}</h3>
+        <p>Redirecionando para o seu painel de estudos...</p>
+      </div>
+    } @else if (checkoutData()) {
+      <div class="order-summary">
+        <div class="summary-row">
+          <span>Curso / Trilha:</span>
+          <strong>{{ checkoutData()?.courseTitle }}</strong>
+        </div>
+        <div class="summary-row">
+          <span>Valor Total:</span>
+          <strong class="total-price">R$ {{ checkoutData()?.amount?.toFixed(2) }}</strong>
+        </div>
+        <div class="split-info">
+          <small>✓ Repasse direto ao professor (90%) · Taxa de serviço (10%)</small>
+        </div>
+      </div>
+
+      <!-- PIX Box -->
+      <div class="pix-box">
+        <h3>⚡ Pagamento via PIX (Liberação Instantânea)</h3>
+
+        <div class="qrcode-wrapper">
+          <img [src]="checkoutData()?.pixQrCodeImageUrl" alt="QR Code PIX" />
+        </div>
+
+        <p class="pix-instructions">Abra o app do seu banco e escaneie o código QR acima ou copie o código abaixo:</p>
+
+        <div class="copy-paste-row">
+          <input type="text" [value]="checkoutData()?.pixQrCodeCode" readonly />
+          <button type="button" class="btn-copy" (click)="copyPixCode()">📋 Copiar</button>
+        </div>
+
+        <!-- Testing Button -->
+        <div class="test-action">
+          <button 
+            type="button" 
+            class="btn-simulate" 
+            (click)="onSimulatePayment()" 
+            [disabled]="isConfirming">
+            @if (isConfirming) {
+              <span class="spinner"></span> Confirmando Acesso...
+            } @else {
+              ⚡ Simular Confirmação Instantânea (Ambiente de Teste)
+            }
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

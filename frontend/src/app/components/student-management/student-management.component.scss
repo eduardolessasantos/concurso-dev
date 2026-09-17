@@ -1,0 +1,535 @@
+.management-container {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.management-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+
+  .header-intro {
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+
+    p {
+      margin: 0.25rem 0 0;
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+  }
+}
+
+.course-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  .selector-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 700;
+    color: #38bdf8;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .course-dropdown {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.95rem;
+    outline: none;
+
+    &:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    }
+  }
+}
+
+.alert {
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+
+  &.alert-success {
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34d399;
+  }
+
+  &.alert-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+  }
+}
+
+// 3 ACTION CARDS GRID
+.invite-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.hub-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: transform 0.2s, border-color 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: #475569;
+  }
+
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: -0.25rem;
+  }
+
+  .card-content {
+    h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1.15rem;
+      color: #f1f5f9;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+  }
+
+  .phone-input-group {
+    margin-top: 0.85rem;
+
+    .phone-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.65rem 0.85rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f8fafc;
+      font-size: 0.9rem;
+      outline: none;
+
+      &:focus {
+        border-color: #22c55e;
+      }
+    }
+  }
+
+  .btn-action {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: filter 0.2s;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    &.btn-link {
+      background: #0284c7;
+      color: #ffffff;
+      &:hover:not(:disabled) {
+        filter: brightness(1.15);
+      }
+    }
+
+    &.btn-whatsapp {
+      background: #16a34a;
+      color: #ffffff;
+      &:hover:not(:disabled) {
+        filter: brightness(1.15);
+      }
+    }
+
+    &.btn-qr {
+      background: #6366f1;
+      color: #ffffff;
+      &:hover:not(:disabled) {
+        filter: brightness(1.15);
+      }
+    }
+  }
+}
+
+// ÚLTIMO CONVITE GERADO
+.recent-invite-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid #38bdf8;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  position: relative;
+
+  .badge-status {
+    position: absolute;
+    top: -10px;
+    right: 15px;
+    background: #0284c7;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    text-transform: uppercase;
+  }
+
+  .invite-info-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+
+    code {
+      background: #1e293b;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: #38bdf8;
+      font-weight: bold;
+    }
+  }
+
+  .invite-url-display {
+    display: flex;
+    gap: 0.5rem;
+
+    .url-input {
+      flex: 1;
+      padding: 0.65rem 0.85rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .btn-copy-small {
+      padding: 0.65rem 1rem;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #38bdf8;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+
+      &:hover {
+        background: #334155;
+      }
+    }
+  }
+}
+
+// TABELA DE ALUNOS
+.students-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+
+    h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: #f8fafc;
+    }
+
+    p {
+      margin: 0.25rem 0 0;
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+
+    .btn-export {
+      padding: 0.55rem 1rem;
+      background: #334155;
+      border: 1px solid #475569;
+      color: #f1f5f9;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+
+      &:hover {
+        background: #475569;
+      }
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    h3 {
+      color: #f8fafc;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+  }
+
+  .students-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+
+    th {
+      color: #94a3b8;
+      font-weight: 700;
+      background: #0f172a;
+    }
+
+    td {
+      color: #cbd5e1;
+    }
+
+    .student-name {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: #f8fafc;
+    }
+
+    .channel-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+
+      &.badge-whatsapp {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+      }
+
+      &.badge-qr {
+        background: rgba(99, 102, 241, 0.15);
+        color: #818cf8;
+      }
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+
+      &.active {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+      }
+    }
+
+    .btn-revoke {
+      padding: 0.35rem 0.65rem;
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.15);
+      }
+    }
+  }
+}
+
+// MODAL QR CODE
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #334155;
+
+    h3 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 1.2rem;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.25rem;
+      cursor: pointer;
+
+      &:hover {
+        color: #f8fafc;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    text-align: center;
+
+    p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin: 0 0 1rem;
+    }
+
+    .qr-image-wrapper {
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-bottom: 1rem;
+
+      .qr-img {
+        width: 200px;
+        height: 200px;
+        display: block;
+      }
+    }
+
+    .token-caption {
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #334155;
+    background: #0f172a;
+
+    .btn-primary {
+      padding: 0.65rem 1rem;
+      background: #38bdf8;
+      color: #0f172a;
+      border-radius: 8px;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .btn-secondary {
+      padding: 0.65rem 1rem;
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  }
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

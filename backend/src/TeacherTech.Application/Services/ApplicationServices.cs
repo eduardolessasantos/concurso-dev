@@ -19,6 +19,7 @@ public class AuthApplicationService : IAuthApplicationService
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IProfessorProfileRepository _professorProfileRepo;
     private readonly IStudentProfileRepository _studentProfileRepo;
+    private readonly IProfessorSubscriptionRepository _professorSubscriptionRepo;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IConfiguration _configuration;
 
@@ -27,6 +28,7 @@ public class AuthApplicationService : IAuthApplicationService
         RoleManager<IdentityRole> roleManager,
         IProfessorProfileRepository professorProfileRepo,
         IStudentProfileRepository studentProfileRepo,
+        IProfessorSubscriptionRepository professorSubscriptionRepo,
         IUnitOfWork unitOfWork,
         IConfiguration configuration)
     {
@@ -34,6 +36,7 @@ public class AuthApplicationService : IAuthApplicationService
         _roleManager = roleManager;
         _professorProfileRepo = professorProfileRepo;
         _studentProfileRepo = studentProfileRepo;
+        _professorSubscriptionRepo = professorSubscriptionRepo;
         _unitOfWork = unitOfWork;
         _configuration = configuration;
     }
@@ -42,7 +45,7 @@ public class AuthApplicationService : IAuthApplicationService
     {
         var existingUser = await _userManager.FindByEmailAsync(dto.Email);
         if (existingUser != null)
-            return ServiceResult<AuthResponseDto>.Fail("Este e-mail já está cadastrado.");
+            return ServiceResult<AuthResponseDto>.Fail("Este e-mail já está cadastrado.", 409);
 
         var role = dto.UserRole?.ToUpper() == UserRoles.Professor ? UserRoles.Professor : UserRoles.Student;
 
@@ -262,6 +265,144 @@ public class AuthApplicationService : IAuthApplicationService
             FullName = user.FullName,
             UserRole = roles.FirstOrDefault() ?? user.UserRole,
             AvatarUrl = user.AvatarUrl
+        });
+    }
+
+    public async Task<ServiceResult<object>> SeedTestUsersAsync()
+    {
+        // 1. Garantir que as roles existam
+        foreach (var r in new[] { UserRoles.Student, UserRoles.Professor, UserRoles.Admin })
+        {
+            if (!await _roleManager.RoleExistsAsync(r))
+                await _roleManager.CreateAsync(new IdentityRole(r));
+        }
+
+        // 2. Aluno de teste: student_teste@teste.com / Test@123 / Role STUDENT
+        var studentEmail = "student_teste@teste.com";
+        var studentUser = await _userManager.FindByEmailAsync(studentEmail);
+        if (studentUser == null)
+        {
+            studentUser = new ApplicationUser
+            {
+                UserName = studentEmail,
+                Email = studentEmail,
+                FullName = "Aluno Teste TestSprite",
+                UserRole = UserRoles.Student,
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var res = await _userManager.CreateAsync(studentUser, "Test@123");
+            if (!res.Succeeded)
+            {
+                return ServiceResult<object>.Fail($"Erro ao criar student_teste: {string.Join(", ", res.Errors.Select(e => e.Description))}");
+            }
+            await _userManager.AddToRoleAsync(studentUser, UserRoles.Student);
+
+            var studentProfile = new StudentProfile
+            {
+                UserId = studentUser.Id,
+                GoalExam = "Concursos Públicos em Geral",
+                Bio = "Estudante de teste automatizado TestSprite."
+            };
+            await _studentProfileRepo.AddAsync(studentProfile);
+        }
+        else
+        {
+            if (!await _userManager.IsInRoleAsync(studentUser, UserRoles.Student))
+            {
+                await _userManager.AddToRoleAsync(studentUser, UserRoles.Student);
+            }
+            if (!await _userManager.CheckPasswordAsync(studentUser, "Test@123"))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(studentUser);
+                await _userManager.ResetPasswordAsync(studentUser, token, "Test@123");
+            }
+        }
+
+        // 3. Professor de teste: professor_teste@teste.com / Test@123 / Role PROFESSOR com subscription ACTIVE
+        var profEmail = "professor_teste@teste.com";
+        var profUser = await _userManager.FindByEmailAsync(profEmail);
+        if (profUser == null)
+        {
+            profUser = new ApplicationUser
+            {
+                UserName = profEmail,
+                Email = profEmail,
+                FullName = "Professor Teste TestSprite",
+                UserRole = UserRoles.Professor,
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var res = await _userManager.CreateAsync(profUser, "Test@123");
+            if (!res.Succeeded)
+            {
+                return ServiceResult<object>.Fail($"Erro ao criar professor_teste: {string.Join(", ", res.Errors.Select(e => e.Description))}");
+            }
+            await _userManager.AddToRoleAsync(profUser, UserRoles.Professor);
+
+            var profProfile = new ProfessorProfile
+            {
+                UserId = profUser.Id,
+                Headline = "Professor Especialista",
+                Bio = "Professor de teste automatizado TestSprite.",
+                CustomSlug = "professor-teste",
+                AiCreditsLimit = 2000,
+                AiCreditsUsed = 0,
+                PublicVisibility = true,
+                PixKey = profEmail
+            };
+            await _professorProfileRepo.AddAsync(profProfile);
+        }
+        else
+        {
+            if (!await _userManager.IsInRoleAsync(profUser, UserRoles.Professor))
+            {
+                await _userManager.AddToRoleAsync(profUser, UserRoles.Professor);
+            }
+            if (!await _userManager.CheckPasswordAsync(profUser, "Test@123"))
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(profUser);
+                await _userManager.ResetPasswordAsync(profUser, token, "Test@123");
+            }
+        }
+
+        // 4. Garantir assinatura ACTIVE para professor_teste
+        var existingSub = await _professorSubscriptionRepo.GetByProfessorIdAsync(profUser.Id);
+        if (existingSub == null)
+        {
+            var sub = new ProfessorSubscription
+            {
+                ProfessorId = profUser.Id,
+                PlanType = PlanType.Pro,
+                Status = SubscriptionStatus.Active,
+                AsaasCustomerId = "cus_mock_testsprite",
+                AsaasSubscriptionId = "sub_mock_testsprite_pro",
+                Price = 149.90m,
+                CurrentPeriodEnd = DateTime.UtcNow.AddYears(1),
+                MaxCoursesAllowed = 50,
+                AiCreditsLimit = 5000,
+                AiCreditsUsed = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _professorSubscriptionRepo.AddAsync(sub);
+        }
+        else
+        {
+            existingSub.Status = SubscriptionStatus.Active;
+            existingSub.PlanType = PlanType.Pro;
+            existingSub.CurrentPeriodEnd = DateTime.UtcNow.AddYears(1);
+            _professorSubscriptionRepo.Update(existingSub);
+        }
+
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<object>.Ok(new
+        {
+            message = "Usuários de teste semeados com sucesso para o TestSprite.",
+            student = new { email = studentEmail, role = UserRoles.Student },
+            professor = new { email = profEmail, role = UserRoles.Professor, subscription = "ACTIVE" }
         });
     }
 

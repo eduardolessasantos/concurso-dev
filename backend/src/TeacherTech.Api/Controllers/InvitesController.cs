@@ -121,6 +121,18 @@ public class InvitesController : ControllerBase
         return Ok(result.Data);
     }
 
+    [Authorize]
+    [HttpPost("redeem")]
+    [ProducesResponseType(typeof(RedeemInviteResponseDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> RedeemInviteQueryOrBody([FromQuery] string? token, [FromBody] RedeemTokenRequestDto? dto)
+    {
+        var finalToken = !string.IsNullOrWhiteSpace(token) ? token : dto?.Token;
+        if (string.IsNullOrWhiteSpace(finalToken))
+            return BadRequest(new { message = "Token é obrigatório." });
+
+        return await RedeemInvite(finalToken);
+    }
+
     /// <summary>
     /// Obtém métricas B2B consolidadas para o painel do professor:
     /// total de alunos ativos, cursos publicados, taxa de acerto de StudentProgress, convites pendentes e lista de tokens.
@@ -146,4 +158,9 @@ public class InvitesController : ControllerBase
 
         return Ok(result.Data);
     }
+}
+
+public class RedeemTokenRequestDto
+{
+    public string? Token { get; set; }
 }

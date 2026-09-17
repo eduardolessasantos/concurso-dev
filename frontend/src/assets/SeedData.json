@@ -1,0 +1,169 @@
+{
+  "professor": {
+    "email": "eduardolessa2011@gmail.com",
+    "fullName": "Eduardo Lessa",
+    "headline": "Especialista em Preparação para Concursos de TI & Certames Públicos",
+    "bio": "Professor e mentor especializado em Arquitetura de Software, Engenharia de Requisitos, Banco de Dados e Governança de TI.",
+    "customSlug": "eduardo-lessa",
+    "pixKey": "eduardolessa2011@gmail.com"
+  },
+  "course": {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "title": "Plano Estratégico de Estudos - Tecnologia da Informação",
+    "description": "Trilha didática completa com resumos em Markdown, flashcards de memorização, cronograma semanal de estudos e simulado inédito com questões comentadas.",
+    "category": "TI & Dados",
+    "price": 0.00,
+    "isPublic": true,
+    "status": "PUBLISHED"
+  },
+  "subjects": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "Arquitetura de Software & Microsserviços",
+      "description": "Padrões arquiteturais REST, gRPC, Event-Driven Architecture, CQRS e princípios SOLID.",
+      "orderIndex": 1,
+      "topics": [
+        {
+          "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "title": "Arquitetura Monolítica vs Microsserviços",
+          "examBoard": "Cebraspe / FGV",
+          "orderIndex": 1,
+          "contentMarkdown": "### Arquitetura Monolítica vs Microsserviços\n\n- **Monolito**: Aplicação unificada em um único processo de implantação. Vantagens: facilidade inicial de testes e deploy simples. Desvantagens: acoplamento alto e escala vertical cara.\n- **Microsserviços**: Serviços autônomos, desacoplados e comunicando-se via APIs REST ou mensageria (Kafka/RabbitMQ). Vantagens: escalabilidade independente e tolerância a falhas.",
+          "flashcards": [
+            {
+              "frontText": "Qual a principal vantagem da Arquitetura de Microsserviços em relação ao Monolito?",
+              "backText": "Escalabilidade independente de módulos e baixo acoplamento entre os serviços.",
+              "difficulty": "MEDIUM"
+            }
+          ],
+          "questions": [
+            {
+              "statement": "No contexto de microsserviços, a comunicação assíncrona entre serviços costuma ser implementada com o auxílio de qual tecnologia?",
+              "optionsJson": "[\"Servidores HTTP estáticos\", \"Fila ou Barramento de Mensagens como RabbitMQ/Kafka\", \"Conexões diretas via Banco de Dados compartilhado\", \"Sockets UDP síncronos\"]",
+              "correctOptionIndex": 1,
+              "explanation": "Filas e barramentos de mensageria (Kafka/RabbitMQ) permitem a comunicação desacoplada e assíncrona garantindo resiliência.",
+              "examBoard": "Cebraspe"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "Bancos de Dados Relacionais & NoSQL",
+      "description": "Modelagem relacional, Normalização (1FN/2FN/3FN), Transações ACID, Indexação B-Tree e NoSQL.",
+      "orderIndex": 2,
+      "topics": [
+        {
+          "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+          "title": "Normalização de Dados e Propriedades ACID",
+          "examBoard": "FGV / Vunesp",
+          "orderIndex": 1,
+          "contentMarkdown": "### Normalização (1FN, 2FN, 3FN) e ACID\n\n- **1FN**: Eliminação de atributos multivalorados e repetitivos.\n- **2FN**: Estar na 1FN e remover dependências funcionais parciais da chave primária composta.\n- **3FN**: Estar na 2FN e remover dependências transitivas.\n\n### Propriedades ACID:\n- **Atomicidade**: Tudo ou nada.\n- **Consistência**: Transição de um estado válido para outro.\n- **Isolamento**: Transações concorrentes não interferem entre si.\n- **Durabilidade**: Dados persistem após o commit.",
+          "flashcards": [
+            {
+              "frontText": "O que garante a propriedade de 'Durabilidade' em uma transação ACID?",
+              "backText": "Garante que, uma vez confirmado o commit, as alterações ficam gravadas permanentemente, mesmo em caso de falha de energia ou sistema.",
+              "difficulty": "EASY"
+            }
+          ],
+          "questions": [
+            {
+              "statement": "Uma tabela na 1FN possui uma chave primária composta (CodAluno, CodCurso) e um atributo NomeCurso dependente apenas de CodCurso. Qual forma normal essa tabela viola?",
+              "optionsJson": "[\"Primeira Forma Normal (1FN)\", \"Segunda Forma Normal (2FN)\", \"Terceira Forma Normal (3FN)\", \"Forma Normal de Boyce-Codd (FNBC)\"]",
+              "correctOptionIndex": 1,
+              "explanation": "A 2FN exige que todo atributo não-chave seja totalmente dependente da chave primária completa, e não apenas de parte dela.",
+              "examBoard": "FGV"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "Engenharia de Requisitos & Agilidade",
+      "description": "Levantamento de requisitos funcionais e não-funcionais, User Stories, Scrum e Kanban.",
+      "orderIndex": 3,
+      "topics": [
+        {
+          "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+          "title": "Scrum Framework & Gestão Ágil",
+          "examBoard": "Cebraspe",
+          "orderIndex": 1,
+          "contentMarkdown": "### Papéis no Scrum Framework:\n- **Product Owner (PO)**: Define as prioridades no Product Backlog e representa os stakeholders.\n- **Scrum Master**: Facilitador, remove impedimentos e garante o cumprimento dos valores ágeis.\n- **Developers**: Equipe multifuncional responsável pelo incremento do produto a cada Sprint.",
+          "flashcards": [
+            {
+              "frontText": "Quem é o responsável final pelo gerenciamento e ordenação do Product Backlog no Scrum?",
+              "backText": "O Product Owner (PO).",
+              "difficulty": "EASY"
+            }
+          ],
+          "questions": [
+            {
+              "statement": "No Scrum, qual evento tem duração máxima de 15 minutos e ocorre diariamente para alinhar as atividades da equipe?",
+              "optionsJson": "[\"Sprint Planning\", \"Sprint Review\", \"Daily Scrum\", \"Sprint Retrospective\"]",
+              "correctOptionIndex": 2,
+              "explanation": "A Daily Scrum é uma reunião diária de 15 minutos para sincronização dos desenvolvedores.",
+              "examBoard": "Cebraspe"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "studySchedule": [
+    {
+      "weekNumber": 1,
+      "dayOfWeek": "Segunda-feira",
+      "subjectName": "Arquitetura de Software & Microsserviços",
+      "topicTitle": "Arquitetura Monolítica vs Microsserviços",
+      "goalMinutes": 90,
+      "notes": "Ler o resumo em Markdown, responder aos flashcards e fazer 5 questões Cebraspe."
+    },
+    {
+      "weekNumber": 1,
+      "dayOfWeek": "Quarta-feira",
+      "subjectName": "Bancos de Dados Relacionais & NoSQL",
+      "topicTitle": "Normalização de Dados e Propriedades ACID",
+      "goalMinutes": 90,
+      "notes": "Revisar as regras de 1FN, 2FN e 3FN e resolver mapa mental de transações ACID."
+    },
+    {
+      "weekNumber": 1,
+      "dayOfWeek": "Sexta-feira",
+      "subjectName": "Engenharia de Requisitos & Agilidade",
+      "topicTitle": "Scrum Framework & Gestão Ágil",
+      "goalMinutes": 60,
+      "notes": "Focar nos papéis (PO, Scrum Master, Developers) e artefatos (Product Backlog, Sprint Backlog, Incremento)."
+    },
+    {
+      "weekNumber": 1,
+      "dayOfWeek": "Sábado",
+      "subjectName": "Revisão Geral & Simulado Inédito",
+      "topicTitle": "Simulado Prático de TI",
+      "goalMinutes": 120,
+      "notes": "Executar o simulado cronometrado de 60 minutos e analisar o gabarito comentado."
+    }
+  ],
+  "simulatedTest": {
+    "title": "Simulado Inédito DataPrev TI - Conhecimentos Específicos",
+    "description": "Simulado completo cobrindo Arquitetura de Software, Banco de Dados e Engenharia de Requisitos com questões inéditas no formato Cebraspe/FGV.",
+    "timeLimitMinutes": 60,
+    "questions": [
+      {
+        "statement": "Acerca da Arquitetura Hexagonal (Ports and Adapters), assinale a opção correta.",
+        "optionsJson": "[\"A lógica de negócios fica fortemente acoplada ao banco de dados relacional.\", \"As portas definem as interfaces de entrada/saída e os adaptadores implementam a integração externa.\", \"Não permite o uso de testes unitários sem banco de dados ativo.\", \"É exclusiva para aplicações monolíticas legado.\"]",
+        "correctOptionIndex": 1,
+        "explanation": "A Arquitetura Hexagonal isola o domínio central por meio de portas (interfaces) e adaptadores (implementações tecnológicas externas).",
+        "examBoard": "Inédita"
+      },
+      {
+        "statement": "No modelo relacional de banco de dados, qual garantia evita que uma transação leia dados não confirmados (Dirty Read)?",
+        "optionsJson": "[\"Nível de Isolamento READ COMMITTED ou superior\", \"Uso exclusivo de chaves estrangeiras nulas\", \"Desativação do log WAL\", \"Normalização obrigatoriamente na 3FN\"]",
+        "correctOptionIndex": 0,
+        "explanation": "O nível de isolamento READ COMMITTED impede a leitura de dados de transações concorrentes que ainda não realizaram commit.",
+        "examBoard": "Inédita"
+      }
+    ]
+  }
+}

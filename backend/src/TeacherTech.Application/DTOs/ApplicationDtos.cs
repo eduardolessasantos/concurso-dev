@@ -42,6 +42,26 @@ public class AuthResponseDto
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string UserRole { get; set; } = string.Empty;
+    public string Role => UserRole;
+    public string? AvatarUrl { get; set; }
+    public AuthUserDto User => new()
+    {
+        Id = UserId,
+        Email = Email,
+        FullName = FullName,
+        Role = UserRole,
+        UserRole = UserRole,
+        AvatarUrl = AvatarUrl
+    };
+}
+
+public class AuthUserDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string UserRole { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
 }
 
@@ -203,6 +223,8 @@ public class CreateAccessRequestDto
 {
     [Required]
     public Guid CourseId { get; set; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
     public string? Message { get; set; }
 }
 

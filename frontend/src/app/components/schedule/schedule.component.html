@@ -1,0 +1,41 @@
+<section class="section schedule-section">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">13 SEMANAS</p>
+      <h2>Rota de preparação</h2>
+    </div>
+    <div class="legend">
+      <span class="blue-dot"></span> Gerais 
+      <span class="orange-dot"></span> Específicos
+      <span class="check-explanation">Marque as semanas concluídas para acompanhar seu ritmo.</span>
+    </div>
+  </div>
+  
+  <div class="schedule-timeline-container">
+    @for (phase of phases; track phase.title) {
+      <div class="phase-container">
+        <div class="phase-header">{{ phase.title }}</div>
+        <div class="phase-weeks-grid">
+          @for (week of phase.weeks; track week.code) {
+            <div class="week-row" [ngClass]="{ 'completed': week.completed }">
+              <div class="week-checkbox-area">
+                <input type="checkbox" [checked]="week.completed" (change)="toggleWeek(week)">
+              </div>
+              <div class="week-time-info">
+                <time>{{ week.date }}</time>
+              </div>
+              <div class="week-content-column general-col">
+                <span class="column-badge general-badge">Gerais</span>
+                <p>{{ week.general }}</p>
+              </div>
+              <div class="week-content-column specific-col">
+                <span class="column-badge specific-badge">Específicos</span>
+                <p>{{ week.specific }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>

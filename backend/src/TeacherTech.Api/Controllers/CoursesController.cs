@@ -1,4 +1,7 @@
+using System.Globalization;
 using System.Security.Claims;
+using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TeacherTech.Application.DTOs;
@@ -16,31 +19,112 @@ namespace TeacherTech.Api.Controllers;
 public class CoursesController : ControllerBase
 {
     private readonly ICourseApplicationService _courseService;
+    private readonly IPublicShowcaseApplicationService _publicShowcaseService;
 
     /// <summary>
     /// Inicializa uma nova instância de <see cref="CoursesController"/>.
     /// </summary>
     /// <param name="courseService">Serviço de aplicação responsável pela lógica de negócios dos cursos.</param>
-    public CoursesController(ICourseApplicationService courseService)
+    /// <param name="publicShowcaseService">Serviço público de vitrine e catálogo de cursos.</param>
+    public CoursesController(
+        ICourseApplicationService courseService,
+        IPublicShowcaseApplicationService publicShowcaseService)
     {
         _courseService = courseService;
+        _publicShowcaseService = publicShowcaseService;
     }
 
     /// <summary>
     /// Obtém a listagem de todos os cursos públicos e publicados disponíveis na plataforma.
+    /// Não requer autenticação e não filtra por usuário logado.
     /// </summary>
-    /// <remarks>
-    /// Serviço voltado para estudantes e visitantes explorarem o catálogo de cursos públicos ativos.
-    /// Não requer autenticação.
-    /// </remarks>
-    /// <returns>Lista com o resumo dos cursos públicos cadastrados.</returns>
-    /// <response code="200">Retorna a lista de cursos públicos disponíveis.</response>
+    [AllowAnonymous]
     [HttpGet("public")]
     [ProducesResponseType(typeof(List<CourseResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPublicCourses()
     {
         var courses = await _courseService.GetPublicCoursesAsync();
         return Ok(courses);
+    }
+
+    /// <summary>
+    /// Busca e explora cursos públicos e publicados com suporte a termos de busca (Título, Descrição e Nome do Professor) e categorias.
+    /// Acesso livre sem exigência de token.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("explorar")]
+    [HttpGet("explore")]
+    [ProducesResponseType(typeof(List<PublicCourseExploreDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExploreCourses([FromQuery] string? search, [FromQuery] string? category)
+    {
+        var courses = await _publicShowcaseService.ExploreCoursesAsync(search, category);
+        return Ok(courses);
+    }
+
+    /// <summary>
+    /// Obtém detalhes públicos de um plano de estudos ou perfil de professor por slug ou GUID.
+    /// Acesso livre sem exigência de token.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("public/{slug}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPublicBySlug(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+            return BadRequest(new { message = "Slug informado é inválido." });
+
+        // 1. GUID de curso
+        if (Guid.TryParse(slug, out var courseId))
+        {
+            var courseRes = await _publicShowcaseService.GetPublicCourseDetailsAsync(courseId);
+            if (courseRes.Success) return Ok(courseRes.Data);
+
+            var directCourse = await _courseService.GetCourseByIdAsync(courseId);
+            if (directCourse != null) return Ok(directCourse);
+        }
+
+        // 2. Slug de professor (ex: 'eduardo-lessa')
+        var profRes = await _publicShowcaseService.GetProfessorBySlugAsync(slug);
+        if (profRes.Success)
+        {
+            return Ok(profRes.Data);
+        }
+
+        // 3. Slug ou título de curso
+        var allPublic = await _publicShowcaseService.ExploreCoursesAsync(null, null);
+        var matchedCourse = allPublic.FirstOrDefault(c =>
+            Slugify(c.Title) == slug.ToLower() ||
+            c.Title.Equals(slug, StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrEmpty(c.ProfessorSlug) && c.ProfessorSlug.Equals(slug, StringComparison.OrdinalIgnoreCase)));
+
+        if (matchedCourse != null)
+        {
+            var details = await _publicShowcaseService.GetPublicCourseDetailsAsync(matchedCourse.Id);
+            if (details.Success) return Ok(details.Data);
+            return Ok(matchedCourse);
+        }
+
+        return NotFound(new { message = "Plano de estudo ou mentor não encontrado." });
+    }
+
+    private static string Slugify(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder();
+        foreach (var c in normalized)
+        {
+            var uc = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (uc != UnicodeCategory.NonSpacingMark)
+            {
+                if (char.IsLetterOrDigit(c))
+                    sb.Append(char.ToLowerInvariant(c));
+                else if (c == ' ' || c == '-' || c == '_')
+                    sb.Append('-');
+            }
+        }
+        return Regex.Replace(sb.ToString(), @"-+", "-").Trim('-');
     }
 
     /// <summary>

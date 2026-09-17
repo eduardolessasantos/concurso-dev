@@ -43,7 +43,11 @@ public class AuthController : ControllerBase
 
         var result = await _authService.RegisterAsync(dto);
         if (!result.Success)
+        {
+            if (result.StatusCode == StatusCodes.Status409Conflict)
+                return StatusCode(StatusCodes.Status409Conflict, new { error = "EMAIL_EXISTS", message = "Este e-mail já está cadastrado. Faça login." });
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+        }
 
         return Ok(result.Data);
     }
@@ -114,6 +118,25 @@ public class AuthController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _authService.GetCurrentUserAsync(userId);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Endpoint de teste para semear os usuários exigidos pelo TestSprite (student_teste@teste.com e professor_teste@teste.com).
+    /// Habilitado apenas em ambiente de Development ou Testing.
+    /// </summary>
+    [HttpPost("seed-test-users")]
+    public async Task<IActionResult> SeedTestUsers([FromServices] IWebHostEnvironment env)
+    {
+        if (!env.IsDevelopment() && !env.IsEnvironment("Testing"))
+        {
+            return Forbid("Endpoint exclusivo para testes automatizados em ambiente de desenvolvimento/teste.");
+        }
+
+        var result = await _authService.SeedTestUsersAsync();
         if (!result.Success)
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
 

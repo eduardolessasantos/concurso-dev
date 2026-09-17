@@ -16,6 +16,7 @@ public interface IAuthApplicationService
     Task<ServiceResult<AuthResponseDto>> LoginAsync(LoginDto dto);
     Task<ServiceResult<AuthResponseDto>> GoogleLoginAsync(GoogleLoginDto dto);
     Task<ServiceResult<object>> GetCurrentUserAsync(string? userId);
+    Task<ServiceResult<object>> SeedTestUsersAsync();
 }
 
 public interface ICourseApplicationService

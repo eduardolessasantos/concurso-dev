@@ -1,0 +1,81 @@
+<!-- Banner Flutuante de Cookies LGPD & AdSense -->
+@if (showBanner() && !showModal()) {
+  <div class="cookie-banner-container animate-slide-up" role="region" aria-label="Consentimento de Cookies">
+    <div class="cookie-banner-content">
+      <div class="cookie-text">
+        <span class="cookie-icon">🍪</span>
+        <div class="cookie-copy">
+          <strong>Valorizamos sua privacidade</strong>
+          <p>
+            Utilizamos cookies essenciais para o funcionamento da plataforma e tecnologias de parceiros (como Google AdSense) para personalizar anúncios, fornecer recursos sociais e analisar o tráfego em conformidade com a <strong>LGPD</strong>. Saiba mais em nossa
+            <a routerLink="/privacidade" (click)="showBanner.set(false)">Política de Privacidade</a>.
+          </p>
+        </div>
+      </div>
+      <div class="cookie-actions">
+        <button type="button" class="btn-cookie-link" (click)="openPreferences()">Personalizar</button>
+        <button type="button" class="btn-cookie-outline" (click)="acceptEssentialOnly()">Rejeitar Não Essenciais</button>
+        <button type="button" class="btn-cookie-primary" (click)="acceptAll()">Aceitar Todos</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de Preferências Detalhadas de Cookies -->
+@if (showModal()) {
+  <div class="cookie-modal-backdrop" (click)="showModal.set(false)">
+    <div class="cookie-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Preferências de Privacidade e Cookies</h3>
+        <button type="button" class="btn-close-modal" (click)="showModal.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-intro">
+          De acordo com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018), você tem o direito de escolher quais tipos de cookies e rastreadores autoriza em sua navegação:
+        </p>
+
+        <div class="cookie-category">
+          <div class="category-header">
+            <div>
+              <strong>1. Cookies Estritamente Necessários</strong>
+              <span class="badge-required">Sempre Ativo</span>
+            </div>
+          </div>
+          <p class="category-desc">
+            Fundamentais para autenticação segura no sistema, navegação entre disciplinas, salvamento de progresso de estudo e proteção contra ataques CSRF.
+          </p>
+        </div>
+
+        <div class="cookie-category">
+          <div class="category-header">
+            <strong>2. Cookies Analíticos e de Desempenho</strong>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="analyticsCookies" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p class="category-desc">
+            Permitem mensurar o volume de acessos e aprimorar a usabilidade e a estabilidade técnica dos cursos.
+          </p>
+        </div>
+
+        <div class="cookie-category">
+          <div class="category-header">
+            <strong>3. Cookies de Publicidade e Google AdSense</strong>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="advertisingCookies" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p class="category-desc">
+            Utilizados pelo Google e parceiros para exibir anúncios relevantes e apoiar a manutenção e o acesso gratuito a recursos educacionais da plataforma.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cookie-outline" (click)="acceptEssentialOnly()">Recusar Opcionais</button>
+        <button type="button" class="btn-cookie-primary" (click)="savePreferences()">Salvar Minhas Escolhas</button>
+      </div>
+    </div>
+  </div>
+}

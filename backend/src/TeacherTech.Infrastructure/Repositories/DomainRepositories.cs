@@ -73,7 +73,10 @@ public class CourseRepository : Repository<CourseStudyPlan, Guid>, ICourseReposi
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(c => c.Title.ToLower().Contains(s) || c.Description.ToLower().Contains(s));
+            query = query.Where(c => 
+                c.Title.ToLower().Contains(s) || 
+                c.Description.ToLower().Contains(s) ||
+                (c.Professor != null && c.Professor.FullName.ToLower().Contains(s)));
         }
 
         if (!string.IsNullOrWhiteSpace(category) && category != "Todos")

@@ -65,7 +65,7 @@ public class TeacherRegistrationAndAuthTests : IClassFixture<CustomWebApplicatio
     }
 
     [Fact]
-    public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
+    public async Task Register_WithDuplicateEmail_ReturnsConflict()
     {
         // Arrange
         var client = _factory.CreateClient();
@@ -85,7 +85,10 @@ public class TeacherRegistrationAndAuthTests : IClassFixture<CustomWebApplicatio
         var duplicateResponse = await client.PostAsJsonAsync("/api/auth/register", registerDto);
 
         // Assert
-        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var conflictBody = await duplicateResponse.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        conflictBody.GetProperty("error").GetString().Should().Be("EMAIL_EXISTS");
+        conflictBody.GetProperty("message").GetString().Should().Be("Este e-mail já está cadastrado. Faça login.");
     }
 
     [Fact]
