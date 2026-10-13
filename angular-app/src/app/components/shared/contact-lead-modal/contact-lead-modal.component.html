@@ -1,0 +1,107 @@
+@if (isOpen) {
+  <div class="modal-backdrop" (click)="onModalClose()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-icon">✉️</div>
+        <div>
+          <h3>Falar com Prof. {{ professorName }}</h3>
+          @if (offeringTitle) {
+            <p class="offering-subtitle">Interesse em: <strong>{{ offeringTitle }}</strong></p>
+          } @else {
+            <p class="offering-subtitle">Envie uma mensagem direta ou solicite mais informações</p>
+          }
+        </div>
+        <button type="button" class="btn-close" (click)="onModalClose()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        @if (isSuccess()) {
+          <div class="success-box">
+            <div class="success-icon">🎉</div>
+            <h4>Mensagem enviada com sucesso!</h4>
+            <p>Seus dados foram encaminhados ao Prof. {{ professorName }}. Ele(a) responderá pelo e-mail ou WhatsApp em breve.</p>
+            <button type="button" class="btn-done" (click)="onModalClose()">Fechar</button>
+          </div>
+        } @else {
+          @if (errorMessage()) {
+            <div class="alert-error">
+              <span>⚠️ {{ errorMessage() }}</span>
+            </div>
+          }
+
+          <form (ngSubmit)="onSubmit()" class="lead-form">
+            <div class="form-group">
+              <label for="leadName">Seu Nome Completo *</label>
+              <input 
+                id="leadName" 
+                type="text" 
+                [ngModel]="name()" 
+                (ngModelChange)="name.set($event)"
+                name="name" 
+                placeholder="Ex: Ana Maria Silva" 
+                required />
+            </div>
+
+            <div class="form-group">
+              <label for="leadEmail">Seu E-mail *</label>
+              <input 
+                id="leadEmail" 
+                type="email" 
+                [ngModel]="email()" 
+                (ngModelChange)="email.set($event)"
+                name="email" 
+                placeholder="Ex: ana@exemplo.com" 
+                required />
+            </div>
+
+            <div class="form-group">
+              <label for="leadPhone">WhatsApp / Celular (opcional)</label>
+              <input 
+                id="leadPhone" 
+                type="tel" 
+                [ngModel]="phone()" 
+                (ngModelChange)="onPhoneChange($event)"
+                name="phone" 
+                placeholder="(DDD) 99999-9999" />
+            </div>
+
+            <div class="form-group">
+              <label for="leadMessage">Mensagem ou Dúvidas</label>
+              <textarea 
+                id="leadMessage" 
+                rows="3" 
+                [ngModel]="message()" 
+                (ngModelChange)="message.set($event)"
+                name="message" 
+                placeholder="Olá! Gostaria de saber mais sobre horários disponíveis e formato das aulas..."></textarea>
+            </div>
+
+            <div class="form-group checkbox-group">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [ngModel]="termsAccepted()" 
+                  (ngModelChange)="termsAccepted.set($event)"
+                  name="terms" />
+                <span>Concordo em compartilhar meus dados de contato com o professor para retorno pedagógico (LGPD).</span>
+              </label>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" (click)="onModalClose()" [disabled]="isSubmitting()">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+                @if (isSubmitting()) {
+                  <span>Enviando...</span>
+                } @else {
+                  <span>Enviar Mensagem</span>
+                }
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </div>
+  </div>
+}

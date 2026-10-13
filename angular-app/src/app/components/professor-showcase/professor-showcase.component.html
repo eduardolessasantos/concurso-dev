@@ -2,28 +2,83 @@
   @if (isLoading()) {
     <div class="loading-box">
       <div class="spinner"></div>
-      <p>Carregando perfil do professor...</p>
+      <p>Carregando vitrine do professor...</p>
     </div>
   } @else if (profile()) {
-    <!-- Hero Banner Profile Header -->
-    <header class="profile-hero">
+    <!-- Custom Hero Banner Header -->
+    <header class="profile-hero" [style.background]="profile()?.bannerImageUrl ? 'linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.85)), url(' + profile()?.bannerImageUrl + ') center/cover no-repeat' : (profile()?.themeColor ? 'linear-gradient(135deg, ' + profile()?.themeColor + '22, ' + profile()?.themeColor + '44)' : null)">
       <div class="hero-content">
         <div class="prof-avatar">
-          <span>{{ profile()?.fullName?.charAt(0) || '👨‍🏫' }}</span>
-        </div>
-        <div class="prof-details">
-          <h1>{{ profile()?.fullName }}</h1>
-          <p class="headline">✨ {{ profile()?.headline }}</p>
-          @if (profile()?.bio) {
-            <p class="bio">{{ profile()?.bio }}</p>
+          @if (profile()?.avatarUrl) {
+            <img [src]="profile()?.avatarUrl" [alt]="profile()?.fullName" class="avatar-img" />
+          } @else {
+            <span>{{ profile()?.fullName?.charAt(0) || '👨‍🏫' }}</span>
           }
-          <div class="badges-row">
-            <span class="badge-count">📚 {{ profile()?.publicCoursesCount }} Cursos Públicos</span>
+        </div>
+        
+        <div class="prof-details">
+          <div class="header-title-row">
+            <h1>{{ profile()?.fullName }}</h1>
             <span class="badge-verified">✓ Professor Verificado</span>
+          </div>
+          
+          <p class="headline">✨ {{ profile()?.headline || 'Educador Especialista TeacherTech' }}</p>
+          
+          @if (profile()?.city || profile()?.state) {
+            <p class="location-tag">
+              📍 {{ profile()?.city }}{{ profile()?.state ? ' - ' + profile()?.state : '' }}
+            </p>
+          }
+
+          <div class="badges-row">
+            <span class="badge-count">📦 {{ profile()?.offerings?.length || 0 }} Ofertas Disponíveis</span>
+            <span class="badge-count">📚 {{ profile()?.publicCoursesCount || 0 }} Cursos no TeacherTech</span>
+          </div>
+
+          <!-- Social Links & Contact -->
+          <div class="social-actions-row">
+            @for (social of socialLinks(); track social.name) {
+              <a [href]="social.url" target="_blank" rel="noopener noreferrer" class="social-pill" [title]="social.name">
+                <span>{{ social.icon }}</span>
+                <span>{{ social.name }}</span>
+              </a>
+            }
+
+            @if (profile()?.whatsAppNumber) {
+              <button type="button" class="btn-hero-whatsapp" (click)="openWhatsApp()">
+                💬 Conversar no WhatsApp
+              </button>
+            }
+
+            <button type="button" class="btn-hero-message" (click)="openContactLead()">
+              ✉️ Enviar Mensagem
+            </button>
           </div>
         </div>
       </div>
     </header>
+
+    @if (profile()?.bio) {
+      <section class="bio-section">
+        <h3>Sobre o Professor</h3>
+        <p class="bio-text">{{ profile()?.bio }}</p>
+      </section>
+    }
+
+    <!-- Video de Apresentação / Boas-vindas -->
+    @if (safeVideoUrl()) {
+      <section class="video-intro-section">
+        <h3>🎬 Vídeo de Apresentação</h3>
+        <div class="video-wrapper">
+          <iframe [src]="safeVideoUrl()!" 
+                  title="Vídeo de Apresentação" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+    }
 
     @if (requestMessage()) {
       <div class="alert-success">
@@ -31,11 +86,93 @@
       </div>
     }
 
-    <!-- Public Courses Grid -->
-    <section class="courses-section">
-      <h2>📚 Cursos & Trilhas de Estudo Disponíveis</h2>
+    <!-- Vitrine de Conteúdos & Serviços -->
+    <section class="offerings-section">
+      <div class="section-header-row">
+        <div>
+          <h2>✨ Vitrine de Aulas & Conteúdos</h2>
+          <p class="section-subtitle">Escolha o formato ideal para você acelerar seus aprendizados</p>
+        </div>
 
-      @if (profile()!.courses.length > 0) {
+        <!-- Filtros por tipo de oferta -->
+        <div class="filter-pills">
+          <button type="button" [class.active]="selectedOfferingType() === 'TODOS'" (click)="setFilter('TODOS')">
+            Todos ({{ profile()?.offerings?.length || 0 }})
+          </button>
+          <button type="button" [class.active]="selectedOfferingType() === 'AULA'" (click)="setFilter('AULA')">
+            🎓 Aulas Particulares
+          </button>
+          <button type="button" [class.active]="selectedOfferingType() === 'CURSO'" (click)="setFilter('CURSO')">
+            📚 Cursos
+          </button>
+          <button type="button" [class.active]="selectedOfferingType() === 'EBOOK'" (click)="setFilter('EBOOK')">
+            📖 E-books
+          </button>
+          <button type="button" [class.active]="selectedOfferingType() === 'MENTORIA'" (click)="setFilter('MENTORIA')">
+            🤝 Mentorias
+          </button>
+        </div>
+      </div>
+
+      @if (filteredOfferings().length > 0) {
+        <div class="offerings-grid">
+          @for (offering of filteredOfferings(); track offering.id) {
+            <div class="offering-card">
+              @if (offering.coverImageUrl) {
+                <div class="card-cover-image">
+                  <img [src]="offering.coverImageUrl" [alt]="offering.title" />
+                </div>
+              }
+
+              <div class="card-body">
+                <div class="card-badges-row">
+                  <span class="offering-type-badge type-{{ offering.offeringType }}">
+                    {{ getOfferingTypeIcon(offering.offeringType) }} {{ getOfferingTypeLabel(offering.offeringType) }}
+                  </span>
+                  <span class="offering-format-badge format-{{ offering.format }}">
+                    {{ getOfferingFormatLabel(offering.format) }}
+                  </span>
+                  @if (offering.format === 2 && offering.locationCity) {
+                    <span class="location-pill">📍 {{ offering.locationCity }}</span>
+                  }
+                </div>
+
+                <div class="subject-tag">{{ offering.subject }}</div>
+                <h3 class="offering-title">{{ offering.title }}</h3>
+                <p class="offering-desc">{{ offering.description }}</p>
+
+                <div class="card-footer">
+                  <div class="price-container">
+                    @if (offering.price && offering.price > 0) {
+                      <span class="price-val">R$ {{ offering.price | number:'1.2-2' }}</span>
+                      @if (offering.offeringType === 1) {
+                        <span class="price-unit">/ hora</span>
+                      }
+                    } @else {
+                      <span class="price-free">GRATUITO</span>
+                    }
+                  </div>
+
+                  <button type="button" class="btn-cta cta-type-{{ offering.ctaType }}" (click)="onCtaClick(offering)">
+                    <span>{{ getCtaIcon(offering) }}</span>
+                    <span>{{ getCtaLabel(offering) }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>Nenhuma oferta encontrada para o filtro selecionado.</p>
+        </div>
+      }
+    </section>
+
+    <!-- Cursos Nativos na Plataforma TeacherTech -->
+    @if (profile()!.courses.length > 0) {
+      <section class="courses-section">
+        <h2>📚 Trilhas & Cursos Nativos na Plataforma</h2>
         <div class="courses-grid">
           @for (course of profile()!.courses; track course.id) {
             <div class="course-card">
@@ -70,24 +207,31 @@
             </div>
           }
         </div>
-      } @else {
-        <div class="empty-state">
-          <p>Este professor ainda não disponibilizou cursos públicos.</p>
-        </div>
-      }
-    </section>
+      </section>
+    }
   } @else {
-    <div class="empty-state">
+    <div class="empty-state error-box">
       <h3>⚠️ Perfil não encontrado</h3>
-      <p>{{ errorMessage() }}</p>
+      <p>{{ errorMessage() || 'O link informado não corresponde a uma vitrine ativa.' }}</p>
+      <a routerLink="/explorar" class="btn-back">🔍 Explorar outros professores</a>
     </div>
   }
 
-  <!-- Modal Solicitar Acesso ao Professor (Modo A por padrão, sem prompt) -->
+  <!-- Modal Solicitar Acesso ao Professor -->
   <app-solicitar-acesso-modal 
     [isOpen]="isAccessModalOpen()" 
     [courseId]="selectedCourseId()" 
     [courseTitle]="selectedCourseTitle()" 
     initialMode="A" 
     (close)="isAccessModalOpen.set(false)" />
+
+  <!-- Modal de Captura de Lead / Contato com LGPD -->
+  <app-contact-lead-modal
+    [isOpen]="isLeadModalOpen()"
+    [professorId]="profile()?.userId || ''"
+    [professorName]="profile()?.fullName || ''"
+    [offeringId]="selectedLeadOfferingId()"
+    [offeringTitle]="selectedLeadOfferingTitle()"
+    (close)="isLeadModalOpen.set(false)"
+    (leadCreated)="onLeadCreated()" />
 </div>

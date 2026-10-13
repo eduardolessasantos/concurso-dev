@@ -1,26 +1,109 @@
 <div class="explore-container">
   <!-- Explore Header -->
   <header class="explore-header">
-    <h1>🌐 Explorar Cursos & Professores</h1>
-    <p>Descubra os melhores planos de estudo criados por professores renomados.</p>
+    <h1>🌐 Explorar Conteúdos & Professores</h1>
+    <p>Descubra aulas particulares, cursos, e-books e mentorias dos melhores educadores autônomos.</p>
 
     <!-- Search Bar -->
     <div class="search-box">
       <input 
         type="text" 
-        [(ngModel)]="searchKeyword" 
-        (keyup.enter)="onSearch()" 
-        placeholder="Buscar por disciplina, certame ou nome do professor..." />
-      <button type="button" class="btn-search" (click)="onSearch()">🔍 Buscar</button>
+        [ngModel]="searchKeyword()" 
+        (ngModelChange)="searchKeyword.set($event)"
+        (keyup.enter)="search(true)" 
+        placeholder="Buscar por matéria, título, tema ou professor..." />
+      <button type="button" class="btn-search" (click)="search(true)">🔍 Buscar</button>
     </div>
 
-    <!-- Category Pills -->
-    <div class="categories-pills">
-      <button type="button" class="pill" [class.active]="selectedCategory === ''" (click)="onSelectCategory('')">Todos</button>
-      <button type="button" class="pill" [class.active]="selectedCategory === 'Concursos Gerais'" (click)="onSelectCategory('Concursos Gerais')">Concursos Gerais</button>
-      <button type="button" class="pill" [class.active]="selectedCategory === 'Engenharia de Software'" (click)="onSelectCategory('Engenharia de Software')">Engenharia de Software</button>
-      <button type="button" class="pill" [class.active]="selectedCategory === 'Direito'" (click)="onSelectCategory('Direito')">Direito & Legislação</button>
-      <button type="button" class="pill" [class.active]="selectedCategory === 'TI & Dados'" (click)="onSelectCategory('TI & Dados')">TI & Análise de Dados</button>
+    <!-- Filtros de Formato & Tipo de Oferta -->
+    <div class="filters-panel">
+      <!-- Tipos de Conteúdo -->
+      <div class="filter-group">
+        <span class="group-label">Tipo:</span>
+        <div class="pills-row">
+          <button type="button" class="pill" [class.active]="selectedOfferingType() === undefined" (click)="onSelectOfferingType(undefined)">
+            Todos
+          </button>
+          <button type="button" class="pill" [class.active]="selectedOfferingType() === 'Aula'" (click)="onSelectOfferingType('Aula')">
+            🎓 Aulas Particulares
+          </button>
+          <button type="button" class="pill" [class.active]="selectedOfferingType() === 'Curso'" (click)="onSelectOfferingType('Curso')">
+            📚 Cursos
+          </button>
+          <button type="button" class="pill" [class.active]="selectedOfferingType() === 'E-book'" (click)="onSelectOfferingType('E-book')">
+            📖 E-books
+          </button>
+          <button type="button" class="pill" [class.active]="selectedOfferingType() === 'Mentoria'" (click)="onSelectOfferingType('Mentoria')">
+            🤝 Mentorias
+          </button>
+        </div>
+      </div>
+
+      <!-- Formato de Ensino -->
+      <div class="filter-group">
+        <span class="group-label">Formato:</span>
+        <div class="pills-row">
+          <button type="button" class="pill" [class.active]="selectedFormat() === undefined" (click)="onSelectFormat(undefined)">
+            Todos
+          </button>
+          <button type="button" class="pill" [class.active]="selectedFormat() === 'Online'" (click)="onSelectFormat('Online')">
+            💻 Online
+          </button>
+          <button type="button" class="pill" [class.active]="selectedFormat() === 'Presencial'" (click)="onSelectFormat('Presencial')">
+            🏫 Presencial
+          </button>
+          <button type="button" class="pill" [class.active]="selectedFormat() === 'Híbrido'" (click)="onSelectFormat('Híbrido')">
+            🔄 Híbrido
+          </button>
+        </div>
+      </div>
+
+      <!-- Matérias Dinâmicas -->
+      @if (availableFilters()?.availableSubjects && availableFilters()!.availableSubjects.length > 0) {
+        <div class="filter-group">
+          <span class="group-label">Matéria:</span>
+          <div class="pills-row">
+            <button type="button" class="pill" [class.active]="selectedSubject() === ''" (click)="onSelectSubject('')">
+              Todas
+            </button>
+            @for (subj of availableFilters()!.availableSubjects; track subj) {
+              <button type="button" class="pill" [class.active]="selectedSubject() === subj" (click)="onSelectSubject(subj)">
+                {{ subj }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Filtros Avançados: Cidade e Faixa de Preço -->
+      <div class="advanced-filters-row">
+        @if (availableFilters()?.availableCities && availableFilters()!.availableCities.length > 0) {
+          <div class="filter-field">
+            <label>Cidade:</label>
+            <select [ngModel]="selectedCity()" (ngModelChange)="onSelectCity($event)">
+              <option value="">Todas as Cidades</option>
+              @for (city of availableFilters()!.availableCities; track city) {
+                <option [value]="city">{{ city }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="filter-field price-inputs">
+          <label>Preço Máx (R$):</label>
+          <input 
+            type="number" 
+            placeholder="Ex: 150" 
+            [ngModel]="maxPriceInput()" 
+            (ngModelChange)="maxPriceInput.set($event)"
+            (keyup.enter)="search(true)" />
+          <button type="button" class="btn-apply-price" (click)="search(true)">Filtrar</button>
+        </div>
+
+        <button type="button" class="btn-clear-filters" (click)="clearFilters()">
+          ✖ Limpar Filtros
+        </button>
+      </div>
     </div>
   </header>
 
@@ -30,74 +113,141 @@
     </div>
   }
 
-  <!-- Technical Error State -->
+  <!-- Error State -->
   @if (technicalError()) {
-    <div class="technical-error-box" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 12px; padding: 2rem; text-align: center; margin: 2rem 0;">
-      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚠️</div>
-      <h3 style="color: #ef4444; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Falha Técnica na Consulta da API</h3>
-      <p style="color: #cbd5e1; max-width: 600px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">{{ technicalError() }}</p>
-      <button type="button" class="btn-search" (click)="fetchCourses()" style="cursor: pointer; padding: 0.6rem 1.4rem;">🔄 Tentar Novamente</button>
+    <div class="technical-error-box">
+      <div class="error-icon">⚠️</div>
+      <h3>Falha Técnica na Consulta da API</h3>
+      <p>{{ technicalError() }}</p>
+      <button type="button" class="btn-retry" (click)="search(true)">🔄 Tentar Novamente</button>
     </div>
   } @else if (isLoading()) {
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Buscando cursos disponíveis...</p>
+      <p>Buscando ofertas e cursos...</p>
     </div>
-  } @else if (courses().length > 0) {
-    <div class="courses-grid">
-      @for (c of courses(); track c.id) {
-        <div class="course-card">
-          <div class="card-top">
-            <span class="category-badge">{{ c.category }}</span>
-            <span class="price-badge">{{ c.price > 0 ? ('R$ ' + c.price) : 'GRATUITO' }}</span>
-          </div>
+  } @else if (pagedResult() && pagedResult()!.items.length > 0) {
+    <!-- Resultados Info -->
+    <div class="results-header">
+      <span class="count-badge">
+        🎯 <strong>{{ pagedResult()!.totalCount }}</strong> conteúdos encontrados
+      </span>
+      <span class="page-info">
+        Página {{ pagedResult()!.pageIndex + 1 }} de {{ pagedResult()!.totalPages }}
+      </span>
+    </div>
 
-          <h3>{{ c.title }}</h3>
-          <p class="desc">{{ c.description || 'Plano de estudos dinâmico gerado com IA e resumos didáticos.' }}</p>
+    <!-- Grid de Conteúdos -->
+    <div class="catalog-grid">
+      @for (item of pagedResult()!.items; track item.id) {
+        <div class="catalog-card">
+          @if (item.coverImageUrl) {
+            <div class="card-cover">
+              <img [src]="item.coverImageUrl" [alt]="item.title" />
+            </div>
+          }
 
-          <!-- Professor Details -->
-          <div class="professor-row">
-            <span class="avatar">👨‍🏫</span>
-            <div class="prof-meta">
-              <strong>{{ c.professorName }}</strong>
-              @if (c.professorSlug) {
-                <a [routerLink]="['/p', c.professorSlug]" class="prof-link">Ver perfil do professor →</a>
+          <div class="card-content">
+            <div class="badges-row">
+              <span class="type-badge">
+                {{ getOfferingTypeIcon(item.offeringType) }} {{ item.offeringType }}
+              </span>
+
+              @if (item.format) {
+                <span class="format-badge">
+                  {{ item.format }}
+                </span>
+              }
+
+              @if (item.city) {
+                <span class="city-badge">📍 {{ item.city }}</span>
               }
             </div>
-          </div>
 
-          <div class="card-footer">
-            <span class="subjects-info">📖 {{ c.subjectsCount }} Disciplinas</span>
+            <div class="subject-tag">{{ item.subject }}</div>
+            <h3 class="card-title">{{ item.title }}</h3>
+            <p class="card-desc">{{ item.description || 'Conteúdo educacional de excelência disponível no TeacherTech.' }}</p>
 
-            @if (isEnrolled(c.id)) {
-              <a [routerLink]="['/estudo', c.id]" class="btn-access">
-                📖 Acessar Estudo
-              </a>
-            } @else if (isRequested(c.id)) {
-              <button type="button" class="btn-pending" disabled>
-                ⏳ Solicitação Enviada
+            <!-- Professor Info -->
+            <div class="professor-row">
+              <div class="prof-avatar">
+                @if (item.professorAvatar) {
+                  <img [src]="item.professorAvatar" [alt]="item.professorName" />
+                } @else {
+                  <span>👨‍🏫</span>
+                }
+              </div>
+              <div class="prof-meta">
+                <span class="prof-label">Professor(a)</span>
+                <strong>{{ item.professorName }}</strong>
+                @if (item.professorSlug) {
+                  <a [routerLink]="['/p', item.professorSlug]" class="prof-link">Ver vitrine completa →</a>
+                }
+              </div>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="card-footer">
+              <div class="price-box">
+                @if (item.price != null && item.price > 0) {
+                  <span class="price-val">R$ {{ item.price | number:'1.2-2' }}</span>
+                  @if (item.offeringType === 'Aula Particular') {
+                    <span class="price-unit">/ hora</span>
+                  }
+                } @else {
+                  <span class="price-free">GRATUITO</span>
+                }
+              </div>
+
+              <button type="button" class="btn-cta" (click)="onCtaClick(item)">
+                <span>{{ getCtaIcon(item) }}</span>
+                <span>{{ getCtaLabel(item) }}</span>
               </button>
-            } @else {
-              <button type="button" class="btn-request" (click)="onRequestAccess(c.id, c.title)">
-                🙋 Solicitar Acesso
-              </button>
-            }
+            </div>
           </div>
         </div>
       }
     </div>
+
+    <!-- Paginação -->
+    @if (pagedResult()!.totalPages > 1) {
+      <div class="pagination-bar">
+        <button 
+          type="button" 
+          class="btn-page" 
+          [disabled]="pageIndex() <= 1" 
+          (click)="goToPage(pageIndex() - 1)">
+          ← Anterior
+        </button>
+
+        <span class="page-indicator">
+          Página <strong>{{ pageIndex() }}</strong> de <strong>{{ pagedResult()!.totalPages }}</strong>
+        </span>
+
+        <button 
+          type="button" 
+          class="btn-page" 
+          [disabled]="pageIndex() >= pagedResult()!.totalPages" 
+          (click)="goToPage(pageIndex() + 1)">
+          Próxima →
+        </button>
+      </div>
+    }
   } @else {
     <div class="empty-state">
       <div class="icon">🔍</div>
-      <h3>Nenhum curso encontrado</h3>
-      <p>Tente alterar o termo digitado na busca ou selecionar outra categoria.</p>
+      <h3>Nenhum conteúdo encontrado</h3>
+      <p>Tente ajustar os filtros selecionados, alterar a matéria ou limpar a busca.</p>
+      <button type="button" class="btn-clear-filters" (click)="clearFilters()">
+        ✖ Limpar Filtros
+      </button>
     </div>
   }
 
   <!-- Bloco de Anúncio Discreto (Google AdSense) -->
   <app-adsense-slot [adSlot]="'explore-bottom-banner'" />
 
-  <!-- Modal Solicitar Acesso (Modo A por padrão, sem prompt) -->
+  <!-- Modal Solicitar Acesso ao Professor -->
   <app-solicitar-acesso-modal 
     [isOpen]="isAccessModalOpen()" 
     [courseId]="selectedCourseId()" 

@@ -309,6 +309,90 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.ToTable("AsaasWebhookLogs");
                 });
 
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ContentOffering", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("CourseStudyPlanId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("CoverImageUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CtaType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CtaUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("CtaWhatsappMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Format")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("LocationCity")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("LocationState")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("OfferingType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("ProfessorId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseStudyPlanId");
+
+                    b.HasIndex("Format");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("LocationCity");
+
+                    b.HasIndex("ProfessorId");
+
+                    b.HasIndex("Subject");
+
+                    b.ToTable("ContentOfferings");
+                });
+
             modelBuilder.Entity("TeacherTech.Domain.Entities.CourseModule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -526,8 +610,14 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.Property<string>("AsaasCustomerId")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("BannerImageUrl")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Bio")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("City")
                         .HasColumnType("longtext");
 
                     b.Property<string>("CustomSlug")
@@ -544,11 +634,26 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.Property<bool>("PublicVisibility")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("SocialLinksJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("State")
+                        .HasColumnType("longtext");
+
                     b.Property<Guid?>("SubscriptionId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("ThemeColor")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("VideoIntroUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("WhatsAppNumber")
+                        .HasColumnType("longtext");
 
                     b.HasKey("UserId");
 
@@ -653,6 +758,98 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.HasIndex("TopicId");
 
                     b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ShowcaseLead", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ContentOfferingId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ProfessorId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("TermsAccepted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentOfferingId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ProfessorId");
+
+                    b.ToTable("ShowcaseLeads");
+                });
+
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ShowcaseMetric", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("CtaClicks")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LeadsCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MetricDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("PageViews")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProfessorId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("WhatsAppClicks")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfessorId", "MetricDate")
+                        .IsUnique();
+
+                    b.ToTable("ShowcaseMetrics");
                 });
 
             modelBuilder.Entity("TeacherTech.Domain.Entities.SimulatedQuestion", b =>
@@ -1065,6 +1262,24 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ContentOffering", b =>
+                {
+                    b.HasOne("TeacherTech.Domain.Entities.CourseStudyPlan", "CourseStudyPlan")
+                        .WithMany()
+                        .HasForeignKey("CourseStudyPlanId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TeacherTech.Domain.Entities.ProfessorProfile", "Professor")
+                        .WithMany("Offerings")
+                        .HasForeignKey("ProfessorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CourseStudyPlan");
+
+                    b.Navigation("Professor");
+                });
+
             modelBuilder.Entity("TeacherTech.Domain.Entities.CourseModule", b =>
                 {
                     b.HasOne("TeacherTech.Domain.Entities.CourseStudyPlan", "Course")
@@ -1180,6 +1395,34 @@ namespace TeacherTech.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ShowcaseLead", b =>
+                {
+                    b.HasOne("TeacherTech.Domain.Entities.ContentOffering", "ContentOffering")
+                        .WithMany()
+                        .HasForeignKey("ContentOfferingId");
+
+                    b.HasOne("TeacherTech.Domain.Entities.ProfessorProfile", "Professor")
+                        .WithMany("Leads")
+                        .HasForeignKey("ProfessorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ContentOffering");
+
+                    b.Navigation("Professor");
+                });
+
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ShowcaseMetric", b =>
+                {
+                    b.HasOne("TeacherTech.Domain.Entities.ProfessorProfile", "Professor")
+                        .WithMany("Metrics")
+                        .HasForeignKey("ProfessorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Professor");
                 });
 
             modelBuilder.Entity("TeacherTech.Domain.Entities.SimulatedQuestion", b =>
@@ -1349,6 +1592,15 @@ namespace TeacherTech.Infrastructure.Migrations
                     b.Navigation("Enrollments");
 
                     b.Navigation("WhatsAppLogs");
+                });
+
+            modelBuilder.Entity("TeacherTech.Domain.Entities.ProfessorProfile", b =>
+                {
+                    b.Navigation("Leads");
+
+                    b.Navigation("Metrics");
+
+                    b.Navigation("Offerings");
                 });
 
             modelBuilder.Entity("TeacherTech.Domain.Entities.Question", b =>

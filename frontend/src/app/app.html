@@ -18,17 +18,23 @@
       @if (authService.isProfessor()) {
         <div class="nav-divider"><span>PAINEL DO PROFESSOR</span></div>
 
+        <a class="nav-link" routerLink="/professor/dashboard" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">📊</span> Dashboard & Métricas
+        </a>
+        <a class="nav-link" routerLink="/professor/vitrine" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">🎨</span> Minha Vitrine Virtual
+        </a>
+        <a class="nav-link" routerLink="/professor/ofertas" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">📦</span> Minhas Ofertas (Aulas/Cursos)
+        </a>
         <a class="nav-link" routerLink="/professor/estudio" routerLinkActive="active" (click)="closeSidebar()">
           <span class="nav-icon">🤖</span> Estúdio do Professor (IA)
         </a>
         <a class="nav-link" routerLink="/professor/alunos" routerLinkActive="active" (click)="closeSidebar()">
-          <span class="nav-icon">👥</span> Gestão de Alunos (Exportar)
+          <span class="nav-icon">👥</span> Gestão de Alunos
         </a>
-        <a class="nav-link" routerLink="/professor/financeiro" routerLinkActive="active" (click)="closeSidebar()">
-          <span class="nav-icon">💰</span> Financeiro & Repasse PIX
-        </a>
-        <a class="nav-link" routerLink="/p/eduardo-lessa" routerLinkActive="active" (click)="closeSidebar()">
-          <span class="nav-icon">👤</span> Meu Perfil Público
+        <a class="nav-link" routerLink="/professor/planos" routerLinkActive="active" (click)="closeSidebar()">
+          <span class="nav-icon">💳</span> Assinatura & Planos
         </a>
       }
 

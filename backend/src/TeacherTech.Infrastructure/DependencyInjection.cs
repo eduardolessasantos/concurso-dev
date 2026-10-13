@@ -25,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<IProfessorSubscriptionRepository, ProfessorSubscriptionRepository>();
         services.AddScoped<IAsaasWebhookLogRepository, AsaasWebhookLogRepository>();
         services.AddScoped<IWhatsAppLogRepository, WhatsAppLogRepository>();
+        services.AddScoped<IContentOfferingRepository, ContentOfferingRepository>();
+        services.AddScoped<IShowcaseLeadRepository, ShowcaseLeadRepository>();
+        services.AddScoped<IShowcaseMetricRepository, ShowcaseMetricRepository>();
 
         // AI Services & Health
         services.AddHttpClient<IAiService, AiService>();

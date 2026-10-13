@@ -68,6 +68,37 @@ public enum InviteChannel
     Email = 4
 }
 
+public enum OfferingType
+{
+    PrivateClass = 1,
+    Course = 2,
+    Ebook = 3,
+    Mentoring = 4
+}
+
+public enum OfferingFormat
+{
+    Online = 1,
+    InPerson = 2,
+    Hybrid = 3
+}
+
+public enum CtaType
+{
+    WhatsApp = 1,
+    Scheduling = 2,
+    ExternalCheckout = 3,
+    PlatformCourse = 4
+}
+
+public enum LeadStatus
+{
+    New = 1,
+    Contacted = 2,
+    Converted = 3,
+    Dismissed = 4
+}
+
 // --- DOMAIN ENTITIES ---
 public class ApplicationUser : IdentityUser
 {
@@ -100,12 +131,103 @@ public class ProfessorProfile
     
     public string? AsaasCustomerId { get; set; }
 
+    public string? BannerImageUrl { get; set; }
+    public string? ThemeColor { get; set; } = "#4F46E5";
+    public string? WhatsAppNumber { get; set; }
+    public string? VideoIntroUrl { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? SocialLinksJson { get; set; }
+
     public int AiCreditsLimit { get; set; } = 200;
     public int AiCreditsUsed { get; set; } = 0;
     public DateTime? UpdatedAt { get; set; }
 
     public ApplicationUser User { get; set; } = null!;
     public ProfessorSubscription? Subscription { get; set; }
+    public ICollection<ContentOffering> Offerings { get; set; } = new List<ContentOffering>();
+    public ICollection<ShowcaseLead> Leads { get; set; } = new List<ShowcaseLead>();
+    public ICollection<ShowcaseMetric> Metrics { get; set; } = new List<ShowcaseMetric>();
+}
+
+public class ContentOffering
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string ProfessorId { get; set; } = string.Empty;
+    public ProfessorProfile Professor { get; set; } = null!;
+
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public decimal? Price { get; set; }
+
+    public OfferingType OfferingType { get; set; } = OfferingType.Course;
+    public OfferingFormat Format { get; set; } = OfferingFormat.Online;
+
+    public string? LocationCity { get; set; }
+    public string? LocationState { get; set; }
+
+    public CtaType CtaType { get; set; } = CtaType.WhatsApp;
+    public string? CtaUrl { get; set; }
+    public string? CtaWhatsappMessage { get; set; }
+    public string? CoverImageUrl { get; set; }
+
+    public int DisplayOrder { get; set; } = 0;
+    public bool IsActive { get; set; } = true;
+    public bool IsFeatured { get; set; } = false;
+
+    public Guid? CourseStudyPlanId { get; set; }
+    public CourseStudyPlan? CourseStudyPlan { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class ShowcaseLead
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [Required]
+    public string ProfessorId { get; set; } = string.Empty;
+    public ProfessorProfile Professor { get; set; } = null!;
+
+    public Guid? ContentOfferingId { get; set; }
+    public ContentOffering? ContentOffering { get; set; }
+
+    [Required, MaxLength(150)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required, MaxLength(150), EmailAddress]
+    public string Email { get; set; } = string.Empty;
+
+    [MaxLength(50)]
+    public string Phone { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string Message { get; set; } = string.Empty;
+
+    public LeadStatus Status { get; set; } = LeadStatus.New;
+    public bool TermsAccepted { get; set; } = true;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
+}
+
+public class ShowcaseMetric
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    [Required]
+    public string ProfessorId { get; set; } = string.Empty;
+    public ProfessorProfile Professor { get; set; } = null!;
+
+    public DateTime MetricDate { get; set; } = DateTime.UtcNow.Date;
+    public int PageViews { get; set; } = 0;
+    public int WhatsAppClicks { get; set; } = 0;
+    public int CtaClicks { get; set; } = 0;
+    public int LeadsCount { get; set; } = 0;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 public class StudentProfile

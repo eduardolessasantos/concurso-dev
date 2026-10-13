@@ -1,0 +1,23 @@
+installation:
+  version: 6.12.2
+  installDate: 2026-10-13T14:29:53.686Z
+  lastUpdated: 2026-10-13T14:29:53.686Z
+  installShims: false
+modules:
+  - name: core
+    version: 6.12.2
+    installDate: 2026-10-13T14:29:52.102Z
+    lastUpdated: 2026-10-13T14:29:53.674Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+  - name: bmm
+    version: 6.12.2
+    installDate: 2026-10-13T14:29:53.311Z
+    lastUpdated: 2026-10-13T14:29:53.686Z
+    source: built-in
+    npmPackage: null
+    repoUrl: null
+ides:
+  - auggie
+  - antigravity-cli

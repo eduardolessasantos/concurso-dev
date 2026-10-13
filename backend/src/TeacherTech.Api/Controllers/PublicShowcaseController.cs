@@ -45,21 +45,33 @@ public class PublicShowcaseController : ControllerBase
     }
 
     /// <summary>
-    /// Explora e pesquisa o catálogo de cursos públicos da plataforma com filtros opcionais de busca textual e categoria.
+    /// Explora e pesquisa o catálogo de ofertas e cursos públicos da plataforma com filtros facetados e paginação.
     /// </summary>
     /// <remarks>
-    /// Serviço de busca para a vitrine principal da plataforma.
+    /// Permite filtrar por matéria/disciplina, faixa de preço, formato (online/presencial), cidade e busca textual.
     /// </remarks>
-    /// <param name="search">Termo de busca textual para filtrar por título ou descrição (opcional).</param>
-    /// <param name="category">Filtro por categoria temática (opcional).</param>
-    /// <returns>Lista de cursos públicos correspondentes aos filtros.</returns>
-    /// <response code="200">Lista de cursos retornada com sucesso.</response>
+    /// <param name="queryParams">Parâmetros de consulta e filtros facetados.</param>
+    /// <returns>Resultado paginado com ofertas e cursos correspondentes.</returns>
+    /// <response code="200">Resultado paginado retornado com sucesso.</response>
     [HttpGet("explore")]
-    [ProducesResponseType(typeof(List<PublicCourseExploreDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ExploreCourses([FromQuery] string? search, [FromQuery] string? category)
+    [ProducesResponseType(typeof(PagedResult<ExploreItemDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Explore([FromQuery] ExploreQueryParams queryParams)
     {
-        var courses = await _publicShowcaseService.ExploreCoursesAsync(search, category);
-        return Ok(courses);
+        var result = await _publicShowcaseService.ExploreAsync(queryParams);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Obtém os filtros ativos agregados (matérias, cidades e formatos) para compor a interface de busca facetada.
+    /// </summary>
+    /// <returns>Lista de filtros disponíveis.</returns>
+    /// <response code="200">Filtros retornados com sucesso.</response>
+    [HttpGet("filters")]
+    [ProducesResponseType(typeof(ExploreFiltersDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetFilters()
+    {
+        var result = await _publicShowcaseService.GetAvailableFiltersAsync();
+        return Ok(result);
     }
 
     /// <summary>
@@ -78,6 +90,76 @@ public class PublicShowcaseController : ControllerBase
     public async Task<IActionResult> GetPublicCourseDetails(Guid id)
     {
         var result = await _publicShowcaseService.GetPublicCourseDetailsAsync(id);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Registra um novo lead de contato na vitrine do professor (sem criação de contas de usuário descartáveis).
+    /// </summary>
+    /// <param name="dto">Dados do lead interessado com aceite explícito de termos LGPD.</param>
+    /// <returns>Lead criado com sucesso.</returns>
+    /// <response code="200">Lead registrado com sucesso.</response>
+    /// <response code="400">Dados inválidos ou aceite de termos não fornecido.</response>
+    /// <response code="404">Professor não encontrado.</response>
+    [HttpPost("leads")]
+    [ProducesResponseType(typeof(ShowcaseLeadResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateLead([FromBody] CreateShowcaseLeadDto dto)
+    {
+        var result = await _publicShowcaseService.CreateLeadAsync(dto);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Registra a telemetria de cliques em botões de ação e visualizações de vitrine.
+    /// </summary>
+    /// <param name="dto">Dados do clique registrado.</param>
+    /// <returns>Confirmação do registro da telemetria.</returns>
+    /// <response code="200">Telemetria registrada.</response>
+    [HttpPost("track-click")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> TrackClick([FromBody] TrackClickDto dto)
+    {
+        var result = await _publicShowcaseService.TrackClickAsync(dto);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(new { success = true });
+    }
+
+    /// <summary>
+    /// Obtém os leads recebidos por um professor específico.
+    /// </summary>
+    /// <param name="professorId">Identificador do professor.</param>
+    /// <returns>Lista de leads capturados.</returns>
+    [HttpGet("professors/{professorId}/leads")]
+    [ProducesResponseType(typeof(List<ShowcaseLeadResponseDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfessorLeads(string professorId)
+    {
+        var result = await _publicShowcaseService.GetProfessorLeadsAsync(professorId);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
+    /// Obtém as métricas consolidadas e histórico de visualizações e cliques do professor.
+    /// </summary>
+    /// <param name="professorId">Identificador do professor.</param>
+    /// <returns>Resumo de métricas da vitrine.</returns>
+    [HttpGet("professors/{professorId}/metrics")]
+    [ProducesResponseType(typeof(ShowcaseMetricSummaryDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfessorMetrics(string professorId)
+    {
+        var result = await _publicShowcaseService.GetProfessorMetricsAsync(professorId);
         if (!result.Success)
             return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
 

@@ -30,6 +30,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<SimulatedTest> SimulatedTests => Set<SimulatedTest>();
     public DbSet<SimulatedQuestion> SimulatedQuestions => Set<SimulatedQuestion>();
     public DbSet<AsaasWebhookLog> AsaasWebhookLogs => Set<AsaasWebhookLog>();
+    public DbSet<ContentOffering> ContentOfferings => Set<ContentOffering>();
+    public DbSet<ShowcaseLead> ShowcaseLeads => Set<ShowcaseLead>();
+    public DbSet<ShowcaseMetric> ShowcaseMetrics => Set<ShowcaseMetric>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -164,5 +167,44 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<StudentProgress>()
             .HasIndex(sp => new { sp.StudentId, sp.TopicId });
+
+        // --- 6. CONTENT OFFERINGS (Showcase items) ---
+        builder.Entity<ContentOffering>()
+            .HasOne(o => o.Professor)
+            .WithMany(p => p.Offerings)
+            .HasForeignKey(o => o.ProfessorId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<ContentOffering>()
+            .HasOne(o => o.CourseStudyPlan)
+            .WithMany()
+            .HasForeignKey(o => o.CourseStudyPlanId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<ContentOffering>()
+            .HasIndex(o => o.Subject);
+
+        builder.Entity<ContentOffering>()
+            .HasIndex(o => o.Format);
+
+        builder.Entity<ContentOffering>()
+            .HasIndex(o => o.LocationCity);
+
+        builder.Entity<ContentOffering>()
+            .HasIndex(o => o.IsActive);
+
+        // --- 7. SHOWCASE LEADS & METRICS ---
+        builder.Entity<ShowcaseLead>()
+            .HasIndex(l => l.ProfessorId);
+
+        builder.Entity<ShowcaseLead>()
+            .HasIndex(l => l.ContentOfferingId);
+
+        builder.Entity<ShowcaseLead>()
+            .HasIndex(l => l.CreatedAt);
+
+        builder.Entity<ShowcaseMetric>()
+            .HasIndex(m => new { m.ProfessorId, m.MetricDate })
+            .IsUnique();
     }
 }

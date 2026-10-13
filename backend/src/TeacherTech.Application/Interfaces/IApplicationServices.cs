@@ -69,6 +69,28 @@ public interface IPublicShowcaseApplicationService
     Task<ServiceResult<PublicProfessorProfileDto>> GetProfessorBySlugAsync(string slug);
     Task<List<PublicCourseExploreDto>> ExploreCoursesAsync(string? search, string? category);
     Task<ServiceResult<object>> GetPublicCourseDetailsAsync(Guid id);
+    Task<PagedResult<ExploreItemDto>> ExploreAsync(ExploreQueryParams queryParams);
+    Task<ExploreFiltersDto> GetAvailableFiltersAsync();
+    Task<ServiceResult<ShowcaseLeadResponseDto>> CreateLeadAsync(CreateShowcaseLeadDto dto);
+    Task<ServiceResult<bool>> TrackClickAsync(TrackClickDto dto);
+    Task<ServiceResult<List<ShowcaseLeadResponseDto>>> GetProfessorLeadsAsync(string professorId);
+    Task<ServiceResult<ShowcaseMetricSummaryDto>> GetProfessorMetricsAsync(string professorId);
+}
+
+public interface IProfessorShowcaseManagementService
+{
+    Task<ServiceResult<PublicProfessorProfileDto>> GetMyShowcaseAsync(string professorId);
+    Task<ServiceResult<PublicProfessorProfileDto>> UpdateMyShowcaseAsync(string professorId, UpdateProfessorShowcaseDto dto);
+    Task<ServiceResult<bool>> CheckSlugAvailabilityAsync(string professorId, string slug);
+
+    Task<ServiceResult<List<PublicOfferingDto>>> GetMyOfferingsAsync(string professorId);
+    Task<ServiceResult<PublicOfferingDto>> CreateOfferingAsync(string professorId, SaveOfferingDto dto);
+    Task<ServiceResult<PublicOfferingDto>> UpdateOfferingAsync(string professorId, Guid offeringId, SaveOfferingDto dto);
+    Task<ServiceResult<bool>> DeleteOfferingAsync(string professorId, Guid offeringId);
+    Task<ServiceResult<bool>> ToggleOfferingActiveAsync(string professorId, Guid offeringId);
+    Task<ServiceResult<bool>> ReorderOfferingsAsync(string professorId, ReorderOfferingsDto dto);
+
+    Task<ServiceResult<bool>> UpdateLeadStatusAsync(string professorId, Guid leadId, UpdateLeadStatusDto dto);
 }
 
 public interface ISubjectApplicationService

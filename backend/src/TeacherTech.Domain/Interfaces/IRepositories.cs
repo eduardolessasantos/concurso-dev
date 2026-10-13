@@ -106,3 +106,24 @@ public interface IAsaasWebhookLogRepository : IRepository<AsaasWebhookLog, Guid>
 public interface IWhatsAppLogRepository : IRepository<WhatsAppLog, Guid>
 {
 }
+
+public interface IContentOfferingRepository : IRepository<ContentOffering, Guid>
+{
+    Task<List<ContentOffering>> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+    Task<List<ContentOffering>> SearchActiveOfferingsAsync(string? search, string? subject, string? format, string? city, decimal? priceMin, decimal? priceMax, CancellationToken cancellationToken = default);
+    Task<List<string>> GetDistinctSubjectsAsync(CancellationToken cancellationToken = default);
+    Task<List<string>> GetDistinctCitiesAsync(CancellationToken cancellationToken = default);
+}
+
+public interface IShowcaseLeadRepository : IRepository<ShowcaseLead, Guid>
+{
+    Task<List<ShowcaseLead>> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+    Task<int> CountByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default);
+}
+
+public interface IShowcaseMetricRepository : IRepository<ShowcaseMetric, Guid>
+{
+    Task<ShowcaseMetric?> GetByProfessorAndDateAsync(string professorId, DateTime date, CancellationToken cancellationToken = default);
+    Task IncrementMetricAsync(string professorId, DateTime date, Action<ShowcaseMetric> updateAction, CancellationToken cancellationToken = default);
+    Task<List<ShowcaseMetric>> GetMetricsHistoryAsync(string professorId, int days = 30, CancellationToken cancellationToken = default);
+}

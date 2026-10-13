@@ -125,6 +125,8 @@ public class ProfessorProfileRepository : Repository<ProfessorProfile, string>, 
     public async Task<ProfessorProfile?> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
     {
         return await DbContext.ProfessorProfiles
+            .Include(p => p.User)
+            .Include(p => p.Offerings)
             .Include(p => p.Subscription)
             .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
     }
@@ -134,6 +136,7 @@ public class ProfessorProfileRepository : Repository<ProfessorProfile, string>, 
         return await DbContext.ProfessorProfiles
             .Include(p => p.User)
             .Include(p => p.Subscription)
+            .Include(p => p.Offerings)
             .FirstOrDefaultAsync(p => p.CustomSlug.ToLower() == slug.ToLower() && p.PublicVisibility, cancellationToken);
     }
 }
@@ -432,4 +435,160 @@ public class AsaasWebhookLogRepository : Repository<AsaasWebhookLog, Guid>, IAsa
 public class WhatsAppLogRepository : Repository<WhatsAppLog, Guid>, IWhatsAppLogRepository
 {
     public WhatsAppLogRepository(ApplicationDbContext dbContext) : base(dbContext) { }
+}
+
+public class ContentOfferingRepository : Repository<ContentOffering, Guid>, IContentOfferingRepository
+{
+    public ContentOfferingRepository(ApplicationDbContext dbContext) : base(dbContext) { }
+
+    public async Task<List<ContentOffering>> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ContentOfferings
+            .Where(o => o.ProfessorId == professorId)
+            .OrderBy(o => o.DisplayOrder)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<ContentOffering>> SearchActiveOfferingsAsync(string? search, string? subject, string? format, string? city, decimal? priceMin, decimal? priceMax, CancellationToken cancellationToken = default)
+    {
+        var query = DbContext.ContentOfferings
+            .Include(o => o.Professor)
+                .ThenInclude(p => p.User)
+            .Where(o => o.IsActive && o.Professor.PublicVisibility)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(o => o.Title.ToLower().Contains(s) ||
+                                     o.Description.ToLower().Contains(s) ||
+                                     o.Subject.ToLower().Contains(s) ||
+                                     o.Professor.User.FullName.ToLower().Contains(s));
+        }
+
+        if (!string.IsNullOrWhiteSpace(subject))
+        {
+            var subj = subject.Trim().ToLower();
+            query = query.Where(o => o.Subject.ToLower().Contains(subj));
+        }
+
+        if (!string.IsNullOrWhiteSpace(format) && Enum.TryParse<OfferingFormat>(format, true, out var fmt))
+        {
+            query = query.Where(o => o.Format == fmt);
+        }
+
+        if (!string.IsNullOrWhiteSpace(city))
+        {
+            var c = city.Trim().ToLower();
+            query = query.Where(o => o.LocationCity != null && o.LocationCity.ToLower().Contains(c));
+        }
+
+        if (priceMin.HasValue)
+        {
+            query = query.Where(o => o.Price >= priceMin.Value);
+        }
+
+        if (priceMax.HasValue)
+        {
+            query = query.Where(o => o.Price <= priceMax.Value);
+        }
+
+        return await query.OrderByDescending(o => o.IsFeatured)
+                          .ThenBy(o => o.DisplayOrder)
+                          .ThenByDescending(o => o.CreatedAt)
+                          .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<string>> GetDistinctSubjectsAsync(CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ContentOfferings
+            .Where(o => o.IsActive && !string.IsNullOrWhiteSpace(o.Subject))
+            .Select(o => o.Subject.Trim())
+            .Distinct()
+            .OrderBy(s => s)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<string>> GetDistinctCitiesAsync(CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ContentOfferings
+            .Where(o => o.IsActive && !string.IsNullOrWhiteSpace(o.LocationCity))
+            .Select(o => o.LocationCity!.Trim())
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync(cancellationToken);
+    }
+}
+
+public class ShowcaseLeadRepository : Repository<ShowcaseLead, Guid>, IShowcaseLeadRepository
+{
+    public ShowcaseLeadRepository(ApplicationDbContext dbContext) : base(dbContext) { }
+
+    public async Task<List<ShowcaseLead>> GetByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ShowcaseLeads
+            .Include(l => l.ContentOffering)
+            .Where(l => l.ProfessorId == professorId)
+            .OrderByDescending(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.ShowcaseLeads
+            .Where(l => l.ProfessorId == professorId)
+            .CountAsync(cancellationToken);
+    }
+}
+
+public class ShowcaseMetricRepository : Repository<ShowcaseMetric, Guid>, IShowcaseMetricRepository
+{
+    public ShowcaseMetricRepository(ApplicationDbContext dbContext) : base(dbContext) { }
+
+    public async Task<ShowcaseMetric?> GetByProfessorAndDateAsync(string professorId, DateTime date, CancellationToken cancellationToken = default)
+    {
+        var targetDate = date.Date;
+        return await DbContext.ShowcaseMetrics
+            .FirstOrDefaultAsync(m => m.ProfessorId == professorId && m.MetricDate == targetDate, cancellationToken);
+    }
+
+    public async Task IncrementMetricAsync(string professorId, DateTime date, Action<ShowcaseMetric> updateAction, CancellationToken cancellationToken = default)
+    {
+        var targetDate = date.Date;
+        var metric = await DbContext.ShowcaseMetrics
+            .FirstOrDefaultAsync(m => m.ProfessorId == professorId && m.MetricDate == targetDate, cancellationToken);
+
+        if (metric == null)
+        {
+            metric = new ShowcaseMetric
+            {
+                ProfessorId = professorId,
+                MetricDate = targetDate,
+                PageViews = 0,
+                WhatsAppClicks = 0,
+                CtaClicks = 0,
+                LeadsCount = 0,
+                UpdatedAt = DateTime.UtcNow
+            };
+            updateAction(metric);
+            await DbContext.ShowcaseMetrics.AddAsync(metric, cancellationToken);
+        }
+        else
+        {
+            updateAction(metric);
+            metric.UpdatedAt = DateTime.UtcNow;
+            DbContext.ShowcaseMetrics.Update(metric);
+        }
+
+        await DbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<List<ShowcaseMetric>> GetMetricsHistoryAsync(string professorId, int days = 30, CancellationToken cancellationToken = default)
+    {
+        var startDate = DateTime.UtcNow.Date.AddDays(-days);
+        return await DbContext.ShowcaseMetrics
+            .Where(m => m.ProfessorId == professorId && m.MetricDate >= startDate)
+            .OrderBy(m => m.MetricDate)
+            .ToListAsync(cancellationToken);
+    }
 }

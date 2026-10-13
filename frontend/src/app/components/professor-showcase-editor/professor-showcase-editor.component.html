@@ -1,0 +1,389 @@
+<div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header de Navegação do Painel do Professor -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-6 border-b border-slate-200 mb-8 gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-sm text-indigo-600 font-medium mb-1">
+          <a routerLink="/professor/dashboard" class="hover:underline flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            Painel do Professor
+          </a>
+          <span>/</span>
+          <span class="text-slate-500">Vitrine Virtual</span>
+        </div>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Editar Minha Vitrine Virtual</h1>
+        <p class="text-sm text-slate-600 mt-1">Personalize sua landing page, links de contato e identidade visual para atrair novos alunos.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        @if (originalProfile()?.customSlug) {
+          <a [routerLink]="['/p', originalProfile()?.customSlug]" target="_blank"
+             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-300 shadow-sm hover:bg-slate-50 transition-all">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            Ver Vitrine Pública
+          </a>
+        }
+        <button (click)="saveShowcase()" [disabled]="isSaving()"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 shadow-md hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all">
+          @if (isSaving()) {
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Salvando...
+          } @else {
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+            Salvar Alterações
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Abas de Navegação Rápida -->
+    <div class="flex border-b border-slate-200 mb-8 space-x-8">
+      <a routerLink="/professor/dashboard" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        Dashboard Geral
+      </a>
+      <a routerLink="/professor/vitrine" class="border-indigo-600 text-indigo-600 py-3 px-1 border-b-2 font-semibold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        Personalizar Vitrine
+      </a>
+      <a routerLink="/professor/ofertas" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        Gerenciar Ofertas
+      </a>
+      <a routerLink="/professor/estudio-criacao" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        Estúdio IA
+      </a>
+    </div>
+
+    <!-- Feedback Mensagens Toast -->
+    @if (successMessage()) {
+      <div class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3 animate-fade-in">
+        <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <p class="font-medium text-sm">{{ successMessage() }}</p>
+      </div>
+    }
+
+    @if (errorMessage()) {
+      <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-center gap-3 animate-fade-in">
+        <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <p class="font-medium text-sm">{{ errorMessage() }}</p>
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="py-24 text-center">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent"></div>
+        <p class="mt-4 text-sm font-medium text-slate-600">Carregando configurações da vitrine...</p>
+      </div>
+    } @else {
+      <!-- Split-View: Editor (Esquerda) vs Live Preview (Direita) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- COLUNA 1: Formulário de Configuração (7 colunas) -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Bloco 1: Identidade e Headline -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">1</span>
+              Apresentação e Bio
+            </h2>
+            <p class="text-xs text-slate-500 mb-6">Essas informações aparecem logo no topo da sua vitrine para encantar os visitantes.</p>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Sua Frase de Destaque (Headline)</label>
+                <input type="text" [ngModel]="headline()" (ngModelChange)="headline.set($event)"
+                       placeholder="Ex: Professor de Matemática e Preparador para Vestibulares de Medicina"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm placeholder:text-slate-400 text-slate-900">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Biografia / Sobre Você</label>
+                <textarea rows="4" [ngModel]="bio()" (ngModelChange)="bio.set($event)"
+                          placeholder="Conte sua metodologia, formação acadêmica, anos de experiência e por que seu método funciona..."
+                          class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm placeholder:text-slate-400 text-slate-900"></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Cidade (Opcional)</label>
+                  <input type="text" [ngModel]="city()" (ngModelChange)="city.set($event)"
+                         placeholder="Ex: Curitiba"
+                         class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Estado / UF</label>
+                  <input type="text" [ngModel]="state()" (ngModelChange)="state.set($event)"
+                         placeholder="Ex: PR" maxlength="2"
+                         class="w-full px-4 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm uppercase">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 2: Link Personalizado (Slug) -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">2</span>
+              Link Personalizado da sua Vitrine (Slug)
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Seu endereço exclusivo para divulgar no Instagram, WhatsApp ou cartão de visitas.</p>
+
+            <div>
+              <div class="flex items-center rounded-xl border border-slate-300 px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 bg-slate-50">
+                <span class="text-xs sm:text-sm font-semibold text-slate-500 select-none">teachertech.com/p/</span>
+                <input type="text" [ngModel]="customSlug()" (ngModelChange)="onSlugChange($event)"
+                       placeholder="seu-nome"
+                       class="flex-1 bg-transparent border-0 focus:ring-0 text-sm font-bold text-indigo-700 placeholder:text-slate-400 p-0 ml-1">
+              </div>
+
+              <div class="mt-2 flex items-center gap-2 text-xs">
+                @if (isCheckingSlug()) {
+                  <span class="text-slate-500 flex items-center gap-1">
+                    <svg class="animate-spin h-3.5 w-3.5 text-slate-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Verificando disponibilidade...
+                  </span>
+                } @else if (isSlugAvailable() === true) {
+                  <span class="text-emerald-700 font-medium flex items-center gap-1">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    Link disponível para você!
+                  </span>
+                } @else if (isSlugAvailable() === false) {
+                  <span class="text-red-600 font-medium flex items-center gap-1">
+                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    Este link já está em uso por outro professor.
+                  </span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 3: Identidade Visual e Tema -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">3</span>
+              Cores e Imagem de Capa (Banner)
+            </h2>
+            <p class="text-xs text-slate-500 mb-6">Escolha sua cor de marca e a imagem de cabeçalho da sua vitrine.</p>
+
+            <div class="space-y-5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Cor de Destaque da Vitrine</label>
+                <div class="flex flex-wrap items-center gap-3">
+                  @for (c of presetColors; track c.hex) {
+                    <button type="button" (click)="selectThemeColor(c.hex)"
+                            [style.backgroundColor]="c.hex"
+                            [class.ring-4]="themeColor() === c.hex"
+                            class="w-10 h-10 rounded-xl transition-all shadow-sm ring-indigo-300 flex items-center justify-center hover:scale-105 active:scale-95"
+                            [title]="c.name">
+                      @if (themeColor() === c.hex) {
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                      }
+                    </button>
+                  }
+                  <div class="flex items-center gap-2 ml-2 pl-3 border-l border-slate-200">
+                    <input type="color" [ngModel]="themeColor()" (ngModelChange)="themeColor.set($event)"
+                           class="w-10 h-10 p-1 rounded-xl border border-slate-300 cursor-pointer">
+                    <span class="text-xs font-mono font-medium text-slate-600">{{ themeColor() }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">URL da Foto de Capa (Banner)</label>
+                <input type="url" [ngModel]="bannerImageUrl()" (ngModelChange)="bannerImageUrl.set($event)"
+                       placeholder="https://exemplo.com/sua-foto-banner.jpg (ideal: 1200x320)"
+                       class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm placeholder:text-slate-400">
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloco 4: Contato, Vídeo e Redes Sociais -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">4</span>
+              WhatsApp, Vídeo & Redes Sociais
+            </h2>
+            <p class="text-xs text-slate-500 mb-6">Canais diretos de contato para os alunos interagirem com você.</p>
+
+            <div class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Número de WhatsApp</label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-slate-400 text-xs font-semibold">+55</span>
+                    </div>
+                    <input type="tel" [ngModel]="whatsAppNumber()" (ngModelChange)="whatsAppNumber.set($event)"
+                           placeholder="(11) 98765-4321"
+                           class="w-full pl-12 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Vídeo Intro (YouTube / Vimeo)</label>
+                  <input type="url" [ngModel]="videoIntroUrl()" (ngModelChange)="videoIntroUrl.set($event)"
+                         placeholder="https://youtube.com/watch?v=..."
+                         class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+              </div>
+
+              <!-- Links sociais em grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Instagram (@ ou URL)</label>
+                  <input type="text" [ngModel]="instagram()" (ngModelChange)="instagram.set($event)"
+                         placeholder="ex: prof.matematica"
+                         class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">LinkedIn (URL)</label>
+                  <input type="url" [ngModel]="linkedin()" (ngModelChange)="linkedin.set($event)"
+                         placeholder="https://linkedin.com/in/..."
+                         class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Canal no YouTube (URL)</label>
+                  <input type="url" [ngModel]="youtube()" (ngModelChange)="youtube.set($event)"
+                         placeholder="https://youtube.com/@seucanal"
+                         class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-600 mb-1">Site Pessoal / Blog</label>
+                  <input type="url" [ngModel]="website()" (ngModelChange)="website.set($event)"
+                         placeholder="https://seusite.com.br"
+                         class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-xs">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botão de Ação Salvar no Rodapé do Form -->
+          <div class="flex items-center justify-end gap-3 pt-4">
+            <button (click)="saveShowcase()" [disabled]="isSaving()"
+                    class="px-8 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 shadow-lg hover:bg-indigo-700 active:scale-95 disabled:opacity-50 transition-all">
+              @if (isSaving()) { Salvando... } @else { Salvar Vitrine Virtual }
+            </button>
+          </div>
+        </div>
+
+        <!-- COLUNA 2: Live Preview Interativo (5 colunas) -->
+        <div class="lg:col-span-5 sticky top-6">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-md p-4">
+            <!-- Barra superior do preview: Alternador Desktop vs Mobile -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Prévia em Tempo Real
+              </span>
+              <div class="flex items-center bg-slate-100 p-1 rounded-xl">
+                <button type="button" (click)="setPreviewMode('mobile')"
+                        [class.bg-white]="previewMode() === 'mobile'"
+                        [class.shadow-sm]="previewMode() === 'mobile'"
+                        [class.text-indigo-600]="previewMode() === 'mobile'"
+                        [class.text-slate-500]="previewMode() !== 'mobile'"
+                        class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                  Celular
+                </button>
+                <button type="button" (click)="setPreviewMode('desktop')"
+                        [class.bg-white]="previewMode() === 'desktop'"
+                        [class.shadow-sm]="previewMode() === 'desktop'"
+                        [class.text-indigo-600]="previewMode() === 'desktop'"
+                        [class.text-slate-500]="previewMode() !== 'desktop'"
+                        class="px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                  Desktop
+                </button>
+              </div>
+            </div>
+
+            <!-- Moldura do Mockup -->
+            <div class="flex justify-center bg-slate-100 p-2 sm:p-4 rounded-xl overflow-hidden min-h-[580px]">
+              
+              <!-- Container de Simulação -->
+              <div [class.max-w-sm]="previewMode() === 'mobile'"
+                   [class.w-full]="true"
+                   class="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col transition-all">
+                
+                <!-- Mockup Banner com Cor ou Imagem -->
+                <div class="h-28 relative flex items-center justify-center overflow-hidden"
+                     [style.backgroundColor]="themeColor()">
+                  @if (bannerImageUrl()) {
+                    <img [src]="bannerImageUrl()" alt="Banner" class="w-full h-full object-cover">
+                  } @else {
+                    <div class="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
+                  }
+                </div>
+
+                <!-- Avatar e Identidade -->
+                <div class="px-4 pb-4 -mt-10 relative flex flex-col items-center text-center">
+                  <img [src]="avatarUrl()" [alt]="fullName()"
+                       [style.borderColor]="themeColor()"
+                       class="w-20 h-20 rounded-full border-4 object-cover shadow-lg bg-white">
+
+                  <h3 class="text-base font-extrabold text-slate-900 mt-2">{{ fullName() }}</h3>
+                  
+                  @if (headline()) {
+                    <p class="text-xs font-medium text-slate-600 mt-0.5 line-clamp-2 px-2">{{ headline() }}</p>
+                  }
+
+                  @if (city() || state()) {
+                    <div class="flex items-center gap-1 text-[11px] text-slate-400 mt-1">
+                      <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <span>{{ city() }}@if (city() && state()) { - }{{ state() }}</span>
+                    </div>
+                  }
+
+                  <!-- Botão WhatsApp CTA do Preview -->
+                  @if (whatsAppNumber()) {
+                    <div class="mt-3 w-full">
+                      <div class="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-xl text-xs font-bold text-white bg-emerald-600 shadow-sm">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.353.101.173.449.74 0.963 1.198.662.59 1.221.774 1.394.86.174.086.275.072.376-.043.102-.116.433-.506.549-.679.116-.174.232-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                        Conversar no WhatsApp
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Bio Preview -->
+                  @if (bio()) {
+                    <div class="mt-4 text-left w-full border-t border-slate-100 pt-3">
+                      <h4 class="text-[11px] font-bold text-slate-800 uppercase tracking-wider mb-1">Sobre o Mentor</h4>
+                      <p class="text-xs text-slate-600 line-clamp-3 leading-relaxed">{{ bio() }}</p>
+                    </div>
+                  }
+
+                  <!-- Prévia de Ofertas / Cursos Mockup -->
+                  <div class="mt-4 text-left w-full border-t border-slate-100 pt-3">
+                    <h4 class="text-[11px] font-bold text-slate-800 uppercase tracking-wider mb-2">Ofertas em Destaque</h4>
+                    <div class="space-y-2">
+                      <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <div>
+                          <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Aula Particular</span>
+                          <p class="text-xs font-bold text-slate-900 mt-0.5">Aulas Individuais VIP</p>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900">R$ 150/h</span>
+                      </div>
+                      <div class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                        <div>
+                          <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Mentoria</span>
+                          <p class="text-xs font-bold text-slate-900 mt-0.5">Acompanhamento Semanal</p>
+                        </div>
+                        <span class="text-xs font-extrabold text-slate-900">R$ 350</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    }
+  </div>
+</div>

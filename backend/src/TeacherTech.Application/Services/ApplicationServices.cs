@@ -1307,13 +1307,25 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
 {
     private readonly IProfessorProfileRepository _professorProfileRepo;
     private readonly ICourseRepository _courseRepo;
+    private readonly IContentOfferingRepository _offeringRepo;
+    private readonly IShowcaseLeadRepository _leadRepo;
+    private readonly IShowcaseMetricRepository _metricRepo;
+    private readonly IUnitOfWork _unitOfWork;
 
     public PublicShowcaseApplicationService(
         IProfessorProfileRepository professorProfileRepo,
-        ICourseRepository courseRepo)
+        ICourseRepository courseRepo,
+        IContentOfferingRepository offeringRepo,
+        IShowcaseLeadRepository leadRepo,
+        IShowcaseMetricRepository metricRepo,
+        IUnitOfWork unitOfWork)
     {
         _professorProfileRepo = professorProfileRepo;
         _courseRepo = courseRepo;
+        _offeringRepo = offeringRepo;
+        _leadRepo = leadRepo;
+        _metricRepo = metricRepo;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<ServiceResult<PublicProfessorProfileDto>> GetProfessorBySlugAsync(string slug)
@@ -1342,6 +1354,54 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
                 EnrollmentsCount = c.Enrollments.Count
             }).ToList();
 
+        var activeOfferings = (profProfile.Offerings ?? new List<ContentOffering>())
+            .Where(o => o.IsActive)
+            .OrderBy(o => o.DisplayOrder)
+            .Select(o => new PublicOfferingDto
+            {
+                Id = o.Id,
+                Title = o.Title,
+                Description = o.Description,
+                Subject = o.Subject,
+                Price = o.Price,
+                PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+                OfferingType = o.OfferingType,
+                OfferingTypeName = o.OfferingType switch
+                {
+                    OfferingType.PrivateClass => "Aula Particular",
+                    OfferingType.Course => "Curso",
+                    OfferingType.Ebook => "E-book",
+                    OfferingType.Mentoring => "Mentoria",
+                    _ => o.OfferingType.ToString()
+                },
+                Format = o.Format,
+                FormatName = o.Format switch
+                {
+                    OfferingFormat.Online => "Online",
+                    OfferingFormat.InPerson => "Presencial",
+                    OfferingFormat.Hybrid => "Híbrido",
+                    _ => o.Format.ToString()
+                },
+                LocationCity = o.LocationCity,
+                LocationState = o.LocationState,
+                CtaType = o.CtaType,
+                CtaTypeName = o.CtaType switch
+                {
+                    CtaType.WhatsApp => "WhatsApp",
+                    CtaType.Scheduling => "Agendamento",
+                    CtaType.ExternalCheckout => "Comprar Externo",
+                    CtaType.PlatformCourse => "Curso na Plataforma",
+                    _ => o.CtaType.ToString()
+                },
+                CtaUrl = o.CtaUrl,
+                CtaWhatsappMessage = o.CtaWhatsappMessage,
+                CoverImageUrl = o.CoverImageUrl,
+                DisplayOrder = o.DisplayOrder,
+                IsActive = o.IsActive,
+                IsFeatured = o.IsFeatured,
+                CourseStudyPlanId = o.CourseStudyPlanId
+            }).ToList();
+
         var result = new PublicProfessorProfileDto
         {
             UserId = profProfile.UserId,
@@ -1350,8 +1410,16 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
             Headline = profProfile.Headline,
             Bio = profProfile.Bio,
             CustomSlug = profProfile.CustomSlug,
+            BannerImageUrl = profProfile.BannerImageUrl,
+            ThemeColor = profProfile.ThemeColor ?? "#4F46E5",
+            WhatsAppNumber = profProfile.WhatsAppNumber,
+            VideoIntroUrl = profProfile.VideoIntroUrl,
+            City = profProfile.City,
+            State = profProfile.State,
+            SocialLinksJson = profProfile.SocialLinksJson,
             PublicCoursesCount = publicCourses.Count,
-            Courses = publicCourses
+            Courses = publicCourses,
+            Offerings = activeOfferings
         };
 
         return ServiceResult<PublicProfessorProfileDto>.Ok(result);
@@ -1375,6 +1443,143 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
             SubjectsCount = c.Subjects.Count,
             CreatedAt = c.CreatedAt
         }).ToList();
+    }
+
+    public async Task<PagedResult<ExploreItemDto>> ExploreAsync(ExploreQueryParams queryParams)
+    {
+        var pageIndex = Math.Max(0, queryParams.PageIndex);
+        var pageSize = queryParams.PageSize > 0 ? queryParams.PageSize : 12;
+
+        var subjectFilter = !string.IsNullOrWhiteSpace(queryParams.Subject) ? queryParams.Subject : queryParams.Category;
+
+        // 1. Search ContentOfferings
+        var offerings = await _offeringRepo.SearchActiveOfferingsAsync(
+            queryParams.Search,
+            subjectFilter,
+            queryParams.Format,
+            queryParams.City,
+            queryParams.PriceMin,
+            queryParams.PriceMax);
+
+        var exploreItems = offerings.Select(o => new ExploreItemDto
+        {
+            Id = o.Id,
+            Title = o.Title,
+            Description = o.Description,
+            Subject = o.Subject,
+            Price = o.Price,
+            PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+            ItemType = "OFFERING",
+            OfferingType = o.OfferingType switch
+            {
+                OfferingType.PrivateClass => "Aula Particular",
+                OfferingType.Course => "Curso",
+                OfferingType.Ebook => "E-book",
+                OfferingType.Mentoring => "Mentoria",
+                _ => o.OfferingType.ToString()
+            },
+            Format = o.Format switch
+            {
+                OfferingFormat.Online => "Online",
+                OfferingFormat.InPerson => "Presencial",
+                OfferingFormat.Hybrid => "Híbrido",
+                _ => o.Format.ToString()
+            },
+            City = o.LocationCity,
+            State = o.LocationState,
+            CoverImageUrl = o.CoverImageUrl,
+            ProfessorId = o.ProfessorId,
+            ProfessorName = o.Professor.User.FullName,
+            ProfessorSlug = o.Professor.CustomSlug,
+            ProfessorAvatar = o.Professor.User.AvatarUrl,
+            ProfessorHeadline = o.Professor.Headline,
+            CtaType = o.CtaType switch
+            {
+                CtaType.WhatsApp => "WhatsApp",
+                CtaType.Scheduling => "Agendamento",
+                CtaType.ExternalCheckout => "Comprar Externo",
+                CtaType.PlatformCourse => "Curso na Plataforma",
+                _ => o.CtaType.ToString()
+            },
+            CtaUrl = o.CtaUrl,
+            CtaWhatsappMessage = o.CtaWhatsappMessage,
+            CreatedAt = o.CreatedAt
+        }).ToList();
+
+        // 2. Also search published courses if format is Online/unspecified and city is unspecified
+        if ((string.IsNullOrWhiteSpace(queryParams.Format) || queryParams.Format.Equals("Online", StringComparison.OrdinalIgnoreCase)) &&
+            string.IsNullOrWhiteSpace(queryParams.City))
+        {
+            var courses = await _courseRepo.SearchPublicCoursesAsync(queryParams.Search, subjectFilter);
+            foreach (var c in courses)
+            {
+                if (queryParams.PriceMin.HasValue && c.Price < queryParams.PriceMin.Value) continue;
+                if (queryParams.PriceMax.HasValue && c.Price > queryParams.PriceMax.Value) continue;
+
+                // Avoid duplicating if an offering already links to this course
+                if (exploreItems.Any(i => i.Id == c.Id)) continue;
+
+                exploreItems.Add(new ExploreItemDto
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    Description = c.Description,
+                    Subject = c.Category,
+                    Price = c.Price,
+                    PriceFormatted = c.Price > 0 ? $"R$ {c.Price:N2}" : "Gratuito",
+                    ItemType = "COURSE",
+                    OfferingType = "Curso",
+                    Format = "Online",
+                    CoverImageUrl = c.CoverImageUrl,
+                    ProfessorId = c.ProfessorId,
+                    ProfessorName = c.Professor.FullName,
+                    ProfessorSlug = c.Professor.ProfessorProfile?.CustomSlug ?? c.ProfessorId,
+                    ProfessorAvatar = c.Professor.AvatarUrl,
+                    ProfessorHeadline = c.Professor.ProfessorProfile?.Headline,
+                    CtaType = "Curso na Plataforma",
+                    CreatedAt = c.CreatedAt
+                });
+            }
+        }
+
+        var totalCount = exploreItems.Count;
+        var pagedItems = exploreItems
+            .Skip(pageIndex * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new PagedResult<ExploreItemDto>
+        {
+            Items = pagedItems,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<ExploreFiltersDto> GetAvailableFiltersAsync()
+    {
+        var offeringSubjects = await _offeringRepo.GetDistinctSubjectsAsync();
+        var allCourses = await _courseRepo.GetPublicPublishedAsync();
+        var courseCategories = allCourses
+            .Where(c => !string.IsNullOrWhiteSpace(c.Category))
+            .Select(c => c.Category.Trim())
+            .Distinct();
+
+        var combinedSubjects = offeringSubjects
+            .Concat(courseCategories)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => s)
+            .ToList();
+
+        var cities = await _offeringRepo.GetDistinctCitiesAsync();
+
+        return new ExploreFiltersDto
+        {
+            AvailableSubjects = combinedSubjects,
+            AvailableCities = cities,
+            AvailableFormats = new List<string> { "Online", "Presencial", "Híbrido" }
+        };
     }
 
     public async Task<ServiceResult<object>> GetPublicCourseDetailsAsync(Guid id)
@@ -1419,6 +1624,148 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
         };
 
         return ServiceResult<object>.Ok(result);
+    }
+
+    public async Task<ServiceResult<ShowcaseLeadResponseDto>> CreateLeadAsync(CreateShowcaseLeadDto dto)
+    {
+        if (!dto.TermsAccepted)
+        {
+            return ServiceResult<ShowcaseLeadResponseDto>.Fail("É obrigatório aceitar os termos de contato para enviar sua mensagem (LGPD).", 400);
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Email))
+        {
+            return ServiceResult<ShowcaseLeadResponseDto>.Fail("Nome e e-mail são campos obrigatórios.", 400);
+        }
+
+        var profProfile = await _professorProfileRepo.GetByUserIdAsync(dto.ProfessorId);
+        if (profProfile == null)
+        {
+            return ServiceResult<ShowcaseLeadResponseDto>.Fail("Professor não encontrado.", 404);
+        }
+
+        string? offeringTitle = null;
+        if (dto.ContentOfferingId.HasValue && dto.ContentOfferingId.Value != Guid.Empty)
+        {
+            var offering = await _offeringRepo.GetByIdAsync(dto.ContentOfferingId.Value);
+            offeringTitle = offering?.Title;
+        }
+
+        var lead = new ShowcaseLead
+        {
+            ProfessorId = dto.ProfessorId,
+            ContentOfferingId = dto.ContentOfferingId,
+            Name = dto.Name.Trim(),
+            Email = dto.Email.Trim().ToLowerInvariant(),
+            Phone = dto.Phone?.Trim() ?? string.Empty,
+            Message = dto.Message?.Trim() ?? string.Empty,
+            TermsAccepted = true,
+            Status = LeadStatus.New,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _leadRepo.AddAsync(lead);
+        await _unitOfWork.CommitAsync();
+
+        // Increment atomic daily metric
+        await _metricRepo.IncrementMetricAsync(dto.ProfessorId, DateTime.UtcNow.Date, m => m.LeadsCount++);
+
+        var response = new ShowcaseLeadResponseDto
+        {
+            Id = lead.Id,
+            ProfessorId = lead.ProfessorId,
+            ContentOfferingId = lead.ContentOfferingId,
+            OfferingTitle = offeringTitle,
+            Name = lead.Name,
+            Email = lead.Email,
+            Phone = lead.Phone,
+            Message = lead.Message,
+            Status = lead.Status.ToString(),
+            CreatedAt = lead.CreatedAt
+        };
+
+        return ServiceResult<ShowcaseLeadResponseDto>.Ok(response);
+    }
+
+    public async Task<ServiceResult<bool>> TrackClickAsync(TrackClickDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.ProfessorId))
+        {
+            return ServiceResult<bool>.Fail("ProfessorId é obrigatório.", 400);
+        }
+
+        var ctaType = dto.CtaType.Trim().ToLowerInvariant();
+
+        await _metricRepo.IncrementMetricAsync(dto.ProfessorId, DateTime.UtcNow.Date, m =>
+        {
+            if (ctaType.Contains("whatsapp") || ctaType == "1")
+            {
+                m.WhatsAppClicks++;
+            }
+            else if (ctaType.Contains("pageview") || ctaType.Contains("view"))
+            {
+                m.PageViews++;
+            }
+            else
+            {
+                m.CtaClicks++;
+            }
+        });
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
+    public async Task<ServiceResult<List<ShowcaseLeadResponseDto>>> GetProfessorLeadsAsync(string professorId)
+    {
+        if (string.IsNullOrWhiteSpace(professorId))
+        {
+            return ServiceResult<List<ShowcaseLeadResponseDto>>.Fail("Não autorizado.", 401);
+        }
+
+        var leads = await _leadRepo.GetByProfessorIdAsync(professorId);
+        var result = leads.Select(l => new ShowcaseLeadResponseDto
+        {
+            Id = l.Id,
+            ProfessorId = l.ProfessorId,
+            ContentOfferingId = l.ContentOfferingId,
+            OfferingTitle = l.ContentOffering?.Title,
+            Name = l.Name,
+            Email = l.Email,
+            Phone = l.Phone,
+            Message = l.Message,
+            Status = l.Status.ToString(),
+            CreatedAt = l.CreatedAt
+        }).ToList();
+
+        return ServiceResult<List<ShowcaseLeadResponseDto>>.Ok(result);
+    }
+
+    public async Task<ServiceResult<ShowcaseMetricSummaryDto>> GetProfessorMetricsAsync(string professorId)
+    {
+        if (string.IsNullOrWhiteSpace(professorId))
+        {
+            return ServiceResult<ShowcaseMetricSummaryDto>.Fail("Não autorizado.", 401);
+        }
+
+        var history = await _metricRepo.GetMetricsHistoryAsync(professorId, 30);
+        var summary = new ShowcaseMetricSummaryDto
+        {
+            ProfessorId = professorId,
+            TotalPageViews = history.Sum(h => h.PageViews),
+            TotalWhatsAppClicks = history.Sum(h => h.WhatsAppClicks),
+            TotalCtaClicks = history.Sum(h => h.CtaClicks),
+            TotalLeads = history.Sum(h => h.LeadsCount),
+            DailyMetrics = history.Select(h => new ShowcaseMetricDailyDto
+            {
+                Date = h.MetricDate,
+                PageViews = h.PageViews,
+                WhatsAppClicks = h.WhatsAppClicks,
+                CtaClicks = h.CtaClicks,
+                LeadsCount = h.LeadsCount
+            }).ToList()
+        };
+
+        return ServiceResult<ShowcaseMetricSummaryDto>.Ok(summary);
     }
 }
 
@@ -1655,5 +2002,315 @@ public class TopicApplicationService : ITopicApplicationService
         await _unitOfWork.CommitAsync();
 
         return ServiceResult<bool>.Ok(true);
+    }
+}
+
+public class ProfessorShowcaseManagementService : IProfessorShowcaseManagementService
+{
+    private readonly IProfessorProfileRepository _professorProfileRepo;
+    private readonly ICourseRepository _courseRepo;
+    private readonly IContentOfferingRepository _offeringRepo;
+    private readonly IShowcaseLeadRepository _leadRepo;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public ProfessorShowcaseManagementService(
+        IProfessorProfileRepository professorProfileRepo,
+        ICourseRepository courseRepo,
+        IContentOfferingRepository offeringRepo,
+        IShowcaseLeadRepository leadRepo,
+        IUnitOfWork unitOfWork)
+    {
+        _professorProfileRepo = professorProfileRepo;
+        _courseRepo = courseRepo;
+        _offeringRepo = offeringRepo;
+        _leadRepo = leadRepo;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<ServiceResult<PublicProfessorProfileDto>> GetMyShowcaseAsync(string professorId)
+    {
+        var profProfile = await _professorProfileRepo.GetByUserIdAsync(professorId);
+        if (profProfile == null)
+            return ServiceResult<PublicProfessorProfileDto>.Fail("Perfil do professor não encontrado.", 404);
+
+        var allCourses = await _courseRepo.GetByProfessorIdAsync(professorId);
+        var publicCourses = allCourses
+            .Where(c => c.IsPublic && c.Status == CourseStatus.Published)
+            .Select(c => new CourseResponseDto
+            {
+                Id = c.Id,
+                ProfessorId = c.ProfessorId,
+                ProfessorName = profProfile.User?.FullName ?? string.Empty,
+                Title = c.Title,
+                Description = c.Description,
+                Category = c.Category,
+                Price = c.Price,
+                IsPublic = c.IsPublic,
+                Status = c.Status,
+                CoverImageUrl = c.CoverImageUrl,
+                CreatedAt = c.CreatedAt,
+                SubjectsCount = c.Subjects?.Count ?? 0,
+                EnrollmentsCount = c.Enrollments?.Count ?? 0
+            }).ToList();
+
+        var offerings = await _offeringRepo.GetByProfessorIdAsync(professorId);
+        var offeringsDto = offerings
+            .OrderBy(o => o.DisplayOrder)
+            .Select(MapOfferingToDto)
+            .ToList();
+
+        var result = new PublicProfessorProfileDto
+        {
+            UserId = profProfile.UserId,
+            FullName = profProfile.User?.FullName ?? string.Empty,
+            AvatarUrl = profProfile.User?.AvatarUrl,
+            Headline = profProfile.Headline,
+            Bio = profProfile.Bio,
+            CustomSlug = profProfile.CustomSlug,
+            BannerImageUrl = profProfile.BannerImageUrl,
+            ThemeColor = profProfile.ThemeColor,
+            WhatsAppNumber = profProfile.WhatsAppNumber,
+            VideoIntroUrl = profProfile.VideoIntroUrl,
+            City = profProfile.City,
+            State = profProfile.State,
+            SocialLinksJson = profProfile.SocialLinksJson,
+            PublicCoursesCount = publicCourses.Count,
+            Courses = publicCourses,
+            Offerings = offeringsDto
+        };
+
+        return ServiceResult<PublicProfessorProfileDto>.Ok(result);
+    }
+
+    public async Task<ServiceResult<PublicProfessorProfileDto>> UpdateMyShowcaseAsync(string professorId, UpdateProfessorShowcaseDto dto)
+    {
+        var profProfile = await _professorProfileRepo.GetByUserIdAsync(professorId);
+        if (profProfile == null)
+            return ServiceResult<PublicProfessorProfileDto>.Fail("Perfil do professor não encontrado.", 404);
+
+        var cleanSlug = dto.CustomSlug?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(cleanSlug))
+            return ServiceResult<PublicProfessorProfileDto>.Fail("O link personalizado (slug) é obrigatório.", 400);
+
+        // Check if slug is taken by someone else
+        var existingBySlug = await _professorProfileRepo.GetBySlugAsync(cleanSlug);
+        if (existingBySlug != null && existingBySlug.UserId != professorId)
+        {
+            return ServiceResult<PublicProfessorProfileDto>.Fail("Este link personalizado (slug) já está sendo utilizado por outro professor.", 409);
+        }
+
+        profProfile.Headline = dto.Headline?.Trim() ?? string.Empty;
+        profProfile.Bio = dto.Bio?.Trim() ?? string.Empty;
+        profProfile.CustomSlug = cleanSlug;
+        profProfile.BannerImageUrl = dto.BannerImageUrl?.Trim();
+        profProfile.ThemeColor = string.IsNullOrWhiteSpace(dto.ThemeColor) ? "#4F46E5" : dto.ThemeColor.Trim();
+        profProfile.WhatsAppNumber = dto.WhatsAppNumber?.Trim();
+        profProfile.VideoIntroUrl = dto.VideoIntroUrl?.Trim();
+        profProfile.City = dto.City?.Trim();
+        profProfile.State = dto.State?.Trim();
+        profProfile.SocialLinksJson = dto.SocialLinksJson;
+        profProfile.PublicVisibility = dto.PublicVisibility;
+        profProfile.UpdatedAt = DateTime.UtcNow;
+
+        _professorProfileRepo.Update(profProfile);
+        await _unitOfWork.CommitAsync();
+
+        return await GetMyShowcaseAsync(professorId);
+    }
+
+    public async Task<ServiceResult<bool>> CheckSlugAvailabilityAsync(string professorId, string slug)
+    {
+        var cleanSlug = slug?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(cleanSlug))
+            return ServiceResult<bool>.Fail("Slug não pode ser vazio.", 400);
+
+        var existing = await _professorProfileRepo.GetBySlugAsync(cleanSlug);
+        var isAvailable = existing == null || existing.UserId == professorId;
+        return ServiceResult<bool>.Ok(isAvailable);
+    }
+
+    public async Task<ServiceResult<List<PublicOfferingDto>>> GetMyOfferingsAsync(string professorId)
+    {
+        var offerings = await _offeringRepo.GetByProfessorIdAsync(professorId);
+        var dtos = offerings.OrderBy(o => o.DisplayOrder).Select(MapOfferingToDto).ToList();
+        return ServiceResult<List<PublicOfferingDto>>.Ok(dtos);
+    }
+
+    public async Task<ServiceResult<PublicOfferingDto>> CreateOfferingAsync(string professorId, SaveOfferingDto dto)
+    {
+        var profProfile = await _professorProfileRepo.GetByUserIdAsync(professorId);
+        if (profProfile == null)
+            return ServiceResult<PublicOfferingDto>.Fail("Perfil do professor não encontrado.", 404);
+
+        var existingOfferings = await _offeringRepo.GetByProfessorIdAsync(professorId);
+        var maxOrder = existingOfferings.Any() ? existingOfferings.Max(o => o.DisplayOrder) + 1 : 0;
+
+        var offering = new ContentOffering
+        {
+            Id = Guid.NewGuid(),
+            ProfessorId = professorId,
+            Title = dto.Title.Trim(),
+            Description = dto.Description?.Trim() ?? string.Empty,
+            Subject = dto.Subject.Trim(),
+            Price = dto.Price,
+            OfferingType = dto.OfferingType,
+            Format = dto.Format,
+            LocationCity = dto.LocationCity?.Trim(),
+            LocationState = dto.LocationState?.Trim(),
+            CtaType = dto.CtaType,
+            CtaUrl = dto.CtaUrl?.Trim(),
+            CtaWhatsappMessage = dto.CtaWhatsappMessage?.Trim(),
+            CoverImageUrl = dto.CoverImageUrl?.Trim(),
+            DisplayOrder = dto.DisplayOrder > 0 ? dto.DisplayOrder : maxOrder,
+            IsActive = dto.IsActive,
+            IsFeatured = dto.IsFeatured,
+            CourseStudyPlanId = dto.CourseStudyPlanId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _offeringRepo.AddAsync(offering);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<PublicOfferingDto>.Created(MapOfferingToDto(offering));
+    }
+
+    public async Task<ServiceResult<PublicOfferingDto>> UpdateOfferingAsync(string professorId, Guid offeringId, SaveOfferingDto dto)
+    {
+        var offering = await _offeringRepo.GetByIdAsync(offeringId);
+        if (offering == null || offering.ProfessorId != professorId)
+            return ServiceResult<PublicOfferingDto>.Fail("Oferta não encontrada.", 404);
+
+        offering.Title = dto.Title.Trim();
+        offering.Description = dto.Description?.Trim() ?? string.Empty;
+        offering.Subject = dto.Subject.Trim();
+        offering.Price = dto.Price;
+        offering.OfferingType = dto.OfferingType;
+        offering.Format = dto.Format;
+        offering.LocationCity = dto.LocationCity?.Trim();
+        offering.LocationState = dto.LocationState?.Trim();
+        offering.CtaType = dto.CtaType;
+        offering.CtaUrl = dto.CtaUrl?.Trim();
+        offering.CtaWhatsappMessage = dto.CtaWhatsappMessage?.Trim();
+        offering.CoverImageUrl = dto.CoverImageUrl?.Trim();
+        offering.DisplayOrder = dto.DisplayOrder;
+        offering.IsActive = dto.IsActive;
+        offering.IsFeatured = dto.IsFeatured;
+        offering.CourseStudyPlanId = dto.CourseStudyPlanId;
+        offering.UpdatedAt = DateTime.UtcNow;
+
+        _offeringRepo.Update(offering);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<PublicOfferingDto>.Ok(MapOfferingToDto(offering));
+    }
+
+    public async Task<ServiceResult<bool>> DeleteOfferingAsync(string professorId, Guid offeringId)
+    {
+        var offering = await _offeringRepo.GetByIdAsync(offeringId);
+        if (offering == null || offering.ProfessorId != professorId)
+            return ServiceResult<bool>.Fail("Oferta não encontrada.", 404);
+
+        _offeringRepo.Remove(offering);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
+    public async Task<ServiceResult<bool>> ToggleOfferingActiveAsync(string professorId, Guid offeringId)
+    {
+        var offering = await _offeringRepo.GetByIdAsync(offeringId);
+        if (offering == null || offering.ProfessorId != professorId)
+            return ServiceResult<bool>.Fail("Oferta não encontrada.", 404);
+
+        offering.IsActive = !offering.IsActive;
+        offering.UpdatedAt = DateTime.UtcNow;
+        _offeringRepo.Update(offering);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(offering.IsActive);
+    }
+
+    public async Task<ServiceResult<bool>> ReorderOfferingsAsync(string professorId, ReorderOfferingsDto dto)
+    {
+        var offerings = await _offeringRepo.GetByProfessorIdAsync(professorId);
+        var orderMap = dto.OrderedIds
+            .Select((id, index) => new { id, index })
+            .ToDictionary(x => x.id, x => x.index);
+
+        foreach (var offering in offerings)
+        {
+            if (orderMap.TryGetValue(offering.Id, out var newIndex))
+            {
+                offering.DisplayOrder = newIndex;
+                offering.UpdatedAt = DateTime.UtcNow;
+                _offeringRepo.Update(offering);
+            }
+        }
+
+        await _unitOfWork.CommitAsync();
+        return ServiceResult<bool>.Ok(true);
+    }
+
+    public async Task<ServiceResult<bool>> UpdateLeadStatusAsync(string professorId, Guid leadId, UpdateLeadStatusDto dto)
+    {
+        var lead = await _leadRepo.GetByIdAsync(leadId);
+        if (lead == null || lead.ProfessorId != professorId)
+            return ServiceResult<bool>.Fail("Lead não encontrado.", 404);
+
+        lead.Status = dto.Status;
+        lead.UpdatedAt = DateTime.UtcNow;
+        _leadRepo.Update(lead);
+        await _unitOfWork.CommitAsync();
+
+        return ServiceResult<bool>.Ok(true);
+    }
+
+    private static PublicOfferingDto MapOfferingToDto(ContentOffering o)
+    {
+        return new PublicOfferingDto
+        {
+            Id = o.Id,
+            Title = o.Title,
+            Description = o.Description,
+            Subject = o.Subject,
+            Price = o.Price,
+            PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+            OfferingType = o.OfferingType,
+            OfferingTypeName = o.OfferingType switch
+            {
+                OfferingType.PrivateClass => "Aula Particular",
+                OfferingType.Course => "Curso",
+                OfferingType.Ebook => "E-book",
+                OfferingType.Mentoring => "Mentoria",
+                _ => o.OfferingType.ToString()
+            },
+            Format = o.Format,
+            FormatName = o.Format switch
+            {
+                OfferingFormat.Online => "Online",
+                OfferingFormat.InPerson => "Presencial",
+                OfferingFormat.Hybrid => "Híbrido",
+                _ => o.Format.ToString()
+            },
+            LocationCity = o.LocationCity,
+            LocationState = o.LocationState,
+            CtaType = o.CtaType,
+            CtaTypeName = o.CtaType switch
+            {
+                CtaType.WhatsApp => "WhatsApp",
+                CtaType.Scheduling => "Agendamento",
+                CtaType.ExternalCheckout => "Comprar Externo",
+                CtaType.PlatformCourse => "Curso na Plataforma",
+                _ => o.CtaType.ToString()
+            },
+            CtaUrl = o.CtaUrl,
+            CtaWhatsappMessage = o.CtaWhatsappMessage,
+            CoverImageUrl = o.CoverImageUrl,
+            DisplayOrder = o.DisplayOrder,
+            IsActive = o.IsActive,
+            IsFeatured = o.IsFeatured,
+            CourseStudyPlanId = o.CourseStudyPlanId
+        };
     }
 }

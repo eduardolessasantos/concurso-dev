@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IAccessRequestApplicationService, AccessRequestApplicationService>();
         services.AddScoped<IPaymentApplicationService, PaymentApplicationService>();
         services.AddScoped<IPublicShowcaseApplicationService, PublicShowcaseApplicationService>();
+        services.AddScoped<IProfessorShowcaseManagementService, ProfessorShowcaseManagementService>();
         services.AddScoped<ISubjectApplicationService, SubjectApplicationService>();
         services.AddScoped<ITopicApplicationService, TopicApplicationService>();
         services.AddScoped<IInviteService, InviteService>();

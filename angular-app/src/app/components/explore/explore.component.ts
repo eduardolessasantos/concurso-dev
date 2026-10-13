@@ -2,7 +2,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { PublicShowcaseService, PublicCourse } from '../../services/public-showcase.service';
+import { 
+  PublicShowcaseService, 
+  ExploreItem, 
+  ExploreFilters, 
+  PagedResult 
+} from '../../services/public-showcase.service';
 import { StudentManagementService } from '../../services/student-management.service';
 import { AuthService } from '../../services/auth.service';
 import { AdSenseSlotComponent } from '../shared/adsense-slot/adsense-slot.component';
@@ -25,18 +30,29 @@ export function normalizeSearchString(val: string | null | undefined): string {
   styleUrls: ['./explore.component.scss']
 })
 export class ExploreComponent implements OnInit {
-  public searchKeyword = '';
-  public selectedCategory = '';
+  // Parâmetros de busca e filtros
+  public searchKeyword = signal<string>('');
+  public selectedSubject = signal<string>('');
+  public selectedOfferingType = signal<string | undefined>(undefined);
+  public selectedFormat = signal<string | undefined>(undefined);
+  public selectedCity = signal<string>('');
+  public minPriceInput = signal<number | undefined>(undefined);
+  public maxPriceInput = signal<number | undefined>(undefined);
 
-  public allLoadedCourses = signal<PublicCourse[]>([]);
-  public courses = signal<PublicCourse[]>([]);
+  public pageIndex = signal<number>(1);
+  public pageSize = signal<number>(12);
+
+  // Estados e dados
+  public pagedResult = signal<PagedResult<ExploreItem> | null>(null);
+  public availableFilters = signal<ExploreFilters | null>(null);
   public enrolledCourseIds = signal<Set<string>>(new Set());
   public requestedCourseIds = signal<Set<string>>(new Set());
-  
+
   public isLoading = signal<boolean>(true);
   public technicalError = signal<string | null>(null);
   public requestMessage = signal<string | null>(null);
 
+  // Modal de solicitação de acesso
   public isAccessModalOpen = signal<boolean>(false);
   public selectedCourseId = signal<string>('');
   public selectedCourseTitle = signal<string>('');
@@ -49,7 +65,8 @@ export class ExploreComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.fetchCourses();
+    this.loadFilters();
+    this.search();
     this.fetchUserEnrollments();
   }
 
@@ -65,17 +82,44 @@ export class ExploreComponent implements OnInit {
     }
   }
 
-  fetchCourses(): void {
+  loadFilters(): void {
+    this.showcaseService.getFilters().subscribe({
+      next: (res) => {
+        this.availableFilters.set(res);
+      },
+      error: () => {}
+    });
+  }
+
+  search(resetPage: boolean = false): void {
+    if (resetPage) {
+      this.pageIndex.set(1);
+    }
+
     this.isLoading.set(true);
     this.technicalError.set(null);
 
-    // Public search must work without authentication token
-    this.showcaseService.exploreCourses(this.searchKeyword, this.selectedCategory).subscribe({
+    // Constrói termo de busca combinando keyword e offeringType se selecionado
+    let searchTerm = this.searchKeyword().trim();
+    if (this.selectedOfferingType() && !searchTerm.includes(this.selectedOfferingType()!)) {
+      searchTerm = searchTerm ? `${searchTerm} ${this.selectedOfferingType()}` : this.selectedOfferingType()!;
+    }
+
+    const params = {
+      search: searchTerm || undefined,
+      subject: this.selectedSubject() || undefined,
+      format: this.selectedFormat(),
+      city: this.selectedCity() || undefined,
+      priceMin: this.minPriceInput(),
+      priceMax: this.maxPriceInput(),
+      pageIndex: this.pageIndex() - 1, // backend 0-indexed
+      pageSize: this.pageSize()
+    };
+
+    this.showcaseService.explore(params).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        this.technicalError.set(null);
-        this.allLoadedCourses.set(res || []);
-        this.applyFilter();
+        this.pagedResult.set(res);
       },
       error: (err) => {
         this.isLoading.set(false);
@@ -83,68 +127,131 @@ export class ExploreComponent implements OnInit {
           ? `HTTP ${err.status} (${err.statusText || 'Erro no servidor'})` 
           : (err?.message || 'Falha de comunicação de rede');
         this.technicalError.set(`Falha ao conectar com o catálogo da plataforma: ${detail}.`);
-        this.courses.set([]);
+        this.pagedResult.set(null);
       }
     });
   }
 
-  onSearch(): void {
-    // If we already loaded courses, apply local search immediately for snappiness, plus sync with server
-    if (this.allLoadedCourses().length > 0) {
-      this.applyFilter();
-    } else {
-      this.fetchCourses();
+  onSelectSubject(subj: string): void {
+    this.selectedSubject.set(this.selectedSubject() === subj ? '' : subj);
+    this.search(true);
+  }
+
+  onSelectOfferingType(type?: string): void {
+    this.selectedOfferingType.set(this.selectedOfferingType() === type ? undefined : type);
+    this.search(true);
+  }
+
+  onSelectFormat(fmt?: string): void {
+    this.selectedFormat.set(this.selectedFormat() === fmt ? undefined : fmt);
+    this.search(true);
+  }
+
+  onSelectCity(city: string): void {
+    this.selectedCity.set(city);
+    this.search(true);
+  }
+
+  clearFilters(): void {
+    this.searchKeyword.set('');
+    this.selectedSubject.set('');
+    this.selectedOfferingType.set(undefined);
+    this.selectedFormat.set(undefined);
+    this.selectedCity.set('');
+    this.minPriceInput.set(undefined);
+    this.maxPriceInput.set(undefined);
+    this.search(true);
+  }
+
+  goToPage(page: number): void {
+    const totalPages = this.pagedResult()?.totalPages || 1;
+    if (page >= 1 && page <= totalPages && page !== this.pageIndex()) {
+      this.pageIndex.set(page);
+      this.search();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  onSelectCategory(cat: string): void {
-    this.selectedCategory = this.selectedCategory === cat ? '' : cat;
-    if (this.allLoadedCourses().length > 0) {
-      this.applyFilter();
-    } else {
-      this.fetchCourses();
-    }
-  }
-
-  applyFilter(): void {
-    const rawTerm = this.searchKeyword;
-    const term = normalizeSearchString(rawTerm);
-    const category = this.selectedCategory;
-    let list = this.allLoadedCourses();
-
-    if (category && category !== 'Todos') {
-      list = list.filter(c => c.category === category);
-    }
-
-    if (term) {
-      list = list.filter(c => {
-        const title = normalizeSearchString(c.title);
-        const desc = normalizeSearchString(c.description);
-        const profName = normalizeSearchString(
-          c.professorName || 
-          c.professorProfile?.fullName || 
-          (c as any).professor?.fullName
-        );
-        return title.includes(term) || desc.includes(term) || profName.includes(term);
-      });
-    }
-
-    this.courses.set(list);
-  }
-
-  isEnrolled(courseId: string): boolean {
+  isEnrolled(courseId?: string): boolean {
+    if (!courseId) return false;
     if (this.authService.isProfessor()) return true;
     return this.enrolledCourseIds().has(courseId);
   }
 
-  isRequested(courseId: string): boolean {
+  isRequested(courseId?: string): boolean {
+    if (!courseId) return false;
     return this.requestedCourseIds().has(courseId);
   }
 
+  openExternal(url?: string): void {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  onCtaClick(item: ExploreItem): void {
+    if (item.professorId) {
+      this.showcaseService.trackClick({
+        professorId: item.professorId,
+        contentOfferingId: item.itemType === 'OFFERING' ? item.id : undefined,
+        ctaType: item.ctaType || (item.itemType === 'COURSE' ? 'PlatformCourse' : 'WhatsApp')
+      }).subscribe({ error: () => {} });
+    }
+
+    if (item.itemType === 'COURSE') {
+      if (this.isEnrolled(item.id)) {
+        this.router.navigate(['/estudo', item.id]);
+      } else {
+        this.onRequestAccess(item.id, item.title);
+      }
+      return;
+    }
+
+    if (item.ctaType === 'WhatsApp' || item.ctaType === '1') {
+      if (item.professorSlug) {
+        this.router.navigate(['/p', item.professorSlug]);
+      }
+    } else if (item.ctaType === 'Agendamento' || item.ctaType === 'Comprar Externo' || item.ctaType === '2' || item.ctaType === '3') {
+      this.openExternal(item.ctaUrl);
+    } else if (item.professorSlug) {
+      this.router.navigate(['/p', item.professorSlug]);
+    }
+  }
+
   onRequestAccess(courseId: string, courseTitle?: string): void {
-    // Abre modal no Modo A (sem código), NUNCA usa prompt()
     this.selectedCourseId.set(courseId);
     this.selectedCourseTitle.set(courseTitle || '');
     this.isAccessModalOpen.set(true);
+  }
+
+  getOfferingTypeIcon(type?: string): string {
+    if (!type) return '📚';
+    const lower = type.toLowerCase();
+    if (lower.includes('aula')) return '🎓';
+    if (lower.includes('ebook') || lower.includes('e-book')) return '📖';
+    if (lower.includes('mentoria')) return '🤝';
+    return '📚';
+  }
+
+  getCtaLabel(item: ExploreItem): string {
+    if (item.itemType === 'COURSE') {
+      return this.isEnrolled(item.id) ? 'Acessar Trilha' : 'Solicitar Acesso';
+    }
+    if (item.ctaType === 'WhatsApp' || item.ctaType === '1') return 'Falar com Professor';
+    if (item.ctaType === 'Agendamento' || item.ctaType === '2') return 'Agendar Horário';
+    if (item.ctaType === 'Comprar Externo' || item.ctaType === '3') return 'Comprar Agora';
+    if (item.ctaType === 'Curso na Plataforma' || item.ctaType === '4') return 'Acessar Trilha';
+    return 'Ver Detalhes';
+  }
+
+  getCtaIcon(item: ExploreItem): string {
+    if (item.itemType === 'COURSE') {
+      return this.isEnrolled(item.id) ? '📖' : '🙋';
+    }
+    if (item.ctaType === 'WhatsApp' || item.ctaType === '1') return '💬';
+    if (item.ctaType === 'Agendamento' || item.ctaType === '2') return '📅';
+    if (item.ctaType === 'Comprar Externo' || item.ctaType === '3') return '💳';
+    if (item.ctaType === 'Curso na Plataforma' || item.ctaType === '4') return '📖';
+    return '👉';
   }
 }

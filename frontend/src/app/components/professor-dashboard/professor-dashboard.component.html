@@ -1,0 +1,323 @@
+<div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Topo: Boas-vindas e Ações Rápidas -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between pb-6 border-b border-slate-200 gap-4">
+      <div class="flex items-center gap-4">
+        <img [src]="profile()?.avatarUrl || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80'"
+             [alt]="profile()?.fullName || 'Professor'"
+             class="w-14 h-14 rounded-2xl object-cover border-2 border-indigo-200 shadow-sm bg-white">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Olá, {{ profile()?.fullName || authService.currentUser()?.fullName || 'Professor' }}! 👋
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
+            Acompanhe o desempenho da sua vitrine, conversão de contatos e créditos de IA.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        @if (profile()?.customSlug) {
+          <a [routerLink]="['/p', profile()?.customSlug]" target="_blank"
+             class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-300 shadow-sm hover:bg-slate-50 transition-all">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            Minha Vitrine Pública
+          </a>
+        }
+        <a routerLink="/professor/vitrine"
+           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 shadow-md hover:bg-indigo-700 active:scale-95 transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+          Editar Vitrine
+        </a>
+      </div>
+    </div>
+
+    <!-- Abas de Navegação Rápida -->
+    <div class="flex border-b border-slate-200 space-x-8">
+      <a routerLink="/professor/dashboard" class="border-indigo-600 text-indigo-600 py-3 px-1 border-b-2 font-semibold text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+        Dashboard Geral
+      </a>
+      <a routerLink="/professor/vitrine" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        Personalizar Vitrine
+      </a>
+      <a routerLink="/professor/ofertas" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        Gerenciar Ofertas
+      </a>
+      <a routerLink="/professor/estudio-criacao" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 py-3 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        Estúdio IA
+      </a>
+    </div>
+
+    <!-- 1. CARDS DE KPIS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      
+      <!-- Card 1: Views -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Visualizações da Vitrine</span>
+          <span class="text-3xl font-extrabold text-slate-900 mt-1 block">
+            {{ metrics()?.totalPageViews || 0 }}
+          </span>
+          <span class="text-[11px] font-medium text-slate-500 mt-1 block">Últimos 30 dias</span>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+          👁️
+        </div>
+      </div>
+
+      <!-- Card 2: WhatsApp Clicks -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Cliques no WhatsApp</span>
+          <span class="text-3xl font-extrabold text-emerald-600 mt-1 block">
+            {{ metrics()?.totalWhatsAppClicks || 0 }}
+          </span>
+          <span class="text-[11px] font-medium text-slate-500 mt-1 block">Conversas iniciadas</span>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+          💬
+        </div>
+      </div>
+
+      <!-- Card 3: Leads -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Leads Capturados</span>
+          <span class="text-3xl font-extrabold text-amber-600 mt-1 block">
+            {{ metrics()?.totalLeads || 0 }}
+          </span>
+          <span class="text-[11px] font-medium text-slate-500 mt-1 block">Taxa de Conversão: {{ conversionRate() }}</span>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          🎯
+        </div>
+      </div>
+
+      <!-- Card 4: Alunos Ativos -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Alunos Ativos</span>
+          <span class="text-3xl font-extrabold text-purple-600 mt-1 block">
+            {{ platformData()?.totalActiveStudents || 0 }}
+          </span>
+          <span class="text-[11px] font-medium text-slate-500 mt-1 block">
+            {{ platformData()?.publishedCoursesCount || 0 }} cursos na plataforma
+          </span>
+        </div>
+        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+          👥
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 2. STATUS DA ASSINATURA SAAS & CRÉDITOS DE IA -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Card Assinatura Asaas -->
+      <div class="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-2xl p-6 text-white shadow-md flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-300">Assinatura do Professor</span>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+              Ativo
+            </span>
+          </div>
+          <h3 class="text-xl font-bold mt-2">
+            Plano {{ platformData()?.subscription?.planType === 1 ? 'PRO Ilimitado' : 'Básico' }}
+          </h3>
+          <p class="text-xs text-indigo-200 mt-1">
+            Vitrine virtual ilimitada e acesso ao gerador de conteúdos com IA.
+          </p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-indigo-700/50 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-indigo-300 block">Renovação Mensal</span>
+            <span class="text-sm font-semibold">
+              {{ platformData()?.subscription?.currentPeriodEnd ? (platformData()?.subscription?.currentPeriodEnd | date:'dd/MM/yyyy') : 'Renovação Automática' }}
+            </span>
+          </div>
+          <a routerLink="/professor/planos"
+             class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 text-white transition-all">
+            Ver Planos
+          </a>
+        </div>
+      </div>
+
+      <!-- Card Créditos de IA (2 colunas) -->
+      <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Créditos de Criação IA</span>
+              <h3 class="text-lg font-bold text-slate-900 mt-0.5">Gerador de Aulas, Questões e Flashcards</h3>
+            </div>
+            <div class="text-right">
+              <span class="text-xl font-extrabold text-indigo-600">
+                {{ platformData()?.subscription?.aiCreditsRemaining ?? 200 }}
+              </span>
+              <span class="text-xs text-slate-400"> / {{ platformData()?.subscription?.aiCreditsLimit ?? 200 }} restantes</span>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso -->
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-4">
+            <div class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+                 [style.width.%]="(((platformData()?.subscription?.aiCreditsUsed ?? 0) / (platformData()?.subscription?.aiCreditsLimit ?? 200)) * 100) || 5"></div>
+          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            Os créditos são renovados mensalmente. Cada aula ou simulado gerado consome 1 crédito.
+          </p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+          <span class="text-xs font-medium text-slate-600">Precisa produzir novos materiais didáticos?</span>
+          <a routerLink="/professor/estudio-criacao"
+             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Abrir Estúdio IA
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. TABELA DE LEADS RECEBIDOS (CRM SIMPLES) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Header do CRM com Filtros -->
+      <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Leads & Alunos Interessados</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Contatos recebidos através dos botões e formulários da sua vitrine.</p>
+        </div>
+
+        <!-- Filtros de Status -->
+        <div class="flex items-center gap-2">
+          <button (click)="filterStatus.set('ALL')"
+                  [class.bg-slate-900]="filterStatus() === 'ALL'"
+                  [class.text-white]="filterStatus() === 'ALL'"
+                  [class.bg-slate-100]="filterStatus() !== 'ALL'"
+                  [class.text-slate-600]="filterStatus() !== 'ALL'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+            Todos ({{ leads().length }})
+          </button>
+          <button (click)="filterStatus.set('New')"
+                  [class.bg-amber-600]="filterStatus() === 'New'"
+                  [class.text-white]="filterStatus() === 'New'"
+                  [class.bg-amber-50]="filterStatus() !== 'New'"
+                  [class.text-amber-700]="filterStatus() !== 'New'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+            Novos
+          </button>
+          <button (click)="filterStatus.set('Contacted')"
+                  [class.bg-blue-600]="filterStatus() === 'Contacted'"
+                  [class.text-white]="filterStatus() === 'Contacted'"
+                  [class.bg-blue-50]="filterStatus() !== 'Contacted'"
+                  [class.text-blue-700]="filterStatus() !== 'Contacted'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+            Contatados
+          </button>
+          <button (click)="filterStatus.set('Converted')"
+                  [class.bg-emerald-600]="filterStatus() === 'Converted'"
+                  [class.text-white]="filterStatus() === 'Converted'"
+                  [class.bg-emerald-50]="filterStatus() !== 'Converted'"
+                  [class.text-emerald-700]="filterStatus() !== 'Converted'"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+            Convertidos
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela ou Vazio -->
+      @if (filteredLeads().length === 0) {
+        <div class="py-16 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto text-2xl mb-3">
+            📭
+          </div>
+          <p class="text-sm font-bold text-slate-800">Nenhum lead encontrado nesta categoria</p>
+          <p class="text-xs text-slate-500 mt-1">Divulgue o link da sua vitrine para começar a receber contatos de alunos.</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+              <tr>
+                <th class="px-6 py-3.5">Aluno</th>
+                <th class="px-6 py-3.5">Interesse / Oferta</th>
+                <th class="px-6 py-3.5">Mensagem</th>
+                <th class="px-6 py-3.5">Status</th>
+                <th class="px-6 py-3.5 text-right">Ação Direta</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              @for (lead of filteredLeads(); track lead.id) {
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                  
+                  <!-- Aluno -->
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="font-bold text-slate-900">{{ lead.name }}</div>
+                    <div class="text-xs text-slate-500">{{ lead.email }}</div>
+                    @if (lead.phone) {
+                      <div class="text-xs text-indigo-600 font-mono mt-0.5">{{ lead.phone }}</div>
+                    }
+                  </td>
+
+                  <!-- Oferta -->
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    @if (lead.offeringTitle) {
+                      <span class="font-medium text-slate-800 block text-xs">{{ lead.offeringTitle }}</span>
+                    } @else {
+                      <span class="text-slate-400 text-xs italic">Contato Geral da Vitrine</span>
+                    }
+                    <span class="text-[11px] text-slate-400 block mt-0.5">
+                      {{ lead.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                  </td>
+
+                  <!-- Mensagem -->
+                  <td class="px-6 py-4 max-w-xs">
+                    <p class="text-xs text-slate-600 line-clamp-2" [title]="lead.message || 'Sem mensagem'">
+                      {{ lead.message || '-' }}
+                    </p>
+                  </td>
+
+                  <!-- Status com Dropdown -->
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <select [value]="getStatusValue(lead.status)" (change)="onStatusChange(lead, $event)"
+                            class="text-xs font-bold rounded-lg border px-2.5 py-1 focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                            [ngClass]="getStatusClass(lead.status)">
+                      @for (s of leadStatuses; track s.value) {
+                        <option [value]="s.value">{{ s.label }}</option>
+                      }
+                    </select>
+                  </td>
+
+                  <!-- Botão 1-Clique WhatsApp -->
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    @if (lead.phone) {
+                      <a [href]="getWhatsAppLink(lead)" target="_blank"
+                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm active:scale-95 transition-all">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.347.491 1.2.534 1.288.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.353.101.173.449.74 0.963 1.198.662.59 1.221.774 1.394.86.174.086.275.072.376-.043.102-.116.433-.506.549-.679.116-.174.232-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                        WhatsApp
+                      </a>
+                    } @else {
+                      <span class="text-xs text-slate-400 italic">Sem telefone</span>
+                    }
+                  </td>
+
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

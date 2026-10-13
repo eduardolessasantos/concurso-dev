@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TeacherTech.Domain.Entities;
 
 namespace TeacherTech.Application.DTOs;
 
@@ -300,8 +301,41 @@ public class PublicProfessorProfileDto
     public string Headline { get; set; } = string.Empty;
     public string Bio { get; set; } = string.Empty;
     public string CustomSlug { get; set; } = string.Empty;
+    public string? BannerImageUrl { get; set; }
+    public string? ThemeColor { get; set; }
+    public string? WhatsAppNumber { get; set; }
+    public string? VideoIntroUrl { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? SocialLinksJson { get; set; }
     public int PublicCoursesCount { get; set; }
     public List<CourseResponseDto> Courses { get; set; } = new List<CourseResponseDto>();
+    public List<PublicOfferingDto> Offerings { get; set; } = new List<PublicOfferingDto>();
+}
+
+public class PublicOfferingDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public decimal? Price { get; set; }
+    public string PriceFormatted { get; set; } = "Sob Consulta";
+    public OfferingType OfferingType { get; set; }
+    public string OfferingTypeName { get; set; } = string.Empty;
+    public OfferingFormat Format { get; set; }
+    public string FormatName { get; set; } = string.Empty;
+    public string? LocationCity { get; set; }
+    public string? LocationState { get; set; }
+    public CtaType CtaType { get; set; }
+    public string CtaTypeName { get; set; } = string.Empty;
+    public string? CtaUrl { get; set; }
+    public string? CtaWhatsappMessage { get; set; }
+    public string? CoverImageUrl { get; set; }
+    public int DisplayOrder { get; set; }
+    public bool IsActive { get; set; } = true;
+    public bool IsFeatured { get; set; }
+    public Guid? CourseStudyPlanId { get; set; }
 }
 
 public class PublicCourseExploreDto
@@ -318,6 +352,185 @@ public class PublicCourseExploreDto
     public string? ProfessorAvatar { get; set; }
     public int SubjectsCount { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class PagedResult<T>
+{
+    public List<T> Items { get; set; } = new List<T>();
+    public int TotalCount { get; set; }
+    public int PageIndex { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
+    public bool HasPreviousPage => PageIndex > 0;
+    public bool HasNextPage => PageIndex + 1 < TotalPages;
+}
+
+public class ExploreFiltersDto
+{
+    public List<string> AvailableSubjects { get; set; } = new List<string>();
+    public List<string> AvailableCities { get; set; } = new List<string>();
+    public List<string> AvailableFormats { get; set; } = new List<string>();
+}
+
+public class ExploreItemDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public decimal? Price { get; set; }
+    public string PriceFormatted { get; set; } = "Sob Consulta";
+    public string ItemType { get; set; } = "OFFERING"; // OFFERING ou COURSE
+    public string OfferingType { get; set; } = "Curso";
+    public string Format { get; set; } = "Online";
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? CoverImageUrl { get; set; }
+    public string ProfessorId { get; set; } = string.Empty;
+    public string ProfessorName { get; set; } = string.Empty;
+    public string ProfessorSlug { get; set; } = string.Empty;
+    public string? ProfessorAvatar { get; set; }
+    public string? ProfessorHeadline { get; set; }
+    public string CtaType { get; set; } = "WhatsApp";
+    public string? CtaUrl { get; set; }
+    public string? CtaWhatsappMessage { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class ExploreQueryParams
+{
+    public string? Search { get; set; }
+    public string? Subject { get; set; }
+    public string? Category { get; set; }
+    public string? Format { get; set; }
+    public string? City { get; set; }
+    public decimal? PriceMin { get; set; }
+    public decimal? PriceMax { get; set; }
+    public int PageIndex { get; set; } = 0;
+    public int PageSize { get; set; } = 12;
+}
+
+// --- SHOWCASE LEAD & CTA METRICS DTOS ---
+public class CreateShowcaseLeadDto
+{
+    [Required]
+    public string ProfessorId { get; set; } = string.Empty;
+    public Guid? ContentOfferingId { get; set; }
+
+    [Required, MaxLength(150)]
+    public string Name { get; set; } = string.Empty;
+
+    [Required, EmailAddress, MaxLength(150)]
+    public string Email { get; set; } = string.Empty;
+
+    [MaxLength(50)]
+    public string Phone { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string Message { get; set; } = string.Empty;
+
+    [Required]
+    public bool TermsAccepted { get; set; }
+}
+
+public class ShowcaseLeadResponseDto
+{
+    public Guid Id { get; set; }
+    public string ProfessorId { get; set; } = string.Empty;
+    public Guid? ContentOfferingId { get; set; }
+    public string? OfferingTitle { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Status { get; set; } = "New";
+    public DateTime CreatedAt { get; set; }
+}
+
+public class TrackClickDto
+{
+    [Required]
+    public string ProfessorId { get; set; } = string.Empty;
+    public Guid? ContentOfferingId { get; set; }
+    [Required]
+    public string CtaType { get; set; } = "WhatsApp"; // "WhatsApp", "Scheduling", "ExternalCheckout", "PlatformCourse", "PageView"
+}
+
+public class ShowcaseMetricSummaryDto
+{
+    public string ProfessorId { get; set; } = string.Empty;
+    public int TotalPageViews { get; set; }
+    public int TotalWhatsAppClicks { get; set; }
+    public int TotalCtaClicks { get; set; }
+    public int TotalLeads { get; set; }
+    public List<ShowcaseMetricDailyDto> DailyMetrics { get; set; } = new List<ShowcaseMetricDailyDto>();
+}
+
+public class ShowcaseMetricDailyDto
+{
+    public DateTime Date { get; set; }
+    public int PageViews { get; set; }
+    public int WhatsAppClicks { get; set; }
+    public int CtaClicks { get; set; }
+    public int LeadsCount { get; set; }
+}
+
+// --- PROFESSOR SHOWCASE MANAGEMENT & OFFERINGS CRUD DTOS ---
+public class UpdateProfessorShowcaseDto
+{
+    public string Headline { get; set; } = string.Empty;
+    public string Bio { get; set; } = string.Empty;
+    [Required, RegularExpression(@"^[a-z0-9-]+$", ErrorMessage = "O slug deve conter apenas letras minúsculas, números e hífens.")]
+    public string CustomSlug { get; set; } = string.Empty;
+    public string? BannerImageUrl { get; set; }
+    public string? ThemeColor { get; set; }
+    public string? WhatsAppNumber { get; set; }
+    public string? VideoIntroUrl { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? SocialLinksJson { get; set; }
+    public bool PublicVisibility { get; set; } = true;
+}
+
+public class SaveOfferingDto
+{
+    [Required, MaxLength(150)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string Description { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Subject { get; set; } = string.Empty;
+
+    public decimal? Price { get; set; }
+
+    public OfferingType OfferingType { get; set; } = OfferingType.Course;
+    public OfferingFormat Format { get; set; } = OfferingFormat.Online;
+
+    public string? LocationCity { get; set; }
+    public string? LocationState { get; set; }
+
+    public CtaType CtaType { get; set; } = CtaType.WhatsApp;
+    public string? CtaUrl { get; set; }
+    public string? CtaWhatsappMessage { get; set; }
+    public string? CoverImageUrl { get; set; }
+
+    public int DisplayOrder { get; set; } = 0;
+    public bool IsActive { get; set; } = true;
+    public bool IsFeatured { get; set; } = false;
+
+    public Guid? CourseStudyPlanId { get; set; }
+}
+
+public class UpdateLeadStatusDto
+{
+    public LeadStatus Status { get; set; } = LeadStatus.Contacted;
+}
+
+public class ReorderOfferingsDto
+{
+    public List<Guid> OrderedIds { get; set; } = new List<Guid>();
 }
 
 // --- PROFESSOR STUDIO DTOS ---
