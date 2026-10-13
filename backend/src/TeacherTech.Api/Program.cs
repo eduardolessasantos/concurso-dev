@@ -21,6 +21,10 @@ using TeacherTech.Application.DTOs;
 using TeacherTech.Application.Interfaces;
 using TeacherTech.Application.Services;
 
+var defaultCulture = new System.Globalization.CultureInfo("pt-BR");
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = defaultCulture;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = defaultCulture;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Centralized Database Configuration

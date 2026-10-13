@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -1311,6 +1312,7 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
     private readonly IShowcaseLeadRepository _leadRepo;
     private readonly IShowcaseMetricRepository _metricRepo;
     private readonly IUnitOfWork _unitOfWork;
+    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public PublicShowcaseApplicationService(
         IProfessorProfileRepository professorProfileRepo,
@@ -1364,7 +1366,7 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
                 Description = o.Description,
                 Subject = o.Subject,
                 Price = o.Price,
-                PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+                PriceFormatted = o.Price.HasValue ? string.Format(PtBr, "R$ {0:N2}", o.Price.Value) : "Sob Consulta",
                 OfferingType = o.OfferingType,
                 OfferingTypeName = o.OfferingType switch
                 {
@@ -1468,7 +1470,7 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
             Description = o.Description,
             Subject = o.Subject,
             Price = o.Price,
-            PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+            PriceFormatted = o.Price.HasValue ? string.Format(PtBr, "R$ {0:N2}", o.Price.Value) : "Sob Consulta",
             ItemType = "OFFERING",
             OfferingType = o.OfferingType switch
             {
@@ -1526,7 +1528,7 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
                     Description = c.Description,
                     Subject = c.Category,
                     Price = c.Price,
-                    PriceFormatted = c.Price > 0 ? $"R$ {c.Price:N2}" : "Gratuito",
+                    PriceFormatted = c.Price > 0 ? string.Format(PtBr, "R$ {0:N2}", c.Price) : "Gratuito",
                     ItemType = "COURSE",
                     OfferingType = "Curso",
                     Format = "Online",
@@ -2275,7 +2277,7 @@ public class ProfessorShowcaseManagementService : IProfessorShowcaseManagementSe
             Description = o.Description,
             Subject = o.Subject,
             Price = o.Price,
-            PriceFormatted = o.Price.HasValue ? $"R$ {o.Price.Value:N2}" : "Sob Consulta",
+            PriceFormatted = o.Price.HasValue ? string.Format(CultureInfo.GetCultureInfo("pt-BR"), "R$ {0:N2}", o.Price.Value) : "Sob Consulta",
             OfferingType = o.OfferingType,
             OfferingTypeName = o.OfferingType switch
             {
