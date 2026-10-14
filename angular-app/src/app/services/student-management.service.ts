@@ -161,4 +161,42 @@ export class StudentManagementService {
       { headers: this.getAuthHeaders() }
     );
   }
+
+  getPendingAccessRequests(): Observable<AccessRequestItem[]> {
+    return this.http.get<AccessRequestItem[]>(
+      `${this.apiUrl}/accessrequests/pending`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  approveAccessRequest(requestId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/accessrequests/${requestId}/approve`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  rejectAccessRequest(requestId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/accessrequests/${requestId}/reject`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
+}
+
+export interface AccessRequestItem {
+  id: string;
+  studentId: string;
+  studentEmail: string;
+  studentName: string;
+  studentPhone?: string;
+  courseId: string;
+  courseTitle: string;
+  coursePrice?: number;
+  coursePriceFormatted?: string;
+  status: string;
+  message: string;
+  requestedAt: string;
 }

@@ -57,6 +57,29 @@ public class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// Inicia o fluxo de checkout Pix Peer-to-Peer (P2P) direto ao professor com geração de BR Code BACEN.
+    /// Funciona com ou sem autenticação prévia do aluno.
+    /// </summary>
+    /// <param name="dto">Dados do aluno e identificador do curso/oferta desejada.</param>
+    /// <returns>Payload Pix oficial BACEN, chave Pix do professor e link pré-configurado de WhatsApp.</returns>
+    [AllowAnonymous]
+    [HttpPost("p2p-pix-checkout")]
+    [ProducesResponseType(typeof(P2pPixCheckoutResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CreateP2pPixCheckout([FromBody] P2pPixCheckoutDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var studentId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var result = await _paymentService.CreateP2pPixCheckoutAsync(studentId, dto);
+        if (!result.Success)
+            return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
+
+    /// <summary>
     /// Recebe e processa notificações em tempo real (webhooks) de confirmação de pagamento enviadas pelo gateway.
     /// </summary>
     /// <remarks>

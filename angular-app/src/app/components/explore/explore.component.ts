@@ -12,6 +12,7 @@ import { StudentManagementService } from '../../services/student-management.serv
 import { AuthService } from '../../services/auth.service';
 import { AdSenseSlotComponent } from '../shared/adsense-slot/adsense-slot.component';
 import { SolicitarAcessoModalComponent } from '../shared/solicitar-acesso-modal/solicitar-acesso-modal.component';
+import { PixP2pCheckoutModalComponent } from '../shared/pix-p2p-checkout-modal/pix-p2p-checkout-modal.component';
 
 export function normalizeSearchString(val: string | null | undefined): string {
   if (!val) return '';
@@ -25,7 +26,7 @@ export function normalizeSearchString(val: string | null | undefined): string {
 @Component({
   selector: 'app-explore',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AdSenseSlotComponent, SolicitarAcessoModalComponent],
+  imports: [CommonModule, FormsModule, RouterModule, AdSenseSlotComponent, SolicitarAcessoModalComponent, PixP2pCheckoutModalComponent],
   templateUrl: './explore.component.html',
   styleUrls: ['./explore.component.scss']
 })
@@ -56,6 +57,14 @@ export class ExploreComponent implements OnInit {
   public isAccessModalOpen = signal<boolean>(false);
   public selectedCourseId = signal<string>('');
   public selectedCourseTitle = signal<string>('');
+
+  // Modal Pix P2P
+  public isPixModalOpen = signal<boolean>(false);
+  public selectedPixCourseId = signal<string>('');
+  public selectedPixCourseTitle = signal<string>('');
+  public selectedPixPrice = signal<number | undefined>(undefined);
+  public selectedPixPriceFormatted = signal<string | undefined>(undefined);
+  public selectedPixProfessorName = signal<string | undefined>(undefined);
 
   constructor(
     private showcaseService: PublicShowcaseService,
@@ -201,6 +210,8 @@ export class ExploreComponent implements OnInit {
     if (item.itemType === 'COURSE') {
       if (this.isEnrolled(item.id)) {
         this.router.navigate(['/estudo', item.id]);
+      } else if (item.price && item.price > 0) {
+        this.openPixCheckout(item);
       } else {
         this.onRequestAccess(item.id, item.title);
       }
@@ -216,6 +227,19 @@ export class ExploreComponent implements OnInit {
     } else if (item.professorSlug) {
       this.router.navigate(['/p', item.professorSlug]);
     }
+  }
+
+  openPixCheckout(item: ExploreItem): void {
+    this.selectedPixCourseId.set(item.id);
+    this.selectedPixCourseTitle.set(item.title);
+    this.selectedPixPrice.set(item.price ?? undefined);
+    this.selectedPixPriceFormatted.set(item.priceFormatted);
+    this.selectedPixProfessorName.set(item.professorName);
+    this.isPixModalOpen.set(true);
+  }
+
+  onPixApproved(courseId: string): void {
+    this.enrolledCourseIds.update(set => new Set([...set, courseId]));
   }
 
   onRequestAccess(courseId: string, courseTitle?: string): void {
@@ -235,7 +259,8 @@ export class ExploreComponent implements OnInit {
 
   getCtaLabel(item: ExploreItem): string {
     if (item.itemType === 'COURSE') {
-      return this.isEnrolled(item.id) ? 'Acessar Trilha' : 'Solicitar Acesso';
+      if (this.isEnrolled(item.id)) return 'Acessar Trilha';
+      return item.price && item.price > 0 ? 'Comprar via Pix' : 'Solicitar Acesso';
     }
     if (item.ctaType === 'WhatsApp' || item.ctaType === '1') return 'Falar com Professor';
     if (item.ctaType === 'Agendamento' || item.ctaType === '2') return 'Agendar Horário';
@@ -246,7 +271,8 @@ export class ExploreComponent implements OnInit {
 
   getCtaIcon(item: ExploreItem): string {
     if (item.itemType === 'COURSE') {
-      return this.isEnrolled(item.id) ? '📖' : '🙋';
+      if (this.isEnrolled(item.id)) return '📖';
+      return item.price && item.price > 0 ? '⚡' : '🙋';
     }
     if (item.ctaType === 'WhatsApp' || item.ctaType === '1') return '💬';
     if (item.ctaType === 'Agendamento' || item.ctaType === '2') return '📅';

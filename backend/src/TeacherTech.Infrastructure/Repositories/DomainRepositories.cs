@@ -309,7 +309,7 @@ public class AccessRequestRepository : Repository<AccessRequest, Guid>, IAccessR
     public async Task<AccessRequest?> GetPendingByStudentAndCourseAsync(string studentId, Guid courseId, CancellationToken cancellationToken = default)
     {
         return await DbContext.AccessRequests
-            .FirstOrDefaultAsync(a => a.StudentId == studentId && a.CourseId == courseId && a.Status == "PENDING", cancellationToken);
+            .FirstOrDefaultAsync(a => a.StudentId == studentId && a.CourseId == courseId && (a.Status == AccessRequestStatus.Pending || a.Status == AccessRequestStatus.PendingPix), cancellationToken);
     }
 
     public async Task<List<AccessRequest>> GetPendingByProfessorIdAsync(string professorId, CancellationToken cancellationToken = default)
@@ -317,7 +317,7 @@ public class AccessRequestRepository : Repository<AccessRequest, Guid>, IAccessR
         return await DbContext.AccessRequests
             .Include(a => a.Student)
             .Include(a => a.Course)
-            .Where(a => a.Course.ProfessorId == professorId && a.Status == "PENDING")
+            .Where(a => a.Course.ProfessorId == professorId && (a.Status == AccessRequestStatus.Pending || a.Status == AccessRequestStatus.PendingPix))
             .OrderByDescending(a => a.RequestedAt)
             .ToListAsync(cancellationToken);
     }

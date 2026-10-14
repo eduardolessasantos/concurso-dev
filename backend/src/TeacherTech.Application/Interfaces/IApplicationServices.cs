@@ -53,6 +53,7 @@ public interface IAccessRequestApplicationService
     Task<ServiceResult<List<AccessRequestResponseDto>>> GetPendingRequestsAsync(string professorId);
     Task<ServiceResult<string>> ApproveRequestAsync(string professorId, Guid requestId);
     Task<ServiceResult<string>> RejectRequestAsync(string professorId, Guid requestId);
+    Task<ServiceResult<AccessRequestStatusDto>> GetRequestStatusAsync(Guid requestId);
 }
 
 public interface IPaymentApplicationService
@@ -62,6 +63,7 @@ public interface IPaymentApplicationService
     Task<ServiceResult<string>> ConfirmSimulatedPaymentAsync(Guid transactionId);
     Task<ServiceResult<ProfessorBalanceDto>> GetProfessorBalanceAsync(string professorId);
     Task<ServiceResult<string>> UpdatePixKeyAsync(string professorId, string pixKey);
+    Task<ServiceResult<P2pPixCheckoutResponseDto>> CreateP2pPixCheckoutAsync(string? studentId, P2pPixCheckoutDto dto);
 }
 
 public interface IPublicShowcaseApplicationService

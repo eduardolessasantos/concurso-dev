@@ -1,0 +1,409 @@
+<div class="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- 1. HERO SECTION DUAL: PARA QUEM ENSINA & PARA QUEM APRENDE -->
+  <!-- ========================================================================= -->
+  <section class="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 bg-gradient-to-b from-indigo-50/70 via-white to-slate-50 border-b border-slate-200/80">
+    <!-- Efeitos de iluminação de fundo suaves -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] bg-gradient-to-tr from-indigo-200/40 via-purple-200/30 to-pink-200/20 blur-3xl pointer-events-none -z-10 rounded-full"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Badge de novidade no topo -->
+      <div class="flex justify-center mb-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-indigo-100 shadow-sm text-xs font-semibold text-indigo-700 animate-fade-in">
+          <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Plataforma Oficial para Professores & Alunos do Brasil</span>
+          <span class="text-slate-300">|</span>
+          <span class="text-slate-500 font-normal">0% de comissão para professores</span>
+        </div>
+      </div>
+
+      <!-- Título de Impacto Dual -->
+      <div class="text-center max-w-4xl mx-auto space-y-4">
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
+          A plataforma definitiva para quem <span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">ensina</span> e quem quer <span class="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">aprender</span>.
+        </h1>
+        <p class="text-base sm:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          Professores particulares e mentores conquistam sua vitrine virtual profissional com estúdio de IA. Estudantes encontram aulas sob medida sem intermediários.
+        </p>
+      </div>
+
+      <!-- Barra de Busca Rápida Integrada -->
+      <div class="mt-8 max-w-3xl mx-auto">
+        <div class="bg-white p-2.5 rounded-2xl shadow-xl shadow-indigo-900/5 border border-slate-200/80 flex flex-col sm:flex-row items-center gap-2">
+          <div class="flex items-center gap-3 px-3 w-full flex-1">
+            <svg class="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()"
+                   placeholder="O que você quer aprender? (ex: Matemática, Física, Redação, Concursos...)"
+                   class="w-full bg-transparent border-0 focus:ring-0 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 p-1">
+          </div>
+          <button (click)="onSearch()"
+                  class="w-full sm:w-auto px-7 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+            <span>Buscar Professor</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+          </button>
+        </div>
+
+        <!-- Chips de busca rápida -->
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span class="text-slate-400 font-medium">Mais buscados:</span>
+          @for (s of popularSubjects; track s.name) {
+            <button (click)="searchBySubject(s.name)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 hover:bg-white text-slate-700 hover:text-indigo-600 border border-slate-200 shadow-2xs transition-all">
+              <span>{{ s.icon }}</span>
+              <span class="font-medium">{{ s.name }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Dois Caminhos / Cards Interativos com Avatares Sally UX -->
+      <div class="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        
+        <!-- CARD 1: PARA O PROFESSOR & MENTOR -->
+        <div class="relative group bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-44 h-44 bg-indigo-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+
+          <div class="relative z-10 space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider">
+              <span>👨‍🏫 Sou Professor / Mentor</span>
+            </div>
+
+            <h2 class="text-2xl font-extrabold text-slate-900 leading-snug">
+              Crie sua vitrine virtual e multiplique seus alunos autônomos
+            </h2>
+
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Tenha sua mini-página profissional (<code class="text-xs bg-slate-100 text-indigo-600 px-1 py-0.5 rounded font-mono">/p/seunome</code>), cadastre aulas particulares, mentorias e e-books. Receba contatos direto no WhatsApp com <strong class="text-slate-900">0% de comissão</strong>.
+            </p>
+
+            <!-- Recursos Rápidos -->
+            <ul class="space-y-2 pt-2 text-xs text-slate-600 font-medium">
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Link profissional completo para colocar na bio do Instagram</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Estúdio IA: crie planos de estudo, flashcards e questões em segundos</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Painel de métricas e CRM de contatos com 1 clique no WhatsApp</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="relative z-10 mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+            <div class="flex items-center -space-x-2">
+              @for (av of teacherAvatars; track av.name) {
+                <img [src]="av.image" [alt]="av.name" [title]="av.name"
+                     class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-xs">
+              }
+              <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold border-2 border-white">
+                +400
+              </div>
+            </div>
+
+            <a routerLink="/cadastro"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold text-xs shadow-md transition-all">
+              <span>Criar Minha Vitrine</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- CARD 2: PARA O ALUNO & ESTUDANTE -->
+        <div class="relative group bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-44 h-44 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform -z-0"></div>
+
+          <div class="relative z-10 space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider">
+              <span>🎓 Sou Aluno / Estudante</span>
+            </div>
+
+            <h2 class="text-2xl font-extrabold text-slate-900 leading-snug">
+              Encontre o professor ideal para destravar seus estudos
+            </h2>
+
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Filtre por matéria, cidade, formato (online ou presencial) e preço. Veja vídeos de apresentação, metodologias reais e converse direto com o professor antes de contratar.
+            </p>
+
+            <!-- Recursos Rápidos -->
+            <ul class="space-y-2 pt-2 text-xs text-slate-600 font-medium">
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Aulas particulares individuais, mentorias VIP e materiais exclusivos</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Contato direto no WhatsApp sem cadastro prévio burocrático</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span>Busca por localização: encontre professores no seu bairro ou cidade</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="relative z-10 mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-amber-400 text-lg">★★★★★</span>
+              <span class="text-xs font-bold text-slate-800">4.9 / 5.0</span>
+              <span class="text-[11px] text-slate-400">avaliação média</span>
+            </div>
+
+            <a routerLink="/explorar"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs shadow-md transition-all">
+              <span>Explorar Professores</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 2. OS 4 FORMATOS DE CONTEÚDO (AULAS, MENTORIAS, CURSOS, E-BOOKS) -->
+  <!-- ========================================================================= -->
+  <section class="py-16 sm:py-24 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">Variedade Pedagógica</h2>
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-slate-900">O que você encontra no TeacherTech</h3>
+        <p class="text-sm sm:text-base text-slate-600 mt-2">Diferentes opções pedagógicas adaptadas para o seu ritmo, objetivo e orçamento.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <!-- Formato 1 -->
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-indigo-300 hover:shadow-lg transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            👨‍🏫
+          </div>
+          <h4 class="text-base font-bold text-slate-900 mb-1">Aulas Particulares</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Atendimento 1-a-1 online ou presencial para reforço escolar, provas universitárias ou vestibulares.
+          </p>
+          <span class="text-[11px] font-bold text-indigo-600">Online ou Presencial</span>
+        </div>
+
+        <!-- Formato 2 -->
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-emerald-300 hover:shadow-lg transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            🚀
+          </div>
+          <h4 class="text-base font-bold text-slate-900 mb-1">Mentorias de Elite</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Acompanhamento contínuo e plano de estudos personalizado para Medicina, ENEM e Concursos de ponta.
+          </p>
+          <span class="text-[11px] font-bold text-emerald-600">Planos Mensais e Semanais</span>
+        </div>
+
+        <!-- Formato 3 -->
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 hover:shadow-lg transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            🎓
+          </div>
+          <h4 class="text-base font-bold text-slate-900 mb-1">Cursos Estruturados</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Trilhas completas com videoaulas gravadas, exercícios resolvidos e simulados interativos.
+          </p>
+          <span class="text-[11px] font-bold text-blue-600">Acesso Direto na Plataforma</span>
+        </div>
+
+        <!-- Formato 4 -->
+        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200/80 hover:border-amber-300 hover:shadow-lg transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            📖
+          </div>
+          <h4 class="text-base font-bold text-slate-900 mb-1">E-books & Apostilas</h4>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Materiais em PDF, mapas mentais e listas de exercícios com gabarito comentado para estudo rápido.
+          </p>
+          <span class="text-[11px] font-bold text-amber-600">Download Imediato</span>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. DESTAQUES DINÂMICOS DO CATÁLOGO (OFERTAS & MENTORES REAIS) -->
+  <!-- ========================================================================= -->
+  <section class="py-16 sm:py-24 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Catálogo em Destaque</h2>
+          <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Professores e conteúdos disponíveis agora</h3>
+        </div>
+        <a routerLink="/explorar"
+           class="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors">
+          <span>Ver catálogo completo</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+        </a>
+      </div>
+
+      <!-- Grid de Ofertas -->
+      @if (isLoadingFeatured()) {
+        <div class="py-12 text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+          <p class="mt-2 text-xs text-slate-500">Carregando professores em destaque...</p>
+        </div>
+      } @else if (featuredOfferings().length > 0) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          @for (item of featuredOfferings(); track item.id) {
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between">
+              
+              <div class="p-5 space-y-3">
+                <!-- Header do Card: Avatar e Nome do Professor -->
+                <div class="flex items-center gap-3">
+                  <img [src]="item.professorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80'"
+                       [alt]="item.professorName"
+                       class="w-11 h-11 rounded-full object-cover border border-slate-200">
+                  <div>
+                    <h4 class="text-sm font-bold text-slate-900 line-clamp-1">{{ item.professorName }}</h4>
+                    <span class="text-xs text-slate-500 line-clamp-1">{{ item.subject }}</span>
+                  </div>
+                </div>
+
+                <!-- Título e Descrição da Oferta -->
+                <div>
+                  <div class="flex items-center gap-2 mb-1.5">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700">
+                      {{ item.offeringType }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                      {{ item.format }}
+                    </span>
+                  </div>
+                  <h5 class="text-base font-bold text-slate-900 line-clamp-1">{{ item.title }}</h5>
+                  <p class="text-xs text-slate-600 line-clamp-2 mt-1">{{ item.description }}</p>
+                </div>
+              </div>
+
+              <!-- Footer do Card -->
+              <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-slate-400 block font-medium">Investimento</span>
+                  <span class="text-sm font-extrabold text-slate-900">{{ item.priceFormatted }}</span>
+                </div>
+
+                @if (item.professorSlug) {
+                  <a [routerLink]="['/p', item.professorSlug]"
+                     class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all">
+                    Ver Vitrine
+                  </a>
+                } @else {
+                  <a routerLink="/explorar"
+                     class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all">
+                    Detalhes
+                  </a>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Fallback visual caso ainda não haja dados no banco -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center max-w-xl mx-auto">
+          <p class="text-sm text-slate-600">Novos professores estão cadastrando suas vitrines neste momento.</p>
+          <a routerLink="/explorar" class="mt-4 inline-block px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">
+            Ver Catálogo Geral
+          </a>
+        </div>
+      }
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 4. COMPARATIVO: TEACHERTECH VS. PLATAFORMAS TRADICIONAIS -->
+  <!-- ========================================================================= -->
+  <section class="py-16 sm:py-24 bg-white border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-1">Por que escolher o TeacherTech?</h2>
+        <h3 class="text-3xl font-extrabold text-slate-900">Liberdade total para educadores autônomos</h3>
+        <p class="text-sm text-slate-600 mt-2">Diga adeus às comissões abusivas e à falta de controle sobre os seus alunos.</p>
+      </div>
+
+      <div class="bg-slate-50 rounded-3xl p-6 sm:p-8 border border-slate-200 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Recursos</th>
+                <th class="py-3 px-4 text-center text-slate-400">Plataformas Tradicionais</th>
+                <th class="py-3 px-4 text-center text-indigo-600 font-extrabold bg-indigo-50/50 rounded-t-xl">TeacherTech</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+              <tr>
+                <td class="py-4 px-4 font-bold text-slate-800">Comissão sobre suas aulas particulares</td>
+                <td class="py-4 px-4 text-center text-red-600 font-medium">15% a 30% retidos</td>
+                <td class="py-4 px-4 text-center text-emerald-600 font-extrabold bg-indigo-50/30">0% (100% é seu)</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold text-slate-800">Canal direto de contato no WhatsApp</td>
+                <td class="py-4 px-4 text-center text-red-500 font-medium">❌ Bloqueado / Chat interno lento</td>
+                <td class="py-4 px-4 text-center text-emerald-600 font-extrabold bg-indigo-50/30">✅ Botão 1-Clique direto</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold text-slate-800">Link personalizado exclusivo</td>
+                <td class="py-4 px-4 text-center text-slate-500 font-medium">Perfil genérico sem identidade</td>
+                <td class="py-4 px-4 text-center text-emerald-600 font-extrabold bg-indigo-50/30">✅ teachertech.com/p/seunome</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold text-slate-800">Gerador pedagógico de conteúdos com IA</td>
+                <td class="py-4 px-4 text-center text-slate-500 font-medium">❌ Não possui</td>
+                <td class="py-4 px-4 text-center text-emerald-600 font-extrabold bg-indigo-50/30">✅ Estúdio de IA integrado</td>
+              </tr>
+              <tr>
+                <td class="py-4 px-4 font-bold text-slate-800">Formatos aceitos</td>
+                <td class="py-4 px-4 text-center text-slate-500 font-medium">Apenas vídeo gravado ou aula avulsa</td>
+                <td class="py-4 px-4 text-center text-emerald-600 font-extrabold bg-indigo-50/30">✅ Aulas, Cursos, E-books & Mentorias</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 5. BANNER FINAL DE CONVERSÃO -->
+  <!-- ========================================================================= -->
+  <section class="py-16 sm:py-20 bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white relative overflow-hidden">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-6">
+      <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+        Comece hoje mesmo no TeacherTech
+      </h2>
+      <p class="text-sm sm:text-base text-indigo-200 max-w-xl mx-auto leading-relaxed">
+        Seja para encontrar um professor particular de excelência ou para criar a vitrine digital que o seu trabalho merece.
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        <a routerLink="/explorar"
+           class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-indigo-900 hover:bg-indigo-50 font-extrabold text-sm shadow-lg active:scale-95 transition-all">
+          Encontrar um Professor
+        </a>
+        <a routerLink="/cadastro"
+           class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm border border-indigo-400/40 shadow-lg active:scale-95 transition-all">
+          Criar Minha Vitrine de Professor
+        </a>
+      </div>
+    </div>
+  </section>
+
+</div>

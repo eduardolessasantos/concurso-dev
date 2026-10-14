@@ -7,6 +7,7 @@ import { StudentManagementService } from '../../services/student-management.serv
 import { AuthService } from '../../services/auth.service';
 import { SolicitarAcessoModalComponent } from '../shared/solicitar-acesso-modal/solicitar-acesso-modal.component';
 import { ContactLeadModalComponent } from '../shared/contact-lead-modal/contact-lead-modal.component';
+import { PixP2pCheckoutModalComponent } from '../shared/pix-p2p-checkout-modal/pix-p2p-checkout-modal.component';
 
 export interface SocialLinkItem {
   name: string;
@@ -17,7 +18,7 @@ export interface SocialLinkItem {
 @Component({
   selector: 'app-professor-showcase',
   standalone: true,
-  imports: [CommonModule, RouterModule, SolicitarAcessoModalComponent, ContactLeadModalComponent],
+  imports: [CommonModule, RouterModule, SolicitarAcessoModalComponent, ContactLeadModalComponent, PixP2pCheckoutModalComponent],
   templateUrl: './professor-showcase.component.html',
   styleUrls: ['./professor-showcase.component.scss']
 })
@@ -37,6 +38,14 @@ export class ProfessorShowcaseComponent implements OnInit {
   public isAccessModalOpen = signal<boolean>(false);
   public selectedCourseId = signal<string>('');
   public selectedCourseTitle = signal<string>('');
+
+  // Modal Pix P2P
+  public isPixModalOpen = signal<boolean>(false);
+  public selectedPixCourseId = signal<string>('');
+  public selectedPixCourseTitle = signal<string>('');
+  public selectedPixPrice = signal<number | undefined>(undefined);
+  public selectedPixPriceFormatted = signal<string | undefined>(undefined);
+  public selectedPixOfferingId = signal<string | undefined>(undefined);
 
   // Modal de contato / captura de leads
   public isLeadModalOpen = signal<boolean>(false);
@@ -258,6 +267,8 @@ export class ProfessorShowcaseComponent implements OnInit {
     } else if (offering.ctaType === 4 && offering.courseStudyPlanId) { // Plataforma
       if (this.isEnrolled(offering.courseStudyPlanId)) {
         this.router.navigate(['/estudo', offering.courseStudyPlanId]);
+      } else if (offering.price && offering.price > 0) {
+        this.openPixCheckout(offering.courseStudyPlanId, offering.title, offering.price, offering.priceFormatted, offering.id);
       } else {
         this.onRequestAccess(offering.courseStudyPlanId, offering.title);
       }
@@ -268,6 +279,19 @@ export class ProfessorShowcaseComponent implements OnInit {
         this.openContactLead(offering);
       }
     }
+  }
+
+  openPixCheckout(courseId: string, courseTitle: string, price?: number, priceFormatted?: string, offeringId?: string): void {
+    this.selectedPixCourseId.set(courseId);
+    this.selectedPixCourseTitle.set(courseTitle);
+    this.selectedPixPrice.set(price);
+    this.selectedPixPriceFormatted.set(priceFormatted);
+    this.selectedPixOfferingId.set(offeringId);
+    this.isPixModalOpen.set(true);
+  }
+
+  onPixApproved(courseId: string): void {
+    this.enrolledCourseIds.update(set => new Set([...set, courseId]));
   }
 
   onRequestAccess(courseId: string, courseTitle?: string): void {

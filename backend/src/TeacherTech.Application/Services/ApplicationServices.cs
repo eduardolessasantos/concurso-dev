@@ -7,6 +7,7 @@ using Google.Apis.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using TeacherTech.Application.Common;
 using TeacherTech.Application.DTOs;
 using TeacherTech.Application.Interfaces;
 using TeacherTech.Domain.Entities;
@@ -1174,14 +1175,18 @@ public class AccessRequestApplicationService : IAccessRequestApplicationService
         if (string.IsNullOrEmpty(professorId)) return ServiceResult<List<AccessRequestResponseDto>>.Fail("Não autorizado.", 401);
 
         var requests = await _accessRequestRepo.GetPendingByProfessorIdAsync(professorId);
+        var ptBr = CultureInfo.GetCultureInfo("pt-BR");
         var result = requests.Select(a => new AccessRequestResponseDto
         {
             Id = a.Id,
             StudentId = a.StudentId,
-            StudentEmail = a.Student.Email!,
-            StudentName = a.Student.FullName,
+            StudentEmail = a.Student?.Email ?? string.Empty,
+            StudentName = a.Student?.FullName ?? string.Empty,
+            StudentPhone = a.Student?.PhoneNumber,
             CourseId = a.CourseId,
-            CourseTitle = a.Course.Title,
+            CourseTitle = a.Course?.Title ?? string.Empty,
+            CoursePrice = a.Course?.Price,
+            CoursePriceFormatted = a.Course != null && a.Course.Price > 0 ? string.Format(ptBr, "R$ {0:N2}", a.Course.Price) : "Gratuito",
             Status = a.Status,
             Message = a.Message,
             RequestedAt = a.RequestedAt
@@ -1196,7 +1201,9 @@ public class AccessRequestApplicationService : IAccessRequestApplicationService
         if (request == null) return ServiceResult<string>.Fail("Solicitação não encontrada.", 404);
         if (request.Course.ProfessorId != professorId) return ServiceResult<string>.Fail("Acesso não autorizado.", 403);
 
-        request.Status = "APPROVED";
+        var wasPix = request.Status == AccessRequestStatus.PendingPix;
+        request.Status = AccessRequestStatus.Approved;
+        request.UpdatedAt = DateTime.UtcNow;
         _accessRequestRepo.Update(request);
 
         var existingEnrollment = await _enrollmentRepo.GetByStudentAndCourseAsync(request.StudentId, request.CourseId);
@@ -1207,15 +1214,18 @@ public class AccessRequestApplicationService : IAccessRequestApplicationService
                 StudentId = request.StudentId,
                 CourseId = request.CourseId,
                 GrantedBy = professorId,
-                GrantedVia = "PUBLIC_ACCESS",
-                Status = "ACTIVE",
+                GrantedVia = wasPix ? "PIX_P2P" : "PUBLIC_ACCESS",
+                Status = EnrollmentStatus.Active,
                 CreatedAt = DateTime.UtcNow
             };
             await _enrollmentRepo.AddAsync(enrollment);
         }
         else
         {
-            existingEnrollment.Status = "ACTIVE";
+            existingEnrollment.Status = EnrollmentStatus.Active;
+            existingEnrollment.GrantedBy = professorId;
+            if (wasPix) existingEnrollment.GrantedVia = "PIX_P2P";
+            existingEnrollment.UpdatedAt = DateTime.UtcNow;
             _enrollmentRepo.Update(existingEnrollment);
         }
 
@@ -1229,11 +1239,27 @@ public class AccessRequestApplicationService : IAccessRequestApplicationService
         if (request == null) return ServiceResult<string>.Fail("Solicitação não encontrada.", 404);
         if (request.Course.ProfessorId != professorId) return ServiceResult<string>.Fail("Acesso não autorizado.", 403);
 
-        request.Status = "REJECTED";
+        request.Status = AccessRequestStatus.Rejected;
+        request.UpdatedAt = DateTime.UtcNow;
         _accessRequestRepo.Update(request);
         await _unitOfWork.CommitAsync();
 
         return ServiceResult<string>.Ok("Solicitação rejeitada.");
+    }
+
+    public async Task<ServiceResult<AccessRequestStatusDto>> GetRequestStatusAsync(Guid requestId)
+    {
+        var request = await _accessRequestRepo.GetByIdWithCourseAsync(requestId);
+        if (request == null) return ServiceResult<AccessRequestStatusDto>.Fail("Solicitação não encontrada.", 404);
+
+        return ServiceResult<AccessRequestStatusDto>.Ok(new AccessRequestStatusDto
+        {
+            Id = request.Id,
+            Status = request.Status,
+            IsApproved = request.Status == AccessRequestStatus.Approved,
+            CourseId = request.CourseId,
+            CourseTitle = request.Course?.Title ?? string.Empty
+        });
     }
 }
 
@@ -1242,17 +1268,27 @@ public class PaymentApplicationService : IPaymentApplicationService
     private readonly ICourseRepository _courseRepo;
     private readonly IEnrollmentRepository _enrollmentRepo;
     private readonly IProfessorProfileRepository _professorProfileRepo;
+    private readonly IAccessRequestRepository _accessRequestRepo;
+    private readonly IContentOfferingRepository _offeringRepo;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUnitOfWork _unitOfWork;
+    private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public PaymentApplicationService(
         ICourseRepository courseRepo,
         IEnrollmentRepository enrollmentRepo,
         IProfessorProfileRepository professorProfileRepo,
+        IAccessRequestRepository accessRequestRepo,
+        IContentOfferingRepository offeringRepo,
+        UserManager<ApplicationUser> userManager,
         IUnitOfWork unitOfWork)
     {
         _courseRepo = courseRepo;
         _enrollmentRepo = enrollmentRepo;
         _professorProfileRepo = professorProfileRepo;
+        _accessRequestRepo = accessRequestRepo;
+        _offeringRepo = offeringRepo;
+        _userManager = userManager;
         _unitOfWork = unitOfWork;
     }
 
@@ -1301,6 +1337,144 @@ public class PaymentApplicationService : IPaymentApplicationService
         await _unitOfWork.CommitAsync();
 
         return ServiceResult<string>.Ok("Chave PIX de repasse atualizada com sucesso!");
+    }
+
+    public async Task<ServiceResult<P2pPixCheckoutResponseDto>> CreateP2pPixCheckoutAsync(string? studentId, P2pPixCheckoutDto dto)
+    {
+        var course = await _courseRepo.GetByIdAsync(dto.CourseId);
+        if (course == null)
+            return ServiceResult<P2pPixCheckoutResponseDto>.Fail("Curso não encontrado.", 404);
+
+        ApplicationUser? studentUser = null;
+        if (!string.IsNullOrEmpty(studentId))
+        {
+            studentUser = await _userManager.FindByIdAsync(studentId);
+        }
+
+        if (studentUser == null)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return ServiceResult<P2pPixCheckoutResponseDto>.Fail("E-mail é obrigatório para iniciar o pagamento via Pix.", 400);
+            }
+
+            var cleanEmail = dto.Email.Trim().ToLowerInvariant();
+            studentUser = await _userManager.FindByEmailAsync(cleanEmail);
+            if (studentUser == null)
+            {
+                studentUser = new ApplicationUser
+                {
+                    UserName = cleanEmail,
+                    Email = cleanEmail,
+                    FullName = !string.IsNullOrWhiteSpace(dto.Name) ? dto.Name.Trim() : "Aluno Interessado",
+                    PhoneNumber = !string.IsNullOrWhiteSpace(dto.Phone) ? dto.Phone.Trim() : null,
+                    UserRole = UserRoles.Student,
+                    EmailConfirmed = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                var res = await _userManager.CreateAsync(studentUser, "AlunoTech" + Guid.NewGuid().ToString("N")[..8] + "!");
+                if (res.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(studentUser, UserRoles.Student);
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(dto.Phone) && string.IsNullOrWhiteSpace(studentUser.PhoneNumber))
+            {
+                studentUser.PhoneNumber = dto.Phone.Trim();
+                await _userManager.UpdateAsync(studentUser);
+            }
+        }
+
+        var existingEnrollment = await _enrollmentRepo.GetByStudentAndCourseAsync(studentUser.Id, course.Id);
+        if (existingEnrollment != null && existingEnrollment.Status == EnrollmentStatus.Active)
+        {
+            return ServiceResult<P2pPixCheckoutResponseDto>.Fail("Você já possui acesso ativo a este conteúdo.", 400);
+        }
+
+        var profProfile = await _professorProfileRepo.GetByUserIdAsync(course.ProfessorId);
+        if (profProfile == null)
+            return ServiceResult<P2pPixCheckoutResponseDto>.Fail("Perfil do professor não encontrado.", 404);
+
+        if (string.IsNullOrWhiteSpace(profProfile.PixKey))
+        {
+            return ServiceResult<P2pPixCheckoutResponseDto>.Fail("O professor deste conteúdo ainda não cadastrou sua Chave Pix para recebimento. Entre em contato diretamente pelo WhatsApp para combinar o acesso.", 400);
+        }
+
+        var profUser = await _userManager.FindByIdAsync(course.ProfessorId);
+        var profName = profUser?.FullName ?? "Professor";
+
+        decimal amount = course.Price;
+        if (dto.OfferingId.HasValue && dto.OfferingId.Value != Guid.Empty)
+        {
+            var offering = await _offeringRepo.GetByIdAsync(dto.OfferingId.Value);
+            if (offering != null && offering.Price.HasValue && offering.Price.Value > 0)
+            {
+                amount = offering.Price.Value;
+            }
+        }
+
+        var existingRequest = await _accessRequestRepo.GetPendingByStudentAndCourseAsync(studentUser.Id, course.Id);
+        AccessRequest accessRequest;
+        var formattedPrice = string.Format(PtBr, "R$ {0:N2}", amount);
+        var phoneInfo = !string.IsNullOrWhiteSpace(dto.Phone) ? dto.Phone : studentUser.PhoneNumber ?? "Não informado";
+
+        if (existingRequest != null)
+        {
+            accessRequest = existingRequest;
+            accessRequest.Status = AccessRequestStatus.PendingPix;
+            accessRequest.Message = $"Pagamento Pix P2P: {formattedPrice} | Tel: {phoneInfo}";
+            accessRequest.RequestedAt = DateTime.UtcNow;
+            _accessRequestRepo.Update(accessRequest);
+        }
+        else
+        {
+            accessRequest = new AccessRequest
+            {
+                StudentId = studentUser.Id,
+                CourseId = course.Id,
+                Status = AccessRequestStatus.PendingPix,
+                Message = $"Pagamento Pix P2P: {formattedPrice} | Tel: {phoneInfo}",
+                RequestedAt = DateTime.UtcNow
+            };
+            await _accessRequestRepo.AddAsync(accessRequest);
+        }
+        await _unitOfWork.CommitAsync();
+
+        var txId = accessRequest.Id.ToString("N")[..20];
+        var pixPayload = PixBrCodeGenerator.GeneratePayload(
+            profProfile.PixKey,
+            profName,
+            profProfile.City,
+            amount > 0 ? amount : null,
+            txId);
+
+        var whatsAppUrl = string.Empty;
+        if (!string.IsNullOrWhiteSpace(profProfile.WhatsAppNumber))
+        {
+            var cleanPhone = new string(profProfile.WhatsAppNumber.Where(char.IsDigit).ToArray());
+            if (!cleanPhone.StartsWith("55") && cleanPhone.Length >= 10 && cleanPhone.Length <= 11)
+            {
+                cleanPhone = "55" + cleanPhone;
+            }
+            var message = $"Olá, Professor(a) {profName}! Acabei de realizar o pagamento Pix de {formattedPrice} referente ao curso '{course.Title}'. Segue meu comprovante! Meu e-mail: {studentUser.Email} (Ref: #{accessRequest.Id.ToString()[..8]})";
+            whatsAppUrl = $"https://wa.me/{cleanPhone}?text={Uri.EscapeDataString(message)}";
+        }
+
+        return ServiceResult<P2pPixCheckoutResponseDto>.Ok(new P2pPixCheckoutResponseDto
+        {
+            AccessRequestId = accessRequest.Id,
+            CourseId = course.Id,
+            CourseTitle = course.Title,
+            Amount = amount,
+            AmountFormatted = formattedPrice,
+            ProfessorName = profName,
+            ProfessorPixKey = profProfile.PixKey,
+            ProfessorWhatsApp = profProfile.WhatsAppNumber,
+            PixPayload = pixPayload,
+            WhatsAppUrl = whatsAppUrl,
+            Status = AccessRequestStatus.PendingPix
+        });
     }
 }
 
@@ -1418,6 +1592,7 @@ public class PublicShowcaseApplicationService : IPublicShowcaseApplicationServic
             VideoIntroUrl = profProfile.VideoIntroUrl,
             City = profProfile.City,
             State = profProfile.State,
+            PixKey = profProfile.PixKey,
             SocialLinksJson = profProfile.SocialLinksJson,
             PublicCoursesCount = publicCourses.Count,
             Courses = publicCourses,
@@ -2075,6 +2250,7 @@ public class ProfessorShowcaseManagementService : IProfessorShowcaseManagementSe
             VideoIntroUrl = profProfile.VideoIntroUrl,
             City = profProfile.City,
             State = profProfile.State,
+            PixKey = profProfile.PixKey,
             SocialLinksJson = profProfile.SocialLinksJson,
             PublicCoursesCount = publicCourses.Count,
             Courses = publicCourses,

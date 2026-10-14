@@ -199,9 +199,15 @@
                     ⏳ Solicitação Enviada
                   </button>
                 } @else {
-                  <button type="button" class="btn-request" (click)="onRequestAccess(course.id, course.title)">
-                    🙋 Solicitar Acesso ao Professor
-                  </button>
+                  @if (course.price > 0) {
+                    <button type="button" class="btn-pix" (click)="openPixCheckout(course.id, course.title, course.price, 'R$ ' + course.price)">
+                      ⚡ Liberar com Pix
+                    </button>
+                  } @else {
+                    <button type="button" class="btn-request" (click)="onRequestAccess(course.id, course.title)">
+                      🙋 Solicitar Acesso Gratuito
+                    </button>
+                  }
                 }
               </div>
             </div>
@@ -234,4 +240,18 @@
     [offeringTitle]="selectedLeadOfferingTitle()"
     (close)="isLeadModalOpen.set(false)"
     (leadCreated)="onLeadCreated()" />
+
+  <!-- Modal Checkout Pix P2P Direto ao Professor -->
+  <app-pix-p2p-checkout-modal
+    [isOpen]="isPixModalOpen()"
+    [courseId]="selectedPixCourseId()"
+    [courseTitle]="selectedPixCourseTitle()"
+    [price]="selectedPixPrice()"
+    [priceFormatted]="selectedPixPriceFormatted()"
+    [offeringId]="selectedPixOfferingId()"
+    [professorName]="profile()?.fullName"
+    [professorPixKey]="profile()?.pixKey"
+    [professorWhatsApp]="profile()?.whatsAppNumber"
+    (close)="isPixModalOpen.set(false)"
+    (accessApproved)="onPixApproved($event)" />
 </div>

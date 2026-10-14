@@ -46,6 +46,36 @@ export interface BillingCheckoutResponse {
   status: string;
 }
 
+export interface P2pPixCheckoutRequest {
+  courseId: string;
+  offeringId?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface P2pPixCheckoutResponse {
+  accessRequestId: string;
+  courseId: string;
+  courseTitle: string;
+  amount: number;
+  amountFormatted: string;
+  professorName: string;
+  professorPixKey: string;
+  professorWhatsApp?: string;
+  pixPayload: string;
+  whatsAppUrl: string;
+  status: string;
+}
+
+export interface AccessRequestStatusResponse {
+  id: string;
+  status: string;
+  isApproved: boolean;
+  courseId: string;
+  courseTitle: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -61,6 +91,22 @@ export class PaymentService {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`
     });
+  }
+
+  createP2pPixCheckout(data: P2pPixCheckoutRequest): Observable<P2pPixCheckoutResponse> {
+    const token = this.authService.token();
+    const headers = token ? this.getAuthHeaders() : new HttpHeaders({ 'Content-Type': 'application/json' });
+    return this.http.post<P2pPixCheckoutResponse>(
+      `${this.apiUrl}/p2p-pix-checkout`,
+      data,
+      { headers }
+    );
+  }
+
+  getAccessRequestStatus(requestId: string): Observable<AccessRequestStatusResponse> {
+    return this.http.get<AccessRequestStatusResponse>(
+      `${environment.apiUrl}/accessrequests/${requestId}/status`
+    );
   }
 
   createCheckout(courseId: string, paymentMethod: string = 'PIX'): Observable<CheckoutResponse> {

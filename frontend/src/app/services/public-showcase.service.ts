@@ -61,6 +61,7 @@ export interface PublicProfessorProfile {
   videoIntroUrl?: string;
   city?: string;
   state?: string;
+  pixKey?: string;
   socialLinksJson?: string;
   publicCoursesCount: number;
   courses: PublicCourse[];

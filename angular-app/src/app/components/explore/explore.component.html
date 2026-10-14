@@ -254,4 +254,15 @@
     [courseTitle]="selectedCourseTitle()" 
     initialMode="A" 
     (close)="isAccessModalOpen.set(false)" />
+
+  <!-- Modal Checkout Pix P2P Direto ao Professor -->
+  <app-pix-p2p-checkout-modal
+    [isOpen]="isPixModalOpen()"
+    [courseId]="selectedPixCourseId()"
+    [courseTitle]="selectedPixCourseTitle()"
+    [price]="selectedPixPrice()"
+    [priceFormatted]="selectedPixPriceFormatted()"
+    [professorName]="selectedPixProfessorName()"
+    (close)="isPixModalOpen.set(false)"
+    (accessApproved)="onPixApproved($event)" />
 </div>

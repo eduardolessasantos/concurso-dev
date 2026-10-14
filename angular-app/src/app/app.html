@@ -8,7 +8,10 @@
     
     <nav aria-label="Navegação principal">
       <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" (click)="closeSidebar()">
-        <span class="nav-icon">🌐</span> Explorar Cursos
+        <span class="nav-icon">🏠</span> Início
+      </a>
+      <a class="nav-link" routerLink="/explorar" routerLinkActive="active" (click)="closeSidebar()">
+        <span class="nav-icon">🌐</span> Explorar Professores & Cursos
       </a>
       <a class="nav-link" routerLink="/meus-estudos" routerLinkActive="active" (click)="closeSidebar()">
         <span class="nav-icon">📚</span> Meus Estudos Liberados

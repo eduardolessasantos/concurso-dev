@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ProfessorManagementService } from '../../services/professor-management.service';
+import { StudentManagementService, AccessRequestItem } from '../../services/student-management.service';
 import { ShowcaseLeadResponse, ShowcaseMetricSummary, PublicProfessorProfile } from '../../services/public-showcase.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -19,6 +20,9 @@ export class ProfessorDashboardComponent implements OnInit {
   public leads = signal<ShowcaseLeadResponse[]>([]);
   public profile = signal<PublicProfessorProfile | null>(null);
   public platformData = signal<any | null>(null);
+  public pendingRequests = signal<AccessRequestItem[]>([]);
+  public approvingId = signal<string | null>(null);
+  public actionSuccessMessage = signal<string | null>(null);
 
   // Filtro de leads por status
   public filterStatus = signal<string>('ALL');
@@ -47,6 +51,7 @@ export class ProfessorDashboardComponent implements OnInit {
 
   constructor(
     private managementService: ProfessorManagementService,
+    private studentService: StudentManagementService,
     public authService: AuthService
   ) {}
 
@@ -75,6 +80,9 @@ export class ProfessorDashboardComponent implements OnInit {
       error: () => {}
     });
 
+    // Carrega Solicitações de Acesso & Pagamentos Pix Pendentes
+    this.loadPendingRequests();
+
     // Carrega Dados de Assinatura e Alunos
     this.managementService.getPlatformDashboard().subscribe({
       next: (d) => {
@@ -85,6 +93,59 @@ export class ProfessorDashboardComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  loadPendingRequests(): void {
+    this.studentService.getPendingAccessRequests().subscribe({
+      next: (reqs) => this.pendingRequests.set(reqs),
+      error: () => {}
+    });
+  }
+
+  approveRequest(request: AccessRequestItem): void {
+    this.approvingId.set(request.id);
+    this.actionSuccessMessage.set(null);
+
+    this.studentService.approveAccessRequest(request.id).subscribe({
+      next: () => {
+        this.approvingId.set(null);
+        this.pendingRequests.update(list => list.filter(r => r.id !== request.id));
+        this.actionSuccessMessage.set(`✅ Acesso liberado com sucesso para ${request.studentName}! O aluno já foi matriculado.`);
+        // Atualiza contadores
+        if (this.platformData()) {
+          const current = this.platformData();
+          this.platformData.set({
+            ...current,
+            totalActiveStudents: (current.totalActiveStudents || 0) + 1
+          });
+        }
+        setTimeout(() => this.actionSuccessMessage.set(null), 6000);
+      },
+      error: (err) => {
+        this.approvingId.set(null);
+        alert(err.error?.message || 'Falha ao liberar acesso. Tente novamente.');
+      }
+    });
+  }
+
+  rejectRequest(request: AccessRequestItem): void {
+    if (!confirm(`Deseja realmente recusar a solicitação de ${request.studentName}?`)) return;
+
+    this.studentService.rejectAccessRequest(request.id).subscribe({
+      next: () => {
+        this.pendingRequests.update(list => list.filter(r => r.id !== request.id));
+      },
+      error: (err) => alert(err.error?.message || 'Falha ao recusar solicitação.')
+    });
+  }
+
+  getStudentWhatsAppUrl(request: AccessRequestItem): string | null {
+    if (!request.studentPhone) return null;
+    const clean = request.studentPhone.replace(/\D/g, '');
+    const phone = clean.startsWith('55') ? clean : `55${clean}`;
+    const profName = this.profile()?.fullName || 'Professor(a)';
+    const text = encodeURIComponent(`Olá ${request.studentName}! Aqui é o(a) Prof. ${profName} do TeacherTech. Recebi sua solicitação do curso '${request.courseTitle}'.`);
+    return `https://wa.me/${phone}?text=${text}`;
   }
 
   onStatusChange(lead: ShowcaseLeadResponse, event: any): void {

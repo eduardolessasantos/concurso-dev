@@ -3,7 +3,7 @@ import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
-  { path: '', loadComponent: () => import('./components/explore/explore.component').then(m => m.ExploreComponent) },
+  { path: '', loadComponent: () => import('./components/landing-page/landing-page.component').then(m => m.LandingPageComponent) },
   { path: 'explorar', loadComponent: () => import('./components/explore/explore.component').then(m => m.ExploreComponent) },
   { path: 'estudo/:courseId', loadComponent: () => import('./components/study-wrapper/study-wrapper.component').then(m => m.StudyWrapperComponent), canActivate: [authGuard] },
   { path: 'p/:slug', loadComponent: () => import('./components/professor-showcase/professor-showcase.component').then(m => m.ProfessorShowcaseComponent) },

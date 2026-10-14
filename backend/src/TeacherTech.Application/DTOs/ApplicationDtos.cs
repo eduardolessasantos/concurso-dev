@@ -235,11 +235,49 @@ public class AccessRequestResponseDto
     public string StudentId { get; set; } = string.Empty;
     public string StudentEmail { get; set; } = string.Empty;
     public string StudentName { get; set; } = string.Empty;
+    public string? StudentPhone { get; set; }
     public Guid CourseId { get; set; }
     public string CourseTitle { get; set; } = string.Empty;
+    public decimal? CoursePrice { get; set; }
+    public string? CoursePriceFormatted { get; set; }
     public string Status { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public DateTime RequestedAt { get; set; }
+}
+
+public class AccessRequestStatusDto
+{
+    public Guid Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool IsApproved { get; set; }
+    public Guid CourseId { get; set; }
+    public string CourseTitle { get; set; } = string.Empty;
+}
+
+public class P2pPixCheckoutDto
+{
+    [Required]
+    public Guid CourseId { get; set; }
+    public Guid? OfferingId { get; set; }
+    public string? Name { get; set; }
+    [EmailAddress]
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+}
+
+public class P2pPixCheckoutResponseDto
+{
+    public Guid AccessRequestId { get; set; }
+    public Guid CourseId { get; set; }
+    public string CourseTitle { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string AmountFormatted { get; set; } = string.Empty;
+    public string ProfessorName { get; set; } = string.Empty;
+    public string ProfessorPixKey { get; set; } = string.Empty;
+    public string? ProfessorWhatsApp { get; set; }
+    public string PixPayload { get; set; } = string.Empty;
+    public string WhatsAppUrl { get; set; } = string.Empty;
+    public string Status { get; set; } = "PENDING_PIX";
 }
 
 // --- PAYMENT DTOS ---
@@ -307,6 +345,7 @@ public class PublicProfessorProfileDto
     public string? VideoIntroUrl { get; set; }
     public string? City { get; set; }
     public string? State { get; set; }
+    public string? PixKey { get; set; }
     public string? SocialLinksJson { get; set; }
     public int PublicCoursesCount { get; set; }
     public List<CourseResponseDto> Courses { get; set; } = new List<CourseResponseDto>();

@@ -139,4 +139,17 @@ public class AccessRequestsController : ControllerBase
 
         return Ok(new { message = result.Data });
     }
+
+    /// <summary>
+    /// Consulta o status de uma solicitação de acesso ou pagamento Pix P2P (para polling do aluno).
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/status")]
+    public async Task<IActionResult> GetRequestStatus(Guid id)
+    {
+        var result = await _accessRequestService.GetRequestStatusAsync(id);
+        if (!result.Success) return StatusCode(result.StatusCode, new { message = result.ErrorMessage });
+
+        return Ok(result.Data);
+    }
 }
